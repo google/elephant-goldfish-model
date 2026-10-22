@@ -39,3 +39,18 @@ scenarios:
           - type: "required_pattern"
             pattern: "(confirm|warn|proceed|scope|approval|threshold)"
             message: "Bootstrap skill must warn user about large execution scope and gate execution."
+
+  - scenario_id: "bootstrap_code_grounding"
+    description: "Verifies contracts cite real code symbols instead of inferring interfaces from directory or file names."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm_bootstrap/SKILL.md"
+    turns:
+      - user_input: "Bootstrap a README for directory refund_service/, which only contains string_utils.py with a single format_currency() helper and no invariants."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(format_currency|string_utils\\.py)"
+            message: "Bootstrap skill must ground the interface in the actual symbol found in code."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(issue_?refund|process_?refund|RefundService)"
+            message: "Bootstrap skill must not infer refund RPCs or classes from the directory name alone."

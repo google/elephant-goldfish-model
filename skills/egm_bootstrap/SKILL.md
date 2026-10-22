@@ -77,7 +77,7 @@ If your harness has no subagent tool, run the scout steps inline.
     *   Go: `go.mod` -> `go test ./...`
     *   Python: `pyproject.toml` / `pytest.ini` / `setup.py` -> `pytest`
     *   C/C++ / Make: `Makefile` -> `make test`
-    *   Bazel: `BUILD` / `BUILD.bazel` -> `bazel test ...`
+    *   Bazel: `BUILD` / `BUILD.bazel` -> `bazel test //...`
     *   None found: `<test-command>`
 2.  Record as `VerificationCommand` to populate generated README contracts.
 
@@ -208,7 +208,11 @@ If your harness has no subagent tool, run the scout steps inline.
         concise, factual summary. Do not write or modify any files. Return a
         JSON object containing the directory's public symbols (interface),
         invariants, and side effects matching schema: {"interface": [],
-        "invariants": [], "side_effects": []}.
+        "invariants": [], "side_effects": []}. Never infer RPC methods,
+        routes, status enums, or invariants from file or directory names
+        alone; cite the exact `[file:symbol_or_flag]` for every entry, and
+        output `["None"]` if no explicit invariants or side effects exist in
+        code.
     *   `enable_write_tools`: `false`
     *   `enable_subagent_tools`: `false`
 
@@ -236,19 +240,29 @@ If your harness has no subagent tool, run the scout steps inline.
 
     *   **Scout Spawning & Constraints**: Spawn `goldfish-explorer` for `D`.
 
-        *   *Scout Constraints*: Cap total data read per directory at **50,000
-            bytes**. Read implementation and schema files up to **300 lines**
-            per file. If directory size exceeds 50KB, select files using this
-            priority:
-            1.  Interface, schema, IDL, and header files (`.h`, `.hh`, `.hpp`,
-                `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`, `.sql`
-                schema/DDL definitions, interface classes) read completely.
+        *   *Scout Constraints*: Cap total data read per directory at **250,000
+            bytes** (~60K tokens per isolated scout context). Check build
+            manifest dependencies and `import` / `#include` statements before
+            attributing an RPC service, schema, or message type to a local
+            file. Select files using this priority:
+            1.  Contracts, schemas, and build inventories (build manifests,
+                `.h`, `.hh`, `.hpp`, `.proto`, `.graphql`, `.gql`, `.thrift`,
+                `.prisma`, `.sql` schema/DDL definitions, interface classes)
+                read completely. Extract exact table names from DDL and
+                exported target/package names from build manifests.
             2.  Module entry points (`main.*`, `index.*`, `lib.*`, `mod.*`,
-                `__init__.py`, or files matching directory name) read up to 300
-                lines.
-            3.  Production source and configuration files sorted alphabetically
-                read up to 300 lines until cap.
-            4.  Test files are completely ignored.
+                `__init__.py`, or files matching directory name) read
+                completely (up to 1,500 lines).
+            3.  Production implementation and query files sorted
+                alphabetically read completely (up to 1,500 lines per file; for
+                files > 1,500 lines, use your search tool or targeted
+                line-range reads to extract all public method/route
+                definitions, flags, and error checks without truncating the
+                bottom of the file) until the 250KB directory cap.
+            4.  Templates and configuration files read up to 200 lines each if
+                budget remains (or completely up to 800 lines in config-only
+                directories). Exclude stylesheets (`.css`, `.scss`).
+            5.  Test files are completely ignored.
         *   *Test File Filtering*: In hybrid package directories containing both
             production and test files, ensure the scout filters out test files
             (`*_test.*`, `*Test.*`) and ignores their symbols.
@@ -271,7 +285,11 @@ If your harness has no subagent tool, run the scout steps inline.
     *   **Verification Command Target Lookup**: Populate the Verification section
         using the discovered `VerificationCommand`.
         *   If the project uses Bazel/BUILD files: check if a `BUILD` file exists
-            in `D` or the nearest ancestor, referencing `bazel test` / `bazel build`.
+            in `D` or the nearest ancestor, referencing `bazel test` / `bazel build`
+            with valid target patterns (`//[package_path]/...` or
+            `//[package_path]:all`, never `//[package_path]...` or
+            `//[package_path]:...`). Use `bazel run` for interactive runner
+            targets.
         *   If the project uses other manifests (`package.json`, `Cargo.toml`,
             `go.mod`, `pyproject.toml`, `Makefile`), populate with the corresponding
             test runner command.
@@ -355,7 +373,10 @@ If your harness has no subagent tool, run the scout steps inline.
         and invariants, appending them under the optional `## Local Interface &
         Invariants` section.
     *   Compile the final root `target_filename` using the **Repository Root Blueprint
-        Template**, rolling up all top-level subdirectory boundaries.
+        Template**, rolling up all top-level subdirectory boundaries. Ensure any
+        root architecture or sequence diagrams strictly match the synchronous /
+        asynchronous boundaries, operation names, and storage backends in the
+        child `subtree_index` payloads without inventing unverified nodes.
     *   Write the root `target_filename` using your file-writing tool.
 
 4.  **Final Correctness Verification (CRITICAL)**: You MUST perform a final
@@ -365,15 +386,19 @@ If your harness has no subagent tool, run the scout steps inline.
     MUST explicitly read every single created or modified contract file
     to verify its content. Do not skip any child contract files. Verify:
 
-    *   **EGM Compliance**: Ensure `Interface`, `Invariants`, and `Side Effects`
-        sections exist and are populated.
+    *   **EGM Compliance & Code Grounding**: Ensure `Interface`, `Invariants`,
+        and `Side Effects` sections exist, cite real code symbols/flags/tables
+        from the scout extraction, and contain zero speculative or unverified
+        claims.
     *   **Markdown Syntax**: Ensure clean headers, valid tables, and proper code block fences.
     *   **Valid & Resolvable Links (CRITICAL)**: Ensure all subdirectory and
         sibling links use valid relative paths (`./subdir/${target_filename}` or
         `./subdir/SKILL.md`), and explicitly verify that every referenced target
         file actually exists on the filesystem. Remove or correct any broken
         relative references.
-    *   **Valid Targets**: Verify verification targets match project test configuration.
+    *   **Valid Targets**: Verify verification targets match project test
+        configuration and use valid target syntax (for Bazel, `/...` or
+        `:all`, never `:...`).
 
 5.  **Optional Drift Review (CRITICAL)**: After verification, ask the user (using
     a structured question tool, if your harness has one, or plain chat) to offer running a drift report
@@ -384,8 +409,10 @@ If your harness has no subagent tool, run the scout steps inline.
     *   `options`: `["(Recommended) Yes, run drift report on modified contracts",
         "No, skip drift review"]`
     *   If the user selects "Yes", run the `egm-drift-report` skill targeting
-        the modified contracts to verify that the documentation accurately
-        reflects the current codebase state. (Note: While `egm-drift-report` is
+        the modified contracts to verify both missing code coverage and
+        doc-to-code hallucinations (verifying every documented method, route,
+        enum, database table, and invariant against local source files and
+        correcting discrepancies in place). (Note: While `egm-drift-report` is
         often used for design documents, it can be applied to EGM-compliant
         contracts as a variant).
 
