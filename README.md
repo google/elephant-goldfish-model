@@ -10,7 +10,7 @@ Elephant-Goldfish Model (EGM) is an open-source plugin for Spec-Driven Developme
 | Harness | Install |
 | :--- | :--- |
 | **Any AI agent** | Ask your agent: `Install https://github.com/google/elephant-goldfish-model` |
-| **Antigravity** | `agy plugin install https://github.com/google/elephant-goldfish-model` (or `/plugin` in IDE) |
+| **Antigravity** | `agy plugin install https://github.com/google/elephant-goldfish-model` (or `/plugin` in IDE; see [Harnesses](docs/harnesses.md#antigravity-ide-and-vs-code)) |
 | **Claude Code** | `claude plugin marketplace add google/elephant-goldfish-model && claude plugin install egm@egm` |
 | **Codex** | `codex plugin marketplace add google/elephant-goldfish-model && codex plugin add egm@egm` |
 | **Claude Cowork / ChatGPT** | See [Harnesses](docs/harnesses.md) for desktop and workspace setup |

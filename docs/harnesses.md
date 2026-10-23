@@ -8,7 +8,7 @@ text.
 
 | Harness | Install |
 | --- | --- |
-| Antigravity | `agy plugin install https://github.com/google/elephant-goldfish-model` (or `/plugin` in the IDE) |
+| Antigravity | `agy plugin install https://github.com/google/elephant-goldfish-model` (or `/plugin` in the IDE; see [below](#antigravity-ide-and-vs-code)) |
 | Claude Code | `claude plugin marketplace add google/elephant-goldfish-model && claude plugin install egm@egm` |
 | Claude Cowork | Install from claude.ai/plugins or the Cowork plugin panel via marketplace `google/elephant-goldfish-model` |
 | Codex | `codex plugin marketplace add google/elephant-goldfish-model && codex plugin add egm@egm` |
@@ -17,6 +17,21 @@ text.
 Install the whole plugin. Skill-only installers that copy `skills/` alone
 break EGM, because the skills read `agents/` and
 `resources/document_standards/` at run time.
+
+### Antigravity IDE and VS Code
+
+Antigravity IDE and Antigravity for VS Code share the global plugin directory
+`~/.gemini/config/plugins/<name>/`. When not using the `agy` CLI, either ask
+the agent `Install https://github.com/google/elephant-goldfish-model` (or run
+`/plugin`), or copy the full runtime bundle into `~/.gemini/config/plugins/egm/`
+and reload the window:
+
+```sh
+git clone https://github.com/google/elephant-goldfish-model.git
+cd elephant-goldfish-model
+mkdir -p ~/.gemini/config/plugins/egm
+cp -R plugin.json README.md LICENSE skills agents resources docs ~/.gemini/config/plugins/egm/
+```
 
 ## Manifests
 
