@@ -85,6 +85,9 @@ A harness counts as supported after `/egm-brainstorm`, `/egm-draft`, and
 | Claude Cowork | Opus 5.5 Medium, connected cloud task | 2026-10-22 | Pass (ZIP) | Completed with direct-dispatch recovery | Completed | Partial: stages 5–7 | Usage limit interrupted stage 8. Final artifacts, stage 9 and actual isolation-child output remain unverified; #105. Earlier complete run is reported separately. |
 | OpenAI Codex | 0.163.0 | 2026-10-22 | Pass | Pass (fixture) | Pass (fixture) | Pass (fixture) | Two live tests passed in 573.13s; isolation, 15 native reviewers, ordered stages and required reads verified. |
 | ChatGPT Work | GPT-6.1 Sol, Light | 2026-10-22 | Pass; installed hashes verified | Completed | Completed | Nine native reviewers completed | Fresh probe returned UNKNOWN. Artifact download/final audit and full child tool traces remain outstanding; #106. |
+| Hermes Agent | 0.8.2 | 2026-10-23 | Pass (`hermes plugins install`) | Pass (fixture) | Pass (fixture) | Pass (fixture) | `.hermes/plugin.yaml` manifest verified. Subagent dispatch via `hermes.spawn` tested in clean subprocess; reviewers restricted to read-only tools (`Read`, `Grep`, `Glob`). |
+| OpenClaw | 1.0.4 | 2026-10-23 | Pass (`openclaw plugin add`) | Pass (fixture) | Pass (fixture) | Pass (fixture) | `.openclaw/openclaw.json` manifest verified. Ephemeral subsession with `fork_context: false` verified; zero parent context leak; reviewers restricted to read-only tools (`Read`, `Grep`, `Glob`). |
+| Delta | 0.9.0 | 2026-10-23 | Pass (`delta skills tap add`) | Pass (fixture) | Pass (fixture) | Pass (fixture) | `.delta/plugin.json` manifest verified. Runner delegation subprocess verified with clean context; reviewers restricted to read-only tools (`Read`, `Grep`, `Glob`). |
 
 ### Interpreting native test results
 
