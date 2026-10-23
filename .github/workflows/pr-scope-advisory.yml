@@ -77,7 +77,7 @@ jobs:
               }
             }
 
-            const advisoryLabel = "advisory: design-doc-suggested";
+            const advisoryLabel = "design-needed";
             const signature = "<!-- egm-scope-advisory -->";
 
             const comments = await github.paginate(
@@ -95,7 +95,7 @@ jobs:
 
             if (shouldAdvise) {
               if (!existingComment) {
-                const message = `${signature}\n### 💡 Contribution Scope Advisory\n\nThank you for your contribution! This PR is marked as a **Bug Fix**, but modifies **${nonTestChanges} non-test lines** across **${coreFilesCount} core definition files** (\`skills/\`, \`agents/\`).\n\nFor changes exceeding 100 non-test lines or touching 3+ core files, we recommend reaching out to maintainers first via a [Feature Inquiry Issue](https://github.com/${context.repo.owner}/${context.repo.repo}/issues/new?template=feature_proposal.md) (\`status: approved-for-design\`), merging a full EGM design document PR (\`docs/designs/<name>.md\`) authored with \`/egm-brainstorm\`, \`/egm-draft\`, and \`/egm-review\`, and then submitting the implementation PR (\`status: approved-for-pr\`).\n\n*Note: This is a non-blocking advisory; your PR remains open in the maintainer queue.*`;
+                const message = `${signature}\n### 💡 Contribution Scope Advisory\n\nThank you for your contribution! This PR is marked as a **Bug Fix**, but modifies **${nonTestChanges} non-test lines** across **${coreFilesCount} core definition files** (\`skills/\`, \`agents/\`).\n\nFor changes exceeding 100 non-test lines or touching 3+ core files, we recommend reaching out to maintainers first via a [Feature Inquiry Issue](https://github.com/${context.repo.owner}/${context.repo.repo}/issues/new?template=feature_proposal.md) (\`design-ready\`), merging a full EGM design document PR (\`docs/designs/<name>.md\`) authored with \`/egm-brainstorm\`, \`/egm-draft\`, and \`/egm-review\`, and then submitting the implementation PR (\`pr-ready\`).\n\n*Note: This is a non-blocking advisory; your PR remains open in the maintainer queue.*`;
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
