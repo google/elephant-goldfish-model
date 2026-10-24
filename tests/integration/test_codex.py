@@ -67,7 +67,7 @@ def read_trace(thread_id: str) -> list[dict]:
     paths = list(sessions.rglob(f"*{thread_id}.jsonl"))
     assert len(paths) == 1, f"Expected one retained Codex trace for {thread_id}"
     return [
-        json.loads(line) for line in paths[0].read_text().split("\n")
+        json.loads(line) for line in paths[0].read_text(encoding="utf-8").split("\n")
         if line.strip()
     ]
 

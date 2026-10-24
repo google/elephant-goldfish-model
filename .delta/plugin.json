@@ -1,0 +1,13 @@
+{
+  "name": "egm",
+  "version": "0.1.0",
+  "description": "Elephant-Goldfish Model: spec-driven development with deep-context drafting and zero-context Goldfish reviews.",
+  "author": {
+    "name": "Google LLC"
+  },
+  "homepage": "https://egm.dev",
+  "repository": "https://github.com/google/elephant-goldfish-model",
+  "license": "Apache-2.0",
+  "skills": "skills",
+  "agents": "agents"
+}
