@@ -281,3 +281,11 @@ def test_bundled_prompt_dependencies_and_harness_guides() -> None:
         continue
       base = prompt.parent if target.startswith("references/") else ROOT
       assert (base / target).is_file(), f"{prompt}: missing {target}"
+
+
+def test_artifact_directory_override_is_documented_for_each_harness() -> None:
+  # The models match this exact line in the user's prompt or instruction file.
+  marker = "EGM artifact directory: "
+  for guide in ("docs/claude.md", "docs/codex.md", "docs/harnesses.md"):
+    text = " ".join((ROOT / guide).read_text(encoding="utf-8").split())
+    assert marker in text, f"{guide} does not document `{marker}<path>`"

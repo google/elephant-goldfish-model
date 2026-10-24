@@ -85,6 +85,22 @@ to ChatGPT modes that do not expose native fresh-context delegation.
 Goldfish reviews strictly require zero-context, stateless evaluation:
 - **Zero-Context Fresh Session**: Subagents must not inherit parent conversation history. In OpenClaw, configure `isolation: { mode: "ephemeral_subsession", fork_context: false }` or pass `fork_context: false` when calling `session.fork`. In Hermes Agent and Delta, reviewer subagents are spawned in fresh runner subprocesses with clean environments.
 - **Read-Only Tool Policy**: Goldfish reviewer subagents must be strictly restricted to read-only tools: `Read`, `Grep`, and `Glob`. File modification (`Write`, `Edit`) or shell execution tools must be disabled to ensure review immutability and prevent audit corruption.
+## Artifact Directory
+
+Skills write briefs, drafts, and reports to the working directory, or to the
+harness's artifact directory if it has one. In Claude Code, Claude Cowork,
+Codex, and ChatGPT, you can name another folder. Add this line to your prompt,
+or to an agent instructions file that your harness loads (`CLAUDE.md` or
+`AGENTS.md`, in the project or at user level):
+
+```text
+EGM artifact directory: .dev/docs
+```
+
+A relative path is relative to the working directory. Design docs and other
+project files do not move. Claude Code reads a project `AGENTS.md` only when
+the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
+`.gitignore`.
 
 ## Support Status & Contributing Other Harnesses
 

@@ -25,6 +25,11 @@ skill's directory. Resolve user documents and generated artifacts against
 the user's working directory. Never substitute similarly named files in the
 user's project for bundled personas or standards.
 
+If the user's prompt or agent instructions file (`AGENTS.md`) has a line
+`EGM artifact directory: <path>`, write briefs, drafts, and reports to that
+folder: resolve a relative path against the working directory, and create the
+folder if it does not exist.
+
 In ChatGPT Work, a skill may be exposed through a cloud resource identifier
 while supporting files live in the installed local bundle. Use the installed
 path supplied by the skill inventory or installation metadata for those files;

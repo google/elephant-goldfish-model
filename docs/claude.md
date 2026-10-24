@@ -29,6 +29,10 @@ in chat; the model reads the draft again before each revision.
 Write briefs, drafts, and reports to the user's working directory. The
 per-session scratchpad is not the artifact directory: it belongs to one
 session, and the deliverables must outlive it.
+If the user's prompt or agent instructions file (`CLAUDE.md` or `AGENTS.md`)
+has a line `EGM artifact directory: <path>`, write them to that folder instead:
+resolve a relative path against the working directory, and create the folder if
+it does not exist.
 In Claude Code, `egm:egm-synthesizer` may spawn reviewers (nesting is allowed
 up to 3 levels by default), or the main context may dispatch reviewers directly.
 In Claude Cowork, subagents cannot spawn further subagents, so dispatch
