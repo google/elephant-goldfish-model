@@ -48,6 +48,7 @@ When you add a reviewer persona, add a Claude adapter under
 `.claude-plugin/agents/` and list it in `.claude-plugin/plugin.json`.
 The adapter reads the shared persona and sets Claude's read-only tools and
 context isolation. This avoids imposing Claude tool names on other hosts.
+In Claude Code, `/plugin` > Errors will report that the default `agents/` folder is ignored because the manifest sets `"agents"`; this warning is expected and harmless (see [Claude integration](claude.md#claude-code-warning-default-agents-folder-is-ignored)).
 
 ## Delegation
 

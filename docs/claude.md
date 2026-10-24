@@ -57,6 +57,22 @@ plugin hooks do not run (Claude Cowork, or `disableAllHooks`), approve the read
 prompts, or for headless runs pass `--allowedTools Read,Grep,Glob`. A reviewer
 that cannot read its persona or standard has not reviewed.
 
+## Claude Code Warning: Default agents/ folder is ignored
+
+In Claude Code (`/plugin` > Errors), you may see the following advisory warning:
+
+```text
+Default agents/ folder is ignored because the manifest sets "agents"
+```
+
+**This warning is expected and completely harmless.**
+
+EGM maintains two agent directories:
+1. `agents/`: Contains canonical, harness-agnostic reviewer persona markdown prompts loaded by Antigravity and other harnesses.
+2. `.claude-plugin/agents/`: Contains specialized Claude Code adapters that enforce zero-context isolation (`omitClaudeMd: true`) and strict read-only tool limits (`tools: [Read, Grep, Glob]`).
+
+Because `.claude-plugin/plugin.json` explicitly declares the `.claude-plugin/agents/` adapters in its `"agents"` field, Claude Code skips auto-loading the root `agents/` folder. This is intentional: removing `"agents"` would auto-load `agents/` without read-only restrictions (granting reviewers file-modification and shell permissions), while listing both folders would create duplicate subagent registrations under the same names. Do not modify the manifest to silence this notice.
+
 ## Reviewer isolation
 
 Spawn a new native Agent of the plugin's registered reviewer type for each
