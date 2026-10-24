@@ -1,0 +1,84 @@
+# Copyright 2026 Google LLC. SPDX-License-Identifier: Apache-2.0
+name: Prepare draft release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing main-branch tag (vMAJOR.MINOR.PATCH)
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: prepare-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+    permissions:
+      contents: read
+    steps:
+      - name: Require default-branch workflow
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+        run: test "$WORKFLOW_REF" = refs/heads/main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out an existing tag contained in main
+        id: source
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}"
+          git merge-base --is-ancestor "refs/tags/$RELEASE_TAG^{commit}" origin/main
+          git checkout --detach "refs/tags/$RELEASE_TAG"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - run: pip install pytest==8.3.5 pyyaml==6.0.2
+      - run: pytest tests/unit
+      - name: Prepare archives and notes
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python scripts/prepare_release.py --tag "$RELEASE_TAG" --commit "$(git rev-parse HEAD)" --output release
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-candidate
+          path: |
+            release/*.zip
+            release/SHA256SUMS
+            release/RELEASE_NOTES.md
+          if-no-files-found: error
+          retention-days: 7
+
+  draft:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-candidate
+          path: release
+      - name: Create draft only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          SOURCE_COMMIT: ${{ needs.build.outputs.commit }}
+        run: |
+          cd release
+          sha256sum -c SHA256SUMS
+          test "$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha)" = "$SOURCE_COMMIT"
+          gh release create "$RELEASE_TAG" --verify-tag --draft --title "EGM $RELEASE_TAG" --notes-file RELEASE_NOTES.md ./*.zip SHA256SUMS

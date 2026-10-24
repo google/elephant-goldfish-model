@@ -2,14 +2,26 @@
   "name": "egm",
   "version": "0.1.0",
   "description": "Elephant-Goldfish Model: spec-driven development with deep-context drafting and zero-context Goldfish reviews.",
+  "author": {
+    "name": "Google LLC"
+  },
   "homepage": "https://egm.dev",
   "repository": "https://github.com/google/elephant-goldfish-model",
   "license": "Apache-2.0",
   "skills": "./skills/",
+  "requires_local_executor": true,
   "interface": {
     "displayName": "Elephant-Goldfish Model",
-    "shortDescription": "Spec-driven development with Goldfish reviews",
+    "shortDescription": "Draft and stress-test specs",
+    "longDescription": "Draft software specifications, stress-test them with fresh-context Goldfish reviewers, resolve findings, and check implementation drift. EGM includes seven skills for developers working in a local codebase. It reads project files and writes design documents and review reports. Bootstrap can run local shell commands. Reviews require native subagents with fresh context; the workflow stops if the host cannot provide isolation. Model calls use your host account's quota. Cloud harness verification remains partial; see TESTING.md. This is not an officially supported Google product.",
     "developerName": "Google LLC",
-    "category": "Productivity"
+    "category": "Developer Tools",
+    "capabilities": ["Draft specifications", "Review designs", "Check implementation drift"],
+    "websiteURL": "https://egm.dev",
+    "supportURL": "https://github.com/google/elephant-goldfish-model/issues",
+    "privacyPolicyURL": "https://github.com/google/elephant-goldfish-model/blob/main/docs/privacy.md",
+    "termsOfServiceURL": "https://github.com/google/elephant-goldfish-model/blob/main/LICENSE",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/icon.svg"
   }
 }

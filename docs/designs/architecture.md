@@ -153,7 +153,7 @@ sequenceDiagram
 ### Phase 5: Implementation & Drift Monitoring
 
 *   **Execution**: Coding agents implement code strictly adhering to the
-    approved design document. (No Skill.md is required here because the design 
+    approved design document. (No Skill.md is required here because the design
     document is complete and detailed.)
 *   **Maintenance**: `/egm-drift-report` is run periodically (e.g. weekly) to
     detect divergence between codebase implementations and checked-in design docs.

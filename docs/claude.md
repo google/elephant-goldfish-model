@@ -47,15 +47,29 @@ invoked skill. Never guess a cache version or search another installed copy.
 Review targets and generated artifacts belong to the user's workspace, not the
 plugin cache. Pass absolute resource and target paths to each reviewer.
 
-Personas and standards live in the plugin cache, outside the project. A
-`PreToolUse` hook in `.claude-plugin/plugin.json` approves `Read`, `Grep`, and
-`Glob` calls inside the plugin's `agents/`, `docs/`, `resources/`, and
-`skills/` folders only, so reviewers read them with no permission rules, also
-in headless runs and background subagents. Other paths get the normal
-permission rules, and deny and ask rules still apply to plugin paths. Where
-plugin hooks do not run (Claude Cowork, or `disableAllHooks`), approve the read
-prompts, or for headless runs pass `--allowedTools Read,Grep,Glob`. A reviewer
-that cannot read its persona or standard has not reviewed.
+Personas and standards live in the plugin cache, outside the project. EGM
+does not install a permission-approval hook. Approve resource reads through
+Claude Code's normal permission prompts; current versions can surface background
+reviewer prompts in the parent session. For headless runs, the user must grant
+read access to the resolved plugin's `agents/`, `docs/`, `resources/`, and
+`skills/` folders using Claude Code's permission settings. Keep write access
+limited to the project and intended output directory. Do not disable permission
+checks or grant access to every installed plugin. A reviewer that cannot read
+its persona or standard must report the limitation and stop; it has not reviewed.
+
+For example, after resolving the actual installed plugin directory, add only
+its resource folders to user-approved read rules in `/permissions`:
+
+```text
+Read(//absolute/plugin/path/agents/**)
+Read(//absolute/plugin/path/docs/**)
+Read(//absolute/plugin/path/resources/**)
+Read(//absolute/plugin/path/skills/**)
+```
+
+Replace the example path; do not copy a guessed cache location. These read rules
+also cover Grep and Glob on those files on a best-effort basis. Adding a directory
+with `--add-dir` extends edit access too, so it is not a read-only substitute.
 
 ## Reviewer isolation
 
@@ -72,9 +86,11 @@ Reviewers cannot edit files or run shell commands, and no persistent `memory`
 is configured. The synthesizer adapter declares
 `tools: [Agent, Read, Grep, Glob, Write]` so it can spawn reviewers and write
 reports but cannot run shell commands or use the session's MCP connectors.
-The bootstrap orchestrator adapter keeps all tools because the bootstrap
-skill uses the shell; it routes workers to the bootstrap `SKILL.md` so they
-return the JSON `subtree_index` instead of prose. The parent handles fixes.
+The bootstrap orchestrator adapter allows only `Agent`, `Bash`, `Read`, `Grep`,
+`Glob`, `Write`, and `Edit` for local discovery and documentation. It routes
+workers to the bootstrap `SKILL.md` so they return the JSON `subtree_index`
+instead of prose. The parent handles fixes. Bash remains subject to normal
+permission rules and is not a filesystem or network sandbox.
 Reviewers cannot open URLs. Do not pass documentation URLs in
 `GoldfishContext` to Claude reviewers: save the raw page as a file in the
 workspace and pass that path instead.

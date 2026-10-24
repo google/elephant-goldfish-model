@@ -4,11 +4,10 @@
 """Offline packaging and isolation contracts for shared and host manifests."""
 
 import json
-import os
 from pathlib import Path
 import re
 import runpy
-import subprocess
+from xml.etree import ElementTree
 
 import pytest
 import yaml
@@ -65,6 +64,32 @@ def test_portable_manifest_schema() -> None:
   assert manifest["$schema"] == SCHEMA_URL
   assert re.fullmatch(NAME_RE, manifest["name"])
   assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
+
+
+def test_openai_submission_metadata_and_assets() -> None:
+  """Check public listing limits and bundled paths, not just JSON syntax."""
+  extension = read_json("plugin.json")["extensions"]["com.openai"]
+  codex = read_json(".codex-plugin/plugin.json")
+  assert extension["interface"] == codex["interface"]
+  assert extension["requires_local_executor"] is True
+  assert codex["requires_local_executor"] is True
+  assert codex["author"] == read_json("plugin.json")["author"]
+  interface = extension["interface"]
+  for field, limit in (
+      ("displayName", 30), ("shortDescription", 30),
+      ("longDescription", 4000), ("developerName", 80),
+  ):
+    assert 0 < len(interface[field]) <= limit, field
+  assert len(interface["capabilities"]) <= 20
+  assert all(0 < len(item) <= 120 for item in interface["capabilities"])
+  for field in ("composerIcon", "logo"):
+    path = interface[field]
+    assert path.startswith("./assets/")
+    asset = (ROOT / path).resolve()
+    assert asset.is_relative_to(ROOT / "assets")
+    assert asset.is_file() and asset.stat().st_size <= 5 * 1024 * 1024
+    svg = ElementTree.parse(asset).getroot()
+    assert float(svg.attrib["width"]) == float(svg.attrib["height"]) >= 48
 
 
 @pytest.mark.parametrize("path", COMPATIBILITY_MANIFESTS)
@@ -139,7 +164,7 @@ def test_claude_synthesizer_adapter_is_tool_restricted() -> None:
 def test_claude_bootstrap_adapter_routes_to_skill() -> None:
   adapter = ROOT / ".claude-plugin/agents/bootstrap_orchestrator.md"
   config = frontmatter(adapter)
-  assert "tools" not in config
+  assert set(config["tools"]) == {"Agent", "Bash", "Read", "Grep", "Glob", "Write", "Edit"}
   assert config["model"] == "inherit"
   text = adapter.read_text()
   assert "${CLAUDE_PLUGIN_ROOT}/agents/bootstrap_orchestrator.md" in text
@@ -151,56 +176,12 @@ def test_claude_bootstrap_adapter_routes_to_skill() -> None:
   assert "./agents/bootstrap_orchestrator.md" not in manifest
 
 
-READ_HOOK = ".claude-plugin/hooks/allow_plugin_reads.sh"
-
-
-def run_read_hook(tool_name: str, tool_input: dict) -> str:
-  result = subprocess.run(
-      [str(ROOT / READ_HOOK)],
-      input=json.dumps({"tool_name": tool_name, "tool_input": tool_input}),
-      capture_output=True,
-      text=True,
-      check=True,
-      env={**os.environ, "CLAUDE_PLUGIN_ROOT": str(ROOT)},
-  )
-  return result.stdout
-
-
-def test_claude_read_hook_is_registered() -> None:
-  hooks = read_json(".claude-plugin/plugin.json")["hooks"]["PreToolUse"]
-  assert [hook["matcher"] for hook in hooks] == ["Read|Grep|Glob"]
-  command = hooks[0]["hooks"][0]["command"]
-  assert command == f'"${{CLAUDE_PLUGIN_ROOT}}/{READ_HOOK}"'
-
-
-@pytest.mark.parametrize(
-    ("tool_name", "tool_input", "allowed"),
-    [
-        ("Read", {"file_path": "{root}/agents/style.md"}, True),
-        ("Read", {"file_path": "{root}/docs/claude.md"}, True),
-        ("Read", {"file_path": "{root}/skills/egm_review/SKILL.md"}, True),
-        ("Grep", {"pattern": "x", "path": "{root}/resources"}, True),
-        ("Glob", {"pattern": "**/*.md", "path": "{root}/agents"}, True),
-        ("Read", {"file_path": "/etc/passwd"}, False),
-        ("Read", {"file_path": "{root}/agents/../../etc/passwd"}, False),
-        ("Read", {"file_path": "{root}-evil/agents/style.md"}, False),
-        ("Read", {"file_path": "{root}/agents-evil/style.md"}, False),
-        ("Read", {"file_path": "{root}/README.md"}, False),
-        ("Read", {"file_path": "{root}/.claude/settings.local.json"}, False),
-        ("Grep", {"pattern": "x", "path": "{root}"}, False),
-        ("Grep", {"pattern": '"path":"{root}/agents"', "path": "/etc"}, False),
-        ("Glob", {"pattern": "**/*.md"}, False),
-        ("Glob", {"pattern": "/etc/*", "path": "{root}/agents"}, False),
-        ("Glob", {"pattern": "~/.ssh/*", "path": "{root}/agents"}, False),
-    ],
-)
-def test_claude_read_hook_approves_plugin_folders_only(
-    tool_name: str, tool_input: dict, allowed: bool
-) -> None:
-  """Only clean paths in the folders EGM reads skip the permission prompt."""
-  tool_input = {k: v.replace("{root}", str(ROOT)) for k, v in tool_input.items()}
-  output = run_read_hook(tool_name, tool_input)
-  assert ('"permissionDecision":"allow"' in output) is allowed
+def test_claude_permissions_remain_under_user_control() -> None:
+  """Bundled resources must not carry an automatic permission override."""
+  manifest = read_json(".claude-plugin/plugin.json")
+  assert "hooks" not in manifest
+  assert not (ROOT / ".claude-plugin/hooks/allow_plugin_reads.sh").exists()
+  assert not (ROOT / "hooks/hooks.json").exists()
 
 
 def test_claude_manifest_agents_and_shared_personas_resolve() -> None:

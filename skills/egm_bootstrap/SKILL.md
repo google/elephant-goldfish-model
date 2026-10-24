@@ -190,7 +190,7 @@ If your harness has no subagent tool, run the scout steps inline.
         *   Subagent: `egm-bootstrap-orchestrator` (`agents/bootstrap_orchestrator.md`) (or a general-purpose subagent)
         *   `Prompt`: "Run egm-bootstrap with path=`[path]`,
             is_worker=true, sub_tree_root=`[partition_root]`,
-            target_filename=`[target_filename]`." 
+            target_filename=`[target_filename]`."
     *   **Unbounded Execution**: Spawn all Sub-Orchestrators in parallel without
         artificial concurrency limits (as authorized by the user during the
         safety gate).
