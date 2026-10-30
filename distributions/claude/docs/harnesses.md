@@ -104,6 +104,12 @@ tool availability rather than inferring it from the product name. This applies
 to standalone Antigravity IDE and to ChatGPT modes that do not expose native
 fresh-context delegation.
 
+Fresh conversation context does not mean that the host omits its instruction
+files. Codex's `fork_context: false` and `fork_turns: "none"` isolate parent
+turns; they do not establish that project or user instructions are excluded.
+Keep stable workspace conventions in instruction files. State review
+assumptions that the Goldfish must challenge as explicit review criteria.
+
 ## Artifact Directory
 
 Skills write briefs, drafts, and reports to the working directory, or to the
@@ -123,7 +129,19 @@ the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
 
 ## Support Status & Contributing Other Harnesses
 
-**Antigravity**, **Claude Code**, and **Codex** pass automated installation, reviewer isolation, and end-to-end workflow fixtures.
+**Antigravity**, **Claude Code**, and **Codex** pass automated installation
+and end-to-end workflow fixtures. Reviewer isolation evidence is narrower:
+parent-turn isolation and host-instruction exclusion are separate results.
+
+Claude reviewer adapters set `omitClaudeMd: true`; see the
+[Claude integration](claude.md#reviewer-isolation). For Codex, issue [#237](https://github.com/google/elephant-goldfish-model/issues/237)
+reports that Codex CLI 0.166.0 supplied project and user `AGENTS.md` files
+despite `fork_turns: "none"`. For Antigravity CLI, the same issue reports
+project `AGENTS.md` and `GEMINI.md` in reviewer context. These are reported
+host-instruction leaks, not evidence that parent conversation turns leaked.
+The Codex test and recorded Antigravity run check parent-turn isolation only;
+neither verifies instruction-file exclusion. No host-specific exclusion
+control is verified here for Codex or Antigravity.
 
 **Claude Cowork** ([#105](https://github.com/google/elephant-goldfish-model/issues/105)) and **ChatGPT Work** ([#106](https://github.com/google/elephant-goldfish-model/issues/106)) have working installation paths with open cloud trace verification gaps.
 
