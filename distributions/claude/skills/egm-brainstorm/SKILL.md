@@ -102,8 +102,9 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
 
 ### Step 1: Deep Clarification & Problem Statement Drilling
 
-1.  **Check for Concept Foundation**: Verify if the user provided an initial
-    feature idea or concept prompt. If missing, prompt the user to describe what
+1.  **Check for Concept Foundation & Author Identity**: Verify if the user provided an initial
+    feature idea or concept prompt. Resolve author identity via local `git config user.name`
+    (or environment variables); if unset, prompt in chat. If missing, prompt the user to describe what
     they want to brainstorm.
 2.  **Iterative Problem Drilling (Multi-Turn Chat)**: Do **NOT** rush into
     launching subagents after a single response. Continue asking targeted,
@@ -198,7 +199,7 @@ The `concepts_brief.md` artifact follows this structure:
 
 ## Alternatives Weighed
 
-[Each option rejected during ideation, with the reason. `/egm-draft` copies
+[Each option rejected during ideation, with the technical reason (e.g. "Rejected by author: <reason>"). Do not attribute rejections to "maintainer" without explicit evidence. `/egm-draft` copies
 these into Alternatives Considered and has no other source for them.]
 
 ## Key Decisions & Staging for Next Steps

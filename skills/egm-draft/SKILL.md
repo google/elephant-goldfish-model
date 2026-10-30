@@ -159,6 +159,9 @@ this strict generation order:
 3.  **Verify State**: Parse the document. Present a quick confirmation to the
     user to ensure we are starting with the correct context.
 4.  **Consensus**: Get explicit approval to start drafting the document.
+5.  **Resolve Author**: Determine author identity by querying local
+    `git config user.name` (or environment variables `GIT_AUTHOR_NAME`/`USER`).
+    If unset or failing, prompt the user in chat. Record in the document header.
 
 ### Step 2: Draft Overview, Goals & Problem Statement
 
@@ -203,6 +206,9 @@ this strict generation order:
     English in Markdown format.
 3.  **Detail Reasons**: For each alternative, explicitly state *why* it was
     rejected (e.g., higher latency, scaling limitations, team unfamiliarity).
+    Document author decisions as `Rejected by author: [technical rationale]`.
+    Do NOT state `Rejected by maintainer` unless quoting an upstream maintainer
+    issue, discussion, or PR URL.
 4.  **Update Draft Artifact (MANDATORY)**: Update `design_draft.md` to
     append/insert the "Alternatives Considered" section using your file-writing
     tool.
