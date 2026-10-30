@@ -33,6 +33,8 @@ def assert_child_probe(
   answers = []
   child_reads = []
   read_results = []
+  handback_id = None
+  handback_errors = []
   for line in raw.split("\n"):
     if not line.strip():
       continue
@@ -40,12 +42,34 @@ def assert_child_probe(
     content = event.get("message", {}).get("content", [])
     for block in content if isinstance(content, list) else []:
       if event.get("type") == "assistant":
+        # A handback ends the child, so later output would compete with its answer.
+        assert handback_id is None or block["type"] not in ("text", "tool_use"), (
+            "Output follows SubagentHandback"
+        )
         if block["type"] == "tool_use":
+          if block["name"] == "SubagentHandback":
+            answer = block.get("input")
+            assert (
+                isinstance(block.get("id"), str) and isinstance(answer, dict)
+                and isinstance(answer.get("message"), str)
+            ), "Malformed SubagentHandback"
+            assert read_results, "SubagentHandback precedes the persona read result"
+            # Narration may precede the handback, but its sentinels must agree.
+            lines = "\n".join([*answers, answer["message"]]).splitlines()
+            assert len(
+                {line.strip() for line in lines} & {"RESOURCE_UNREADABLE", "UNKNOWN"}
+            ) == 1, "Ambiguous SubagentHandback answer"
+            handback_id = block["id"]
+            answers.append(answer["message"])
+            continue
           assert block["name"] == "Read"
           child_reads.append((block["id"], block["input"]["file_path"]))
         if block["type"] == "text":
           answers.append(block["text"])
       if event.get("type") == "user" and block["type"] == "tool_result":
+        if block["tool_use_id"] == handback_id:
+          handback_errors.append(bool(block.get("is_error")))
+          continue
         result = block.get("content", "")
         if isinstance(result, list):
           result = "".join(
@@ -60,6 +84,7 @@ def assert_child_probe(
   assert answers and answers[-1].strip().splitlines()[-1:] == [
       "RESOURCE_UNREADABLE" if deny_persona else "UNKNOWN"
   ]
+  assert handback_errors in ([], [False]), "SubagentHandback result was not accepted"
   assert [path for _, path in child_reads] == [str(persona)]
   assert read_results == [(child_reads[0][0], deny_persona, True)], (
       "Persona read has no correlated native denial result" if deny_persona
