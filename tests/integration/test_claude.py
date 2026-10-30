@@ -40,10 +40,15 @@ def assert_child_probe(
     content = event.get("message", {}).get("content", [])
     for block in content if isinstance(content, list) else []:
       if event.get("type") == "assistant":
-        if block["type"] == "tool_use":
-          assert block["name"] == "Read"
-          child_reads.append((block["id"], block["input"]["file_path"]))
-        if block["type"] == "text":
+        if block.get("type") == "tool_use":
+          if block.get("name") == "SubagentHandback":
+            message = block.get("input", {}).get("message")
+            if isinstance(message, str):
+              answers.append(message)
+          else:
+            assert block.get("name") == "Read"
+            child_reads.append((block["id"], block["input"]["file_path"]))
+        if block.get("type") == "text":
           answers.append(block["text"])
       if event.get("type") == "user" and block["type"] == "tool_result":
         result = block.get("content", "")

@@ -47,6 +47,7 @@ def test_trace_directory(
 @pytest.mark.parametrize("result", [
     "success", "error", "missing", "unrelated", "empty", "whitespace",
     "empty_text_block", "whitespace_text_block", "valid_text_blocks",
+    "subagent_handback",
 ])
 def test_child_probe_requires_successful_read(result: str) -> None:
   check = runpy.run_path(str(ROOT / "tests/integration/test_claude.py"))[
@@ -74,11 +75,17 @@ def test_child_probe_requires_successful_read(result: str) -> None:
         "is_error": result == "error",
         "content": content,
     }]}})
-  events.append({"type": "assistant", "message": {"content": [{
-      "type": "text", "text": "UNKNOWN",
-  }]}})
+  if result == "subagent_handback":
+    events.append({"type": "assistant", "message": {"content": [{
+        "type": "tool_use", "name": "SubagentHandback",
+        "input": {"message": "UNKNOWN"},
+    }]}})
+  else:
+    events.append({"type": "assistant", "message": {"content": [{
+        "type": "text", "text": "UNKNOWN",
+    }]}})
   raw = "\n".join(json.dumps(event) for event in events)
-  if result in {"success", "valid_text_blocks"}:
+  if result in {"success", "valid_text_blocks", "subagent_handback"}:
     check(raw, persona, ["parent-only-marker"])
   else:
     with pytest.raises(AssertionError, match="successful native tool result"):
