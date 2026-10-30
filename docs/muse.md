@@ -108,9 +108,10 @@ Do not use `file://` links in Muse chat.
 Run the offline packaging checks with `pytest tests/unit`. The end-to-end
 workflow fixture (brainstorm, draft, and uninterrupted review through the
 installed plugin) passed on Muse 1.4.14 on 2026-10-30 with the
-general-purpose reviewer fallback described above. It ran headless with
-approvals simulated up front, so interactive approval gates and chat link
-rendering are untested; see the [harness test
+general-purpose reviewer fallback described above. The prompt named this guide
+and it ran headless with approvals simulated up front, so skill routing,
+interactive approval gates, and chat link rendering are untested; see the
+[harness test
 record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record).
 Installing or discovering the plugin alone does not establish end-to-end
 workflow support.
