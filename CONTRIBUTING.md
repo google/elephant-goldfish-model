@@ -59,7 +59,7 @@ follows the EGM Spec-Driven Development process:
     We also recommend running `/egm-review docs/designs/<name>.md` to stress-test
     the proposal.
 
-4.  **Submit a Design Doc PR (`pr-ready`)**:
+3.  **Submit a Design Doc PR (`pr-ready`)**:
     Open a dedicated **Design Doc PR** containing `docs/designs/<name>.md`
     and `docs/designs/README.md` (referencing your aligned issue with
     `Refs #<issue>` rather than `Closes #<issue>` so the issue stays open).
@@ -67,7 +67,7 @@ follows the EGM Spec-Driven Development process:
     the codebase and maintainers manually transition the issue label to
     `pr-ready`.
 
-5.  **Submit the Implementation PR**:
+4.  **Submit the Implementation PR**:
     Once the specification is merged and your issue is labeled
     `pr-ready`, open the implementation PR (`Closes #<issue>`)
     referencing `docs/designs/<name>.md`.

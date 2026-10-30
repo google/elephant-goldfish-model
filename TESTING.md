@@ -62,6 +62,7 @@ pytest tests/unit -v
 pytest tests/unit/test_frontmatter.py -v
 pytest tests/unit/test_link_integrity.py -v
 ```
+
 ---
 
 ## Native Claude Reviewer Probe (Opt-in)
@@ -79,6 +80,7 @@ its persona, sees no parent or project `CLAUDE.md` context, and stops without a
 verdict when an explicit deny rule blocks its persona. This is a focused probe,
 not the full review workflow or a marketplace installation test.
 See [Claude integration](docs/claude.md).
+
 ---
 
 ## Native Codex Integration Tests (Opt-in)
