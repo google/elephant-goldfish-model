@@ -6,8 +6,8 @@
 The behavior itself is model-driven and covered by the
 `bootstrap_scout_failure_is_loud` scenario. These checks make sure a future
 edit to SKILL.md (for example a trim to stay under the load limit) cannot drop
-one of the clauses that turn a lost scout chunk into a visible gap instead of a
-README that looks complete.
+one of the clauses that turn a lost scout chunk into a visible, named gap
+instead of a README that looks complete.
 """
 
 from pathlib import Path
@@ -37,17 +37,20 @@ def skill_text() -> str:
         # The worker, not the scout, decides scope: scouts cannot list dirs.
         ("worker hands scouts explicit paths and line ranges",
          r"give each chunk explicit paths and line ranges"),
-        ("worker checks coverage before merging and retries once",
-         r"check that each scout's `files_read` covers its assignment; re-run a short scout once"),
-        # A lost or short chunk fails the whole directory; no partial merge.
-        ("short coverage counts as failure",
-         r"fails, times out, or still under-reports coverage after the retry"),
-        ("partial results are discarded, not merged",
-         r"discard its partial results"),
-        ("incomplete placeholder",
-         r'\["\(Documentation incomplete: scout failed\)"\]'),
+        ("worker checks coverage before merging",
+         r"check that each scout's `files_read` covers its assignment"),
+        # Any failure mode gets exactly one retry, including timeouts.
+        ("failed, timed-out, and short scouts are retried once",
+         r"Re-run once any scout that fails, times out, or under-reports coverage"),
+        # After the retry, covered chunks are kept and the gap is marked.
+        ("covered chunks are kept",
+         r"keep the other chunks' results"),
+        ("incomplete marker names the range",
+         r"\(Documentation incomplete: scout failed: <path:start-end>\)"),
+        ("marker goes in every section",
+         r"to each of `D`'s three sections"),
         ("uncovered ranges and reason are recorded",
-         r"record `D` with the uncovered `path:start-end` ranges and the reason"),
+         r"record `D` with the uncovered ranges and the reason"),
         # The run ends by telling the human what to rerun.
         ("final report lists ranges, reason, and rerun command",
          r"print its path, the uncovered `path:start-end` ranges, the reason, and the rerun command `egm-bootstrap path=<D>`"),
@@ -62,19 +65,19 @@ def test_scout_failure_contract(clause: str, pattern: str) -> None:
   )
 
 
-def test_scout_failure_scenario_rejects_partial_merge() -> None:
-  """The behavioral scenario must still forbid citing symbols from a lost chunk."""
+def test_scout_failure_scenario_keeps_good_chunks_and_marks_gap() -> None:
+  """The behavioral scenario must keep covered chunks and forbid uncovered symbols."""
   data = yaml.safe_load(SCENARIOS.read_text(encoding="utf-8"))
   scenario = next(
       (s for s in data["scenarios"]
        if s["scenario_id"] == "bootstrap_scout_failure_is_loud"), None)
   assert scenario is not None, "bootstrap_scout_failure_is_loud scenario is missing"
-  kinds = {a["type"] for turn in scenario["turns"] for a in turn["assertions"]}
+  assertions = [a for turn in scenario["turns"] for a in turn["assertions"]]
+  kinds = {a["type"] for a in assertions}
   assert "forbidden_pattern" in kinds, (
-      "scenario must forbid merged symbols from the failed chunk"
+      "scenario must forbid symbols from the uncovered range"
   )
   required = " ".join(
-      a["pattern"] for turn in scenario["turns"]
-      for a in turn["assertions"] if a["type"] == "required_pattern")
-  for needle in ("documentation incomplete", "1965", "egm-bootstrap"):
+      a["pattern"] for a in assertions if a["type"] == "required_pattern")
+  for needle in ("documentation incomplete", "alpha_parse", "1965", "egm-bootstrap"):
     assert needle in required, f"scenario no longer requires {needle!r}"
