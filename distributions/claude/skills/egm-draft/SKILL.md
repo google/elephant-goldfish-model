@@ -60,12 +60,12 @@ the aligned problem and requirements from the brainstorm phase.
     strictly one question (`len(questions) == 1`), be the sole tool call in the
     turn, and provide clear, action-oriented options without `(Recommended)`
     prefixes.
-13. **Owner Decides Architecture**: When a design decision has more than one
+13. **Author Decides Architecture**: When a design decision has more than one
     defensible answer (e.g., data model, component boundaries, storage,
     protocols), present up to three options, each with its mechanism,
-    trade-offs, and the conditions under which it fails, and ask the owner to
+    trade-offs, and the conditions under which it fails, and ask the author to
     choose through a single-select gate. Do not rank the options, mark a
-    default, or pick one. If the owner asks you to choose ("just pick one"),
+    default, or pick one. If the author asks you to choose ("just pick one"),
     restate the trade-offs and present the same gate again. Decide mechanical
     choices with one defensible answer (e.g., file naming, formatting)
     yourself.
@@ -159,9 +159,9 @@ this strict generation order:
 3.  **Verify State**: Parse the document. Present a quick confirmation to the
     user to ensure we are starting with the correct context.
 4.  **Consensus**: Get explicit approval to start drafting the document.
-5.  **Resolve Author**: Determine author identity by querying local
-    `git config user.name` (or environment variables `GIT_AUTHOR_NAME`/`USER`).
-    If unset or failing, prompt the user in chat. Record in the document header.
+5.  **Resolve Author**: Use the `Author` from the ingested brief if it has one.
+    Otherwise use `git config user.name`, then `GIT_AUTHOR_NAME`. If neither is
+    set, prompt the user in chat. Record it in the document header.
 
 ### Step 2: Draft Overview, Goals & Problem Statement
 

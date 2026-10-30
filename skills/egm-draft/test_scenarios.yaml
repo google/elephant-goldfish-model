@@ -135,3 +135,33 @@ scenarios:
           - type: "forbidden_pattern"
             pattern: "Save to detected directory"
             message: "Directory selection must wait until the user decides each contradiction."
+
+  - scenario_id: "author_resolution_fallback_prompts_chat"
+    description: "Asserts that when git user.name and GIT_AUTHOR_NAME are unset, the agent prompts the user in chat for Author."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-draft/SKILL.md"
+    turns:
+      - user_input: "Draft a design document. Neither git user.name nor GIT_AUTHOR_NAME is configured in this environment, and no predecessor brief exists."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(author|name|handle)"
+            message: "Agent must prompt the user for their author name or handle when git config is unset."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(Author:\\s*maintainers|Author:\\s*root|Author:\\s*runner)"
+            message: "Agent must not hallucinate maintainers or use OS login as author."
+
+  - scenario_id: "alternatives_rejection_attribution_by_author"
+    description: "Asserts that rejected alternatives document author rationale and do not falsely claim maintainer rejection."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-draft/SKILL.md"
+    turns:
+      - user_input: "Draft the Alternatives Considered section. We rejected Alternative A (in-memory counters) because it fails under horizontal scaling across multiple pods."
+        assertions:
+          - type: "required_pattern"
+            pattern: "Rejected by author:"
+            message: "Rejections must be attributed to author."
+          - type: "forbidden_pattern"
+            pattern: "Rejected by maintainer"
+            message: "Rejections must not claim maintainer rejection without maintainer evidence."
