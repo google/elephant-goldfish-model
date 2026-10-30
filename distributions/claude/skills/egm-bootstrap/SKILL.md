@@ -250,10 +250,10 @@ If your harness has no subagent tool, run the scout steps inline within a
             chunk in parallel, and merge their JSON. Scouts cannot list
             directories: give each chunk explicit paths and line ranges plus
             the file's imports and top-level definition list. Before merging,
-            check that each scout's `files_read` covers its assignment; re-run
-            a short scout once. Check build deps and `import` / `#include`
-            lines before attributing an RPC service, schema, or message type
-            to a local file. Read non-test files in this order:
+            check that each scout's `files_read` covers its assignment. Check
+            build deps and `import` / `#include` lines before attributing an
+            RPC service, schema, or message type to a local file. Read
+            non-test files in this order:
             1.  Contracts, schemas, and build manifests (`.h`, `.hh`, `.hpp`,
                 `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`, `.sql` DDL,
                 interface classes); extract exact DDL table names and exported
@@ -265,11 +265,11 @@ If your harness has no subagent tool, run the scout steps inline within a
                 directories); exclude `.css`/`.scss`.
             4.  Test files (`*_test.*`, `*Test.*`, `test_*.*`, `*.spec.*`):
                 ignore entirely, including in hybrid directories.
-        *   *Child Fault Tolerance*: If any scout for `D` fails, times out, or
-            still under-reports coverage after the retry, discard its partial
-            results. Set `D`'s interface, invariants, and side effects to
-            `["(Documentation incomplete: scout failed)"]`, record `D` with the
-            uncovered `path:start-end` ranges and the reason, and continue.
+        *   *Child Fault Tolerance*: Re-run once any scout that fails, times
+            out, or under-reports coverage. If it still does, keep the other
+            chunks' results, add `(Documentation incomplete: scout failed:
+            <path:start-end>)` to each of `D`'s three sections, record `D`
+            with the uncovered ranges and the reason, and continue.
 
     *   **Parent Context Propagation**: When processing a parent directory `P`,
         retrieve the compiled interface summaries of its immediate child
