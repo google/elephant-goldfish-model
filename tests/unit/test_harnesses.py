@@ -195,6 +195,7 @@ def test_claude_manifest_agents_and_shared_personas_resolve() -> None:
 def test_bundled_prompt_dependencies_and_harness_guides() -> None:
   assert (ROOT / "docs/claude.md").is_file()
   assert (ROOT / "docs/codex.md").is_file()
+  assert (ROOT / "docs/muse.md").is_file()
   skills = list((ROOT / "skills").glob("*/SKILL.md"))
   for skill in skills:
     text = skill.read_text(encoding="utf-8")
