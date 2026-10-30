@@ -88,7 +88,10 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
   interface = openai.get("interface", {})
   if target == "openai":
     interface = interface or manifest.get("interface", {})
-    references += [interface[key] for key in ("composerIcon", "logo")]
+    for key in ("composerIcon", "logo"):
+      if not interface.get(key):
+        raise ValueError(f"Missing OpenAI interface reference: {key}")
+      references.append(interface[key])
   else:
     references.append(manifest.get("icon", "./.claude-plugin/icon.png"))
   for reference in references:

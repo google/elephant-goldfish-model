@@ -115,7 +115,8 @@ file` mode is specified, confirm full-file line bounds).
         The synthesizer spawns the Goldfish review swarm in
         parallel, deduplicates findings, writes the report artifact, and
         returns a single summary message to avoid context pollution in the root
-        conversation.
+        conversation. Pass it the Failed Reviewers rule below. Its summary must
+        give a status, `completed` or `not run`, for each requested reviewer.
     *   **Direct Dispatch (Flat Swarm)**: Alternatively, spawn each requested
         reviewer subagent in `Reviewers` directly.
         Instruct each subagent to first read its persona definition in
@@ -125,7 +126,14 @@ file` mode is specified, confirm full-file line bounds).
     *   Each reviewer produces findings with severity (🔴 Blocker, 🟡 Major, 🟢
         Nit), line numbers, discrepancy descriptions, and rationales.
 2.  **Consolidate Findings**: Collect all findings across reviewers into a single
-    flat `FindingsList`.
+    flat `FindingsList`. Give each finding a stable id
+    (`<reviewer>-<round>-<n>`) and record its reviewer, severity, and affected
+    scope.
+3.  **Failed Reviewers**: A reviewer that times out, fails, or returns no report
+    did not review. Retry it once. If it fails again, record it as **not run**
+    in the report. Never count it as a reviewer with zero findings. If the
+    synthesizer summary has no status for a requested reviewer, record that
+    reviewer as not run.
 
 #### 2.3 Aggregated Resolution Hand-off
 
@@ -140,8 +148,29 @@ file` mode is specified, confirm full-file line bounds).
 
 #### 2.4 Iteration Check & Turn Boundary
 
-The cycle repeats until reviewers report zero remaining findings or the user
-explicitly halts it.
+Fresh reviewers sample differently each round, so a round with zero findings
+is rare even when the document improves. Use these rules instead:
+
+*   **Settled findings**: A finding is settled when it is contested or
+    recorded without a fix (accepted risk). Keep the settled list across
+    rounds. If a new reviewer raises a settled finding again (same affected
+    scope, same issue), do not re-open it.
+*   **Fixed findings**: An applied fix does not settle a finding. If a later
+    reviewer raises the same issue at the same scope, the fix failed or a
+    later edit reintroduced the issue. Re-open the finding.
+*   **Clean round**: A round is clean when no reviewer raises a Blocker or
+    Major finding that is not settled. Nits do not block. A reviewer recorded
+    as not run makes the round not clean. Decide this from the review results,
+    before you apply the fixes of that round.
+*   **Converged**: Two consecutive clean rounds. One clean round is not enough,
+    because the next fresh reviewer can find a different gap in the same text.
+*   **Cap**: 5 rounds.
+*   **Churn**: A new finding is at the scope of an applied fix, and reverting
+    that fix would resolve it.
+
+On converged, go to Step 3. On cap or churn, write a short list of the open
+findings by severity, then ask the user one question: accept and proceed,
+continue past the cap, or return the document to drafting.
 
 **Crucial Turn-Taking Requirement**: After the resolution phase finishes for a
 given round, the loop driver **MUST respect the turn-taking checkpoint in
@@ -151,10 +180,12 @@ another round of review.
 
 ### Step 3: Output Boundary & Final Checkpoint
 
-Upon successful completion (e.g., zero findings remaining or manual halt):
+Upon completion (converged, cap or churn accepted by the user, or manual
+halt):
 
 *   **Programmatic Callers**: If running as a subflow of `egm-review`, exit
     cleanly to hand execution back to the parent workflow.
 *   **Manual Invocations**: Output a summary of completion in chat: *"The review
-    loop has completed with zero remaining issues. Would you like to proceed to
+    loop has completed after [N] rounds ([converged | accepted at cap | halted]).
+Open findings are in the report. Would you like to proceed to
     the next stage, or do you have any final questions?"*

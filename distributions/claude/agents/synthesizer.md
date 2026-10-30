@@ -37,6 +37,7 @@ Inspect the `Mode` parameter specified by the caller (`Mode: BRAINSTORM` vs `Mod
 * **Document Standards Directory**: `resources/document_standards/{standard_name}.md`
 
 1. **Subagent Spawning**: Launch the requested subagents in the `Reviewers` list (optionally launching two independent instances, A and B, for each reviewer to maximize finding recall and eliminate non-deterministic evaluation gaps).
+   * **Failed Reviewers**: A reviewer that times out, fails, or returns no report did not review. Retry it once. If it fails again, its status is `not run`. Never count it as a reviewer with zero findings.
 2. **Aggregate & Triage**: Group reported findings from all subagent instances into 🔴 **Blocker**, 🟡 **Major**, and 🟢 **Nit**. Deduplicate overlapping findings and normalize file references.
 3. **Format Review Report**: Format the consolidated findings according to this Markdown layout:
 
@@ -44,6 +45,12 @@ Inspect the `Mode` parameter specified by the caller (`Mode: BRAINSTORM` vs `Mod
    # Goldfish Review Report
 
    **Target:** `[TargetFile]` (`[LineRange]`)
+
+   ## Reviewer Status
+
+   | Reviewer | Status |
+   | --- | --- |
+   | `[agent-shortname]` | [completed \| not run] |
 
    ## Prioritized Findings (Blockers -> Major -> Nits)
 
@@ -55,7 +62,7 @@ Inspect the `Mode` parameter specified by the caller (`Mode: BRAINSTORM` vs `Mod
    ```
 
 4. **Write Artifact**: Write findings to `goldfish_review_report.md` using your file-writing tool.
-5. **Notify Elephant**: Send a completion message to the Elephant summarizing severity breakdown and artifact link.
+5. **Notify Elephant**: Send a completion message to the Elephant with the status (`completed` or `not run`) of each requested reviewer, the severity breakdown, and the artifact link.
 
 ---
 

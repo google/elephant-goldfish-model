@@ -60,7 +60,6 @@ sequenceDiagram
     participant Draft as egm-draft Skill
     participant Summary as Artifact: concepts_brief.md / notes
     participant DraftArtifact as Artifact: design_draft.md
-    participant ZoomOut as zoom-out-standard.md
     participant Workspace as Workspace File: docs/designs/<FEATURE>.md
     participant Review as egm-review Skill
 
@@ -79,7 +78,8 @@ sequenceDiagram
     Draft->>Human: Request Feedback on Implementation Checklist
 
     Note over Human,Draft: Step 6: Finalization, Watermark & Handoff
-    Draft->>ZoomOut: Self-Evaluate vs zoom-out-standard.md
+    Draft->>Summary: Reconcile draft against concepts_brief.md
+    Draft->>Human: Report contradictions & architectural additions
     Draft->>DraftArtifact: Append Watermark Footer
     Draft->>Workspace: Write docs/designs/<FEATURE>.md
     Draft->>Human: Provide link to spec & recommend /egm-review
@@ -110,7 +110,7 @@ Appends component diagrams (Mermaid), API signatures, and data flow narratives.
 ### Step 4: Alternatives Considered
 
 Documents rejected alternatives with concrete trade-off justifications (latency,
-complexity, maintenance).
+complexity, maintenance), read from the brief's `Alternatives Weighed` section.
 
 ### Step 5: Detailed Implementation Plan
 
@@ -123,8 +123,9 @@ Drafts the execution section:
 
 ### Step 6: Finalization, Formatting & Registration
 
-*   Performs a final self-evaluation against
-    [`zoom-out-standard.md`](../../resources/document_standards/zoom-out-standard.md).
+*   Reconciles the draft against the predecessor context and asks the user to
+    decide each contradiction. It does not self-grade against the Zoom Out
+    standard; `/egm-review` Stage 5 does that from a fresh context.
 *   Appends a standardized provenance watermark footer (*`*Drafted with EGM*`*)
     separated by a horizontal rule delimiter (`--------------------------------------------------------------------------------`)
     after trailing open questions.

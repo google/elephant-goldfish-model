@@ -99,3 +99,27 @@ scenarios:
           - type: "forbidden_pattern"
             pattern: "(brilliant|amazing|fantastic|great job)"
             message: "Style audit must adhere to anti-sycophancy constraints and avoid flattery."
+
+  - scenario_id: "comprehension_without_reimplementation_standard"
+    description: "Verifies the Comprehension Test does not apply the re-implementation standard to a design document."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review/SKILL.md"
+    turns:
+      - user_input: "Run only Stage 6 (Comprehension Test) on docs/designs/rate_limit.md. Which document standard does the reviewer apply?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(no (document )?standard|self-containment)"
+            message: "Comprehension tests self-containment with no document standard, not the re-implementation standard."
+
+  - scenario_id: "comprehension_report_keeps_paraphrase"
+    description: "Verifies the Comprehension Test report keeps the reviewer's paraphrase."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review/SKILL.md"
+    turns:
+      - user_input: "Run only Stage 6 (Comprehension Test) on docs/designs/rate_limit.md. The reviewer reports no findings. What goes in comprehension_report.md?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)paraphrase"
+            message: "The comprehension report must keep the paraphrase, also when there are no findings."

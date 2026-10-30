@@ -163,6 +163,18 @@ def test_rejects_escaping_or_missing_manifest_assets(
     build(source, "openai", tmp_path / "output")
 
 
+@pytest.mark.parametrize("key", ["composerIcon", "logo"])
+def test_rejects_missing_openai_interface_icons(
+    source: Path, tmp_path: Path, key: str,
+) -> None:
+  path = source / "plugin.json"
+  manifest = json.loads(path.read_text())
+  del manifest["extensions"]["com.openai"]["interface"][key]
+  path.write_text(json.dumps(manifest))
+  with pytest.raises(ValueError, match=f"Missing OpenAI interface reference: {key}"):
+    build(source, "openai", tmp_path / "output")
+
+
 def test_refuses_hooks_and_overwrites(source: Path, tmp_path: Path) -> None:
   output = tmp_path / "output"
   build(source, "claude", output)

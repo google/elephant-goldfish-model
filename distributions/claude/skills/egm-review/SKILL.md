@@ -267,9 +267,10 @@ plain chat):
     *   **Step 5 (Initial Zoom Out)**: Spawn `egm-synthesizer` (or direct
         subagent) with `Reviewers: [egm-zoom-out]` on `full file` → write
         `zoom_out_report.md`.
-    *   **Step 6 (Comprehension Test)**: Spawn `egm-synthesizer` (or direct
-        subagent) with `Reviewers: [egm-comprehension]` on `FeatureRange` &
-        `DetailedRange` → write `comprehension_report.md`.
+    *   **Step 6 (Comprehension Test)**: Spawn the `egm-comprehension`
+        subagent directly (not the synthesizer) on `FeatureRange` &
+        `DetailedRange` → write its complete result to
+        `comprehension_report.md`.
     *   **Step 7 (Critic Review)**: Spawn `egm-synthesizer` (or direct
         subagents) with `Reviewers: [egm-design, egm-structural, egm-style]` on
         `FeatureRange` → write `critic_report.md`.
@@ -324,12 +325,16 @@ plain chat):
 
 ### Subflow: Comprehension Test
 
-1.  **Delegate to Synthesizer Subagent**: Spawn `egm-synthesizer` (or the
-    `egm-comprehension` subagent at `agents/comprehension.md`) on `FeatureRange`
-    & `DetailedRange` applying
-    `resources/document_standards/re-implementation-standard.md`.
-2.  **Delivery**: Write findings to `comprehension_report.md` using your
-    file-writing tool.
+1.  **Spawn the Reviewer Directly**: Spawn the `egm-comprehension` subagent
+    at `agents/comprehension.md` on `FeatureRange` & `DetailedRange` with no
+    document standard. Do not use the synthesizer: its report keeps only
+    findings, and the author must see the paraphrase. The test is self-containment,
+    not detail. Do not apply `re-implementation-standard.md`: it asks for
+    code-level detail, which the Zoom Out standard forbids in `FeatureRange`.
+2.  **Delivery**: Write the complete reviewer result to
+    `comprehension_report.md` using your file-writing tool. Start with the two
+    paraphrase headings verbatim, then the findings. Keep the paraphrase when
+    there are no findings.
 3.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
     `comprehension_report.md` (give its path).
 4.  **Checkpoint Gate**: Present the Stage 6 tri-state gate:

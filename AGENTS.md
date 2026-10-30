@@ -12,10 +12,10 @@ You are assisting development in the EGM repository.
     `skills/` or `agents/`; no design doc required, but please update an existing
     design if appropriate).
   * `Feature / Architectural Change — Stage 1: Design Doc PR` (requires an aligned
-    issue with `status: approved-for-design`, uses `Refs #<issue>`, and adds
+    issue with `design-ready`, uses `Refs #<issue>`, and adds
     `docs/designs/<name>.md` + updates `docs/designs/README.md`).
   * `Feature / Architectural Change — Stage 2: Implementation PR` (requires an
-    aligned issue with `status: approved-for-pr` and a merged
+    aligned issue with `pr-ready` and a merged
     `docs/designs/<name>.md`).
 * **No Artificial PR Splitting**: Never split a cohesive feature or refactoring across
   multiple smaller pull requests to evade the 100-line scope threshold.

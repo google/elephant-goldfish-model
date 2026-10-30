@@ -91,47 +91,12 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
 
 | Lens / Persona          | Core Objective          | Key Questions Challenged |
 | :---------------------- | :---------------------- | :----------------------- |
-| **Contrarian / YAGNI**  | Code & complexity       | *Why does this feature   |
-:                         : minimization            : need to exist? Can an    :
-:                         :                         : existing library,        :
-:                         :                         : open-source dependency,  :
-:                         :                         : API, or service solve    :
-:                         :                         : 90% of this problem      :
-:                         :                         : without writing new      :
-:                         :                         : code?*                   :
-| **Cost, Quota & Token   | Infrastructure & budget | *What is the peak QPS,   |
-: Economics**             : scaling                 : memory footprint,        :
-:                         :                         : database query load, or  :
-:                         :                         : LLM token budget? Will   :
-:                         :                         : this hit quota ceilings  :
-:                         :                         : at scale?*               :
-| **UX & Developer        | Usability & cognitive   | *Is the API/CLI          |
-: Ergonomics**            : overhead                : intuitive? Does it match :
-:                         :                         : ecosystem conventions?   :
-:                         :                         : Are error messages       :
-:                         :                         : actionable, or does it   :
-:                         :                         : add developer friction?* :
-| **Migration & Backward  | Rollout safety &        | *How do existing         |
-: Compatibility**         : version skew            : clients/data migrate?    :
-:                         :                         : Does this break          :
-:                         :                         : serialized schemas,      :
-:                         :                         : protos, or persistent    :
-:                         :                         : storage? How is rollback :
-:                         :                         : handled mid-migration?*  :
-| **Observability & SRE   | Telemetry & operational | *Are key operations      |
-: Debuggability**         : visibility              : traceable via            :
-:                         :                         : distributed tracing? Are :
-:                         :                         : telemetry metrics        :
-:                         :                         : actionable? How will     :
-:                         :                         : oncall engineers triage  :
-:                         :                         : a production incident at :
-:                         :                         : 3 AM?*                   :
-| **Long-Term Tech Debt & | Future maintainability  | *Does this introduce     |
-: Maintenance**           :                         : tightly coupled          :
-:                         :                         : dependencies or brittle  :
-:                         :                         : state machines that will :
-:                         :                         : be painful to maintain   :
-:                         :                         : in 2 years?*             :
+| **Contrarian / YAGNI** | Code & complexity minimization | *Why does this feature need to exist? Can an existing library, open-source dependency, API, or service solve 90% of this problem without writing new code?* |
+| **Cost, Quota & Token Economics** | Infrastructure & budget scaling | *What is the peak QPS, memory footprint, database query load, or LLM token budget? Will this hit quota ceilings at scale?* |
+| **UX & Developer Ergonomics** | Usability & cognitive overhead | *Is the API/CLI intuitive? Does it match ecosystem conventions? Are error messages actionable, or does it add developer friction?* |
+| **Migration & Backward Compatibility** | Rollout safety & version skew | *How do existing clients/data migrate? Does this break serialized schemas, protos, or persistent storage? How is rollback handled mid-migration?* |
+| **Observability & SRE Debuggability** | Telemetry & operational visibility | *Are key operations traceable via distributed tracing? Are telemetry metrics actionable? How will oncall engineers triage a production incident at 3 AM?* |
+| **Long-Term Tech Debt & Maintenance** | Future maintainability | *Does this introduce tightly coupled dependencies or brittle state machines that will be painful to maintain in 2 years?* |
 
 ## Execution Workflow
 
@@ -230,6 +195,11 @@ The `concepts_brief.md` artifact follows this structure:
 
 * **In-Scope Goals:** [Explicitly defined scope items]
 * **Out-of-Scope Non-Goals:** [Features intentionally excluded]
+
+## Alternatives Weighed
+
+[Each option rejected during ideation, with the reason. `/egm-draft` copies
+these into Alternatives Considered and has no other source for them.]
 
 ## Key Decisions & Staging for Next Steps
 

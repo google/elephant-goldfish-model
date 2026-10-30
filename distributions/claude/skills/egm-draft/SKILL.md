@@ -195,8 +195,10 @@ this strict generation order:
 
 ### Step 4: Draft Alternatives
 
-1.  **Review Alternatives**: Recall the alternatives debated and rejected during
-    brainstorming.
+1.  **Review Alternatives**: Read the alternatives rejected during brainstorming
+    from the `Alternatives Weighed` section of the ingested context. Do not
+    rely on memory: drafting often runs in a new session. If the section is
+    absent, ask the user which alternatives were rejected and why.
 2.  **Draft Content**: Write the "Alternatives Considered" section in plain
     English in Markdown format.
 3.  **Detail Reasons**: For each alternative, explicitly state *why* it was
@@ -244,7 +246,27 @@ any impactful decisions. Follow these guidelines:
 When you are asked to write or save the design document, follow these rules
 strictly:
 
-1.  **Target Directory**: If the user specified a target directory or file, use
+1.  **Reconcile against the Predecessor Context**: Do not grade the draft
+    against the Zoom Out standard here. The session that wrote the draft agrees
+    with it; `/egm-review` Stage 5 runs that check from a fresh context.
+    Instead, re-read the context ingested at Step 1 and compare it with the
+    draft. No Goldfish can do this check, because no Goldfish reads the brief.
+    *   **Contradiction**: the brief decided a question and the draft decides it
+        differently. Report every one.
+    *   **Addition**: the draft decides a question the brief did not raise.
+        Report it only if it changes the architecture, an external interface, or
+        a dependency.
+
+    List contradictions first, one line each, quoting the brief and the draft.
+    Ask the user to decide each one. Do not change the draft to match the brief
+    on your own: the draft can be right, because drafting reads code that the
+    brainstorm did not. If nothing diverges, say so in one line. If Step 1
+    found no predecessor file, skip this step.
+
+    If a contradiction is open, stop and wait for the user. Apply each
+    decision to `design_draft.md` before Step 6.2.
+
+2.  **Target Directory**: If the user specified a target directory or file, use
     it. Otherwise, probe the workspace for existing design directories (from
     `Context File` directory, `docs/designs/`, or `<project>/docs/designs/`),
     bind `[DiscoveredPath]` (defaulting to `docs/designs/`), and present a
@@ -273,18 +295,8 @@ strictly:
         `"Please specify the custom target directory path where you would like
         to save the design document."` and yield active execution.
 
-2.  **Update Sitemap**: If `<DESIGN_DIR>/SITEMAP.md` exists, register the new
+3.  **Update Sitemap**: If `<DESIGN_DIR>/SITEMAP.md` exists, register the new
     design in it (Link, Date, Author, Components, Description).
-
-3.  **Self-Evaluate against Zoom Out Standard**: Before saving the file,
-    self-evaluate the compiled design document (contents of `design_draft.md`)
-    against the EGM Zoom Out Standard
-    (`resources/document_standards/zoom-out-standard.md`).
-    Verify that the design remains focused on the root problem, does not
-    introduce premature optimizations or speculative logic (YAGNI), maximizes
-    reuse, and avoids repeating itself. If any issues are found, present them to
-    the user, explain the proposed improvements, and ask for confirmation before
-    refining the draft.
 
 4.  **Write doc**: Once finalized, write the contents of `design_draft.md` to
     the designated destination file at `<DESIGN_DIR>/<FEATURE>.md` using your

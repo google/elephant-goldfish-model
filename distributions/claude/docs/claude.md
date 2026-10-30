@@ -71,6 +71,27 @@ Read(//absolute/plugin/path/resources/**)
 Read(//absolute/plugin/path/skills/**)
 ```
 
+On Windows, write the absolute path either with a leading `//` and a lower-case
+drive letter without the colon, or as a native path:
+
+- `Read(//c/Users/<you>/.claude/plugins/cache/egm/egm/<version>/agents/**)`
+- `Read(C:\Users\<you>\.claude\plugins\cache\egm\egm\<version>\agents\**)`
+
+The form `//C:/Users/...` does not match, and the reads are still denied.
+
+A marketplace install lives in a version folder:
+`.../plugins/cache/<marketplace>/egm/<version>/`. A rule that names one version
+stops matching after an update. Replacing only the version segment with `*` keeps
+matching across versions and still covers only this plugin's folders. For example,
+on Windows:
+
+```text
+Read(//c/Users/<you>/.claude/plugins/cache/egm/egm/*/agents/**)
+Read(//c/Users/<you>/.claude/plugins/cache/egm/egm/*/docs/**)
+Read(//c/Users/<you>/.claude/plugins/cache/egm/egm/*/resources/**)
+Read(//c/Users/<you>/.claude/plugins/cache/egm/egm/*/skills/**)
+```
+
 Replace the example path; do not copy a guessed cache location. These read rules
 also cover Grep and Glob on those files on a best-effort basis. Adding a directory
 with `--add-dir` extends edit access too, so it is not a read-only substitute.

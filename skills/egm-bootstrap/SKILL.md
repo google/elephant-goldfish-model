@@ -79,7 +79,7 @@ If your harness has no subagent tool, run the scout steps inline.
     *   Go: `go.mod` -> `go test ./...`
     *   Python: `pyproject.toml` / `pytest.ini` / `setup.py` -> `pytest`
     *   C/C++ / Make: `Makefile` -> `make test`
-    *   Bazel: `BUILD` / `BUILD.bazel` -> `bazel test ...`
+    *   Bazel: `BUILD` / `BUILD.bazel` -> `bazel test //...`
     *   None found: `<test-command>`
 2.  Record as `VerificationCommand` to populate generated README contracts.
 
@@ -210,7 +210,11 @@ If your harness has no subagent tool, run the scout steps inline.
         concise, factual summary. Do not write or modify any files. Return a
         JSON object containing the directory's public symbols (interface),
         invariants, and side effects matching schema: {"interface": [],
-        "invariants": [], "side_effects": []}.
+        "invariants": [], "side_effects": []}. Never infer RPC methods,
+        routes, status enums, or invariants from file or directory names
+        alone; cite the exact `[file:symbol_or_flag]` for every entry, and
+        output `["None"]` if no explicit invariants or side effects exist in
+        code.
     *   `enable_write_tools`: `false`
     *   `enable_subagent_tools`: `false`
 
@@ -238,22 +242,28 @@ If your harness has no subagent tool, run the scout steps inline.
 
     *   **Scout Spawning & Constraints**: Spawn `goldfish-explorer` for `D`.
 
-        *   *Scout Constraints*: Cap total data read per directory at **50,000
-            bytes**. Read implementation and schema files up to **300 lines**
-            per file. If directory size exceeds 50KB, select files using this
-            priority:
-            1.  Interface, schema, IDL, and header files (`.h`, `.hh`, `.hpp`,
-                `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`, `.sql`
-                schema/DDL definitions, interface classes) read completely.
+        *   *Scout Constraints*: No per-directory or per-file byte cap; every
+            non-test file in `D` is read in full. Bound each scout call to
+            about **1,500 lines** of source instead: list top-level definitions
+            (class/func/def/route/flag lines) with your search tool, cut the
+            directory's files into chunks at those boundaries (never mid-body;
+            small files share a chunk), spawn one `goldfish-explorer` per
+            chunk in parallel, and merge their JSON. Give each chunk the
+            file's imports and top-level definition list so it can judge
+            visibility. Check build-manifest deps and `import` / `#include`
+            statements before attributing an RPC service, schema, or message
+            type to a local file. Read non-test files in this order:
+            1.  Contracts, schemas, and build manifests (`.h`, `.hh`, `.hpp`,
+                `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`, `.sql` DDL,
+                interface classes); extract exact DDL table names and exported
+                build targets.
             2.  Module entry points (`main.*`, `index.*`, `lib.*`, `mod.*`,
-                `__init__.py`, or files matching directory name) read up to 300
-                lines.
-            3.  Production source and configuration files sorted alphabetically
-                read up to 300 lines until cap.
-            4.  Test files are completely ignored.
-        *   *Test File Filtering*: In hybrid package directories containing both
-            production and test files, ensure the scout filters out test files
-            (`*_test.*`, `*Test.*`) and ignores their symbols.
+                `__init__.py`, or files matching directory name), then
+                production source/query files alphabetically.
+            3.  Templates and configs: up to 200 lines each (800 in config-only
+                directories); exclude `.css`/`.scss`.
+            4.  Test files (`*_test.*`, `*Test.*`, `test_*.*`, `*.spec.*`):
+                ignore entirely, including in hybrid directories.
         *   *Child Fault Tolerance*: If the scout fails or times out, log a
             warning, use placeholder values `["(Details pending/documentation
             failed)"]`, and continue execution.
@@ -273,7 +283,11 @@ If your harness has no subagent tool, run the scout steps inline.
     *   **Verification Command Target Lookup**: Populate the Verification section
         using the discovered `VerificationCommand`.
         *   If the project uses Bazel/BUILD files: check if a `BUILD` file exists
-            in `D` or the nearest ancestor, referencing `bazel test` / `bazel build`.
+            in `D` or the nearest ancestor, referencing `bazel test` / `bazel build`
+            with valid target patterns (`//[package_path]/...` or
+            `//[package_path]:all`, never `//[package_path]...` or
+            `//[package_path]:...`). Use `bazel run` for interactive runner
+            targets.
         *   If the project uses other manifests (`package.json`, `Cargo.toml`,
             `go.mod`, `pyproject.toml`, `Makefile`), populate with the corresponding
             test runner command.
@@ -358,7 +372,10 @@ If your harness has no subagent tool, run the scout steps inline.
         and invariants, appending them under the optional `## Local Interface &
         Invariants` section.
     *   Compile the final root `target_filename` using the **Repository Root Blueprint
-        Template**, rolling up all top-level subdirectory boundaries.
+        Template**, rolling up all top-level subdirectory boundaries. Ensure any
+        root architecture or sequence diagrams strictly match the synchronous /
+        asynchronous boundaries, operation names, and storage backends in the
+        child `subtree_index` payloads without inventing unverified nodes.
     *   Write the root `target_filename` using your file-writing tool.
 
 4.  **Final Correctness Verification (CRITICAL)**: You MUST perform a final
@@ -368,15 +385,19 @@ If your harness has no subagent tool, run the scout steps inline.
     MUST explicitly read every single created or modified contract file
     to verify its content. Do not skip any child contract files. Verify:
 
-    *   **EGM Compliance**: Ensure `Interface`, `Invariants`, and `Side Effects`
-        sections exist and are populated.
+    *   **EGM Compliance & Code Grounding**: Ensure `Interface`, `Invariants`,
+        and `Side Effects` sections exist, cite real code symbols/flags/tables
+        from the scout extraction, and contain zero speculative or unverified
+        claims.
     *   **Markdown Syntax**: Ensure clean headers, valid tables, and proper code block fences.
     *   **Valid & Resolvable Links (CRITICAL)**: Ensure all subdirectory and
         sibling links use valid relative paths (`./subdir/${target_filename}` or
         `./subdir/SKILL.md`), and explicitly verify that every referenced target
         file actually exists on the filesystem. Remove or correct any broken
         relative references.
-    *   **Valid Targets**: Verify verification targets match project test configuration.
+    *   **Valid Targets**: Verify verification targets match project test
+        configuration and use valid target syntax (for Bazel, `/...` or
+        `:all`, never `:...`).
 
 5.  **Optional Drift Review (CRITICAL)**: After verification, ask the user (using
     a structured question tool, if your harness has one, or plain chat) to offer running a drift report
@@ -387,10 +408,12 @@ If your harness has no subagent tool, run the scout steps inline.
     *   `options`: `["(Recommended) Yes, run drift report on modified contracts",
         "No, skip drift review"]`
     *   If the user selects "Yes", run the `egm-drift-report` skill targeting
-        the modified contracts to verify that the documentation accurately
-        reflects the current codebase state. (Note: While `egm-drift-report` is
-        often used for design documents, it can be applied to EGM-compliant
-        contracts as a variant).
+        the modified contracts to verify both missing code coverage and
+        doc-to-code hallucinations (verifying every documented method, route,
+        enum, database table, and invariant against local source files and
+        recording discrepancies in the drift report for human triage). (Note:
+        While `egm-drift-report` is often used for design documents, it can be
+        applied to EGM-compliant contracts as a variant).
 
 6.  Terminate execution successfully.
 
@@ -398,61 +421,7 @@ If your harness has no subagent tool, run the scout steps inline.
 
 ## Templates
 
-### 📄 Component Package (Peanuts) README Template
-
-```markdown
-# [Component Name]
-
-## Overview
-[Prose overview of the component's architectural role and goals]
-
-## Interface
-- [Public classes, functions, and symbols]
-- [Subdirectories list and relative links to their contracts (e.g., `./subdir/README.md` or `./subdir/${target_filename}`)]
-
-## Invariants
-- [State and call invariants that must be preserved by developers/agents]
-
-## Side Effects
-- [State mutations, network calls, disk access, locks, or external side effects]
-
-## Verification
-- Run: `<test-command>`
-```
-
-### 📄 Repository Root (Blueprint / Hay) README Template
-
-```markdown
-# [Repository Name] Blueprint
-
-## System Overview
-[High-altitude architectural overview of this subsystem]
-
-[Optional section if the root directory contains direct source files]
-## Local Interface & Invariants
-- [Direct symbols, invariants, and side effects of files in the root folder]
-
-## Subdirectories & System Boundaries
-- [Subdirectory Name]: [Relative link to existing child contract file (e.g., `./subdir/README.md` or `./subdir/${target_filename}`) or `./subdir/SKILL.md`] - [Summary of child contract/role]
-
-## Global Invariants
-- [System-wide constraints that cross component boundaries]
-
-## Global Side Effects
-- [Shared resources, databases, or external integrations affected by this subsystem]
-
-## System Verification
-- Run: `<test-command>`
-```
-
-### 📄 Intermediate Blueprint README Template
-
-```markdown
-# [Directory Name]
-
-## Overview
-[Factual overview of the subdirectories and systems grouped under this directory path]
-
-## Subdirectories & Boundaries
-- [Subdirectory Name]: [Relative link to existing child contract file (e.g., `./subdir/README.md` or `./subdir/${target_filename}`) or `./subdir/SKILL.md`] - [Summary of child contract/role]
-```
+Before writing any contract file, read the
+[README templates](references/templates.md) relative to this skill directory.
+It defines the **Component Package (Peanuts)**, **Repository Root (Blueprint /
+Hay)**, and **Intermediate Blueprint** README templates referenced above.

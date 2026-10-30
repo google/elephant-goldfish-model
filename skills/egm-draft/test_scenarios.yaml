@@ -120,3 +120,18 @@ scenarios:
           - type: "contains"
             pattern: "../sibling/README.md"
             message: "Sibling link must use relative path formatting."
+
+  - scenario_id: "finalize_reconciles_instead_of_self_grading"
+    description: "Verifies Step 6 reconciles the draft against the brief and does not self-grade against the Zoom Out standard."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-draft/SKILL.md"
+    turns:
+      - user_input: "All sections are approved. concepts_brief.md chose PostgreSQL; the draft uses Spanner. Finalize the document."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)contradiction"
+            message: "Finalization must report the brief/draft contradiction to the user."
+          - type: "forbidden_pattern"
+            pattern: "Save to detected directory"
+            message: "Directory selection must wait until the user decides each contradiction."
