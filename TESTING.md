@@ -55,6 +55,11 @@ Shell scripts use LF line endings through `.gitattributes`, including when
 Git's `core.autocrlf` is enabled. CI runs this offline suite on Ubuntu and
 Windows; this does not establish native host workflow support.
 
+The `CI` check waits for both unit jobs and fails if validation fails, is
+cancelled, or is skipped. Workflows that include site validation must list it
+as a `CI` dependency too. A new push cancels older runs for the same pull
+request. Pushes to `main` keep independent runs.
+
 ```bash
 # Run all unit tests
 pytest tests/unit
