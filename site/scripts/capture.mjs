@@ -60,7 +60,9 @@ try {
   await capture({ url: `${base}/`, out: 'screenshots/hero-light.png', width: 1200, height: 600 });
   await capture({ url: `${base}/`, out: 'screenshots/hero-dark.png', width: 1200, height: 600, scheme: 'dark' });
   await capture({ url: `${base}/`, out: 'screenshots/full-light.png', width: 1000, height: 800, fullPage: true });
-  await capture({ url: `${base}/`, out: 'screenshots/mobile.png', width: 375, height: 812 });
+  await capture({ url: `${base}/`, out: 'screenshots/full-dark.png', width: 1000, height: 800, scheme: 'dark', fullPage: true });
+  await capture({ url: `${base}/`, out: 'screenshots/mobile.png', width: 375, height: 812, fullPage: true });
+  await capture({ url: `${base}/`, out: 'screenshots/mobile-dark.png', width: 375, height: 812, scheme: 'dark', fullPage: true });
 } finally {
   await browser.close();
   server.close();

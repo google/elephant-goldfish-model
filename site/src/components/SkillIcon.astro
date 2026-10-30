@@ -1,0 +1,42 @@
+---
+import bootstrap from '../../../skills/egm-bootstrap/assets/icon.svg?url';
+import brainstorm from '../../../skills/egm-brainstorm/assets/icon.svg?url';
+import draft from '../../../skills/egm-draft/assets/icon.svg?url';
+import resolve from '../../../skills/egm-resolve/assets/icon.svg?url';
+import drift_report from '../../../skills/egm-drift-report/assets/icon.svg?url';
+import review from '../../../skills/egm-review/assets/icon.svg?url';
+import review_loop from '../../../skills/egm-review-loop/assets/icon.svg?url';
+
+const icons = { bootstrap, brainstorm, draft, resolve, drift_report, review, review_loop };
+
+interface Props {
+  skill: keyof typeof icons;
+}
+
+const { skill } = Astro.props;
+---
+
+<span class="skill-icon" aria-hidden="true">
+  <img src={icons[skill]} width="28" height="28" alt="" />
+</span>
+
+<style>
+  .skill-icon {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    inline-size: 40px;
+    block-size: 40px;
+    border-radius: 50%;
+    background: light-dark(
+      var(--md-sys-color-surface-container),
+      var(--md-sys-color-surface-container-low)
+    );
+  }
+
+  img {
+    display: block;
+    inline-size: 28px;
+    block-size: 28px;
+  }
+</style>

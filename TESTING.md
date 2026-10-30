@@ -11,7 +11,10 @@ Create and activate an isolated Python 3.10+ virtual environment:
 
 ```bash
 # Navigate to the repository root
-cd /path/to/egm_opensource
+cd /path/to/elephant-goldfish-model
+
+# Check Python version (3.10 or newer)
+python3 --version
 
 # Create virtual environment
 python3 -m venv .venv
@@ -23,6 +26,12 @@ source .venv/bin/activate
 pip install -r requirements-dev.txt
 ```
 
+If your Python version is older than 3.10, install a newer version from [python.org/downloads](https://www.python.org/downloads/) or your system's package manager. Open a new terminal and verify the updated version before continuing. If `python3` still points to the older version, use the newer interpreter explicitly (for example, `python3.12 -m venv .venv`).
+
+If you previously created `.venv` using an older Python version, delete it and recreate it using the updated version.
+
+With Python 3.9 or older, `pytest` stops during test collection with `TypeError: unsupported operand type(s) for |`.
+
 ---
 
 ## Unit Tests
@@ -31,6 +40,16 @@ Unit tests run offline without network access, API keys, or model
 dependencies. They validate YAML frontmatter schemas and relative link
 integrity, the portable plugin manifest, shared metadata consistency, and
 marketplace/component paths.
+
+The read-hook tests also require a POSIX `sh` on `PATH`. On Windows, use
+Git for Windows and run the tests from Git Bash, or add its `bin` directory
+(containing `sh.exe`) to `PATH` in the current PowerShell session. Create
+the environment with `python -m venv .venv`, then activate it with
+`.venv\Scripts\Activate.ps1` in PowerShell or `source .venv/Scripts/activate`
+in Git Bash. Install the test dependencies as described above.
+Shell scripts use LF line endings through `.gitattributes`, including when
+Git's `core.autocrlf` is enabled. CI runs this offline suite on Ubuntu and
+Windows; this does not establish native host workflow support.
 
 ```bash
 # Run all unit tests
@@ -53,9 +72,13 @@ With an authenticated Claude Code 2.1.271+ installation, run:
 EGM_CLAUDE_LIVE=1 pytest tests/integration/test_claude.py
 ```
 
-This uses the account's model quota. It loads a copy of the plugin, invokes
-the review skill, and checks that a native reviewer reads only its persona and
-sees no parent or project `CLAUDE.md` context. See [Claude integration](docs/claude.md).
+This uses the account's model quota. It builds the Claude runtime and gives it
+a unique test name. Two probes invoke the review skill with folder-scoped read
+permissions and no approval hook. They check that a native reviewer reads only
+its persona, sees no parent or project `CLAUDE.md` context, and stops without a
+verdict when an explicit deny rule blocks its persona. This is a focused probe,
+not the full review workflow or a marketplace installation test.
+See [Claude integration](docs/claude.md).
 ---
 
 ## Native Codex Integration Tests (Opt-in)
@@ -85,9 +108,7 @@ A harness counts as supported after `/egm-brainstorm`, `/egm-draft`, and
 | Claude Cowork | Opus 5.5 Medium, connected cloud task | 2026-10-22 | Pass (ZIP) | Completed with direct-dispatch recovery | Completed | Partial: stages 5–7 | Usage limit interrupted stage 8. Final artifacts, stage 9 and actual isolation-child output remain unverified; #105. Earlier complete run is reported separately. |
 | OpenAI Codex | 0.163.0 | 2026-10-22 | Pass | Pass (fixture) | Pass (fixture) | Pass (fixture) | Two live tests passed in 573.13s; isolation, 15 native reviewers, ordered stages and required reads verified. |
 | ChatGPT Work | GPT-6.1 Sol, Light | 2026-10-22 | Pass; installed hashes verified | Completed | Completed | Nine native reviewers completed | Fresh probe returned UNKNOWN. Artifact download/final audit and full child tool traces remain outstanding; #106. |
-| Hermes Agent | 0.8.2 | 2026-10-23 | Unverified (`hermes plugins install`) | Pending live trace | Pending live trace | Pending live trace | `.hermes/plugin.yaml` manifest verified offline. Live subagent execution, isolation proof, and tool restrictions remain unverified; #116. |
-| OpenClaw | 1.0.4 | 2026-10-23 | Unverified (`openclaw plugins install`) | Pending live trace | Pending live trace | Pending live trace | `.openclaw/openclaw.plugin.json` manifest verified offline. Native `sessions_spawn` dispatch, zero-context child isolation, and tool traces remain unverified; #116. |
-| Delta | 0.9.0 | 2026-10-23 | Unverified (`delta skills tap add`) | Pending live trace | Pending live trace | Pending live trace | `.delta/plugin.json` manifest verified offline. Runner delegation, subprocess isolation, and live workflow traces remain unverified; #116. |
+| omp | v18.12.6 | 2026-10-27 | Pass (community install) | Not run | Not run | Not run | Community verification, not a fixture run: all seven skills discover and resolve via `skill://` in fresh headless sessions; all nine reviewer personas register as native `task` agents. TUI `/skill:` autocomplete for hidden skills unverified; end-to-end fixtures not run. Required manifest fixes: hyphenated skill directory names (underscore dirs are rejected by omp's validator) and no `$schema` key in `plugin.json` (omp's strict agent-plugins validation rejects `disable-model-invocation`); see #186. |
 
 ### Interpreting native test results
 
@@ -96,9 +117,28 @@ This table is a summary. Record the tested commit, client version, commands,
 native evidence, and limitations in each report. Parse JSONL on literal LF;
 Python `splitlines()` also splits valid Unicode characters inside JSON strings.
 
-Track open cloud and host verification gaps in [#105 (Cowork)](https://github.com/google/elephant-goldfish-model/issues/105), [#106 (ChatGPT Work)](https://github.com/google/elephant-goldfish-model/issues/106), and [#116 (Hermes, OpenClaw, Delta)](https://github.com/google/elephant-goldfish-model/issues/116).
+Track open cloud verification gaps in [#105 (Cowork)](https://github.com/google/elephant-goldfish-model/issues/105) and [#106 (ChatGPT Work)](https://github.com/google/elephant-goldfish-model/issues/106).
 
 - Inspect native tool traces for reviewer launches, completion, and intended resource reads.
 - Verify sequential stage execution and persona lenses in addition to artifact existence.
 - Distinguish fixture design findings from execution failures of the review workflow.
 - Keep installation, execution, and transcript isolation results recorded separately.
+
+### Offline evidence checks
+
+Run `pytest tests/unit/test_claude_traces.py` to exercise the Claude probe's
+native child validator with synthetic records. A persona read request alone is
+not a successful read: require a matching, non-error, nonempty native tool
+result containing non-whitespace text, either as a string or in native text
+blocks. Missing or unrelated results fail even when the child says `UNKNOWN`.
+These tests do not invoke models or establish cloud support. A successful tool
+result also does not by itself prove that the entire resource was read.
+
+For Cowork and ChatGPT Work, retain separate evidence for every reviewer:
+native launch arguments, canonical persona/target/standard paths, actual read
+results and coverage, completion, and stage timestamps. Child-written receipts
+and parent summaries cannot substitute for unavailable tool records. Inspect
+the actual isolation child's answer; test host-added context separately from
+parent-turn isolation. Keep raw account-bearing records private. Publish only
+sanitized findings and candidate identifiers. If the surface cannot expose the
+required evidence, record that boundary and leave the affected checks open.

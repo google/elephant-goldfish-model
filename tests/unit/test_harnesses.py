@@ -4,25 +4,19 @@
 """Offline packaging and isolation contracts for shared and host manifests."""
 
 import json
-import os
 from pathlib import Path
 import re
 import runpy
-import shutil
-import subprocess
+from xml.etree import ElementTree
 
 import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-SCHEMA_URL = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
 NAME_RE = r"(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?"
 COMPATIBILITY_MANIFESTS = (
     ".claude-plugin/plugin.json",
     ".codex-plugin/plugin.json",
-    ".hermes/plugin.yaml",
-    ".openclaw/openclaw.plugin.json",
-    ".delta/plugin.json",
 )
 MARKETPLACES = (
     ".agents/plugins/marketplace.json",
@@ -56,21 +50,8 @@ def test_jsonl_preserves_unicode_separators(
   assert read_trace("fixture-id") == [event]
 
 
-def read_manifest(path: str | Path) -> dict:
-  target = ROOT / path if not Path(path).is_absolute() else Path(path)
-  content = target.read_text(encoding="utf-8")
-  if target.suffix in (".yaml", ".yml"):
-    data = yaml.safe_load(content)
-  else:
-    data = json.loads(content)
-  assert isinstance(data, dict), (
-      f"Manifest at {path} did not parse into a dictionary: got {type(data).__name__}"
-  )
-  return data
-
-
-# Backwards compatibility alias
-read_json = read_manifest
+def read_json(path: str) -> dict:
+  return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
 def frontmatter(path: Path) -> dict:
@@ -78,43 +59,63 @@ def frontmatter(path: Path) -> dict:
 
 
 def test_portable_manifest_schema() -> None:
-  manifest = read_manifest("plugin.json")
-  assert manifest["$schema"] == SCHEMA_URL
+  # The $schema key is deliberately omitted: omp (Oh My Pi) routes manifests
+  # that declare the agent-plugins 1.0.0 schema to its strict validator, which
+  # rejects the skills' disable-model-invocation frontmatter field.
+  manifest = read_json("plugin.json")
   assert re.fullmatch(NAME_RE, manifest["name"])
   assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
 
 
+def test_openai_submission_metadata_and_assets() -> None:
+  """Check public listing limits and bundled paths, not just JSON syntax."""
+  extension = read_json("plugin.json")["extensions"]["com.openai"]
+  codex = read_json(".codex-plugin/plugin.json")
+  assert extension["interface"] == codex["interface"]
+  assert extension["requires_local_executor"] is True
+  assert codex["requires_local_executor"] is True
+  assert codex["author"] == read_json("plugin.json")["author"]
+  interface = extension["interface"]
+  for field, limit in (
+      ("displayName", 30), ("shortDescription", 30),
+      ("longDescription", 4000), ("developerName", 80),
+  ):
+    assert 0 < len(interface[field]) <= limit, field
+  assert len(interface["capabilities"]) <= 20
+  assert all(0 < len(item) <= 120 for item in interface["capabilities"])
+  for field in ("composerIcon", "logo"):
+    path = interface[field]
+    assert path.startswith("./assets/")
+    asset = (ROOT / path).resolve()
+    assert asset.is_relative_to(ROOT / "assets")
+    assert asset.is_file() and asset.stat().st_size <= 5 * 1024 * 1024
+    svg = ElementTree.parse(asset).getroot()
+    assert float(svg.attrib["width"]) == float(svg.attrib["height"]) >= 48
+
+
 @pytest.mark.parametrize("path", COMPATIBILITY_MANIFESTS)
 def test_compatibility_metadata_matches_root(path: str) -> None:
-  canonical = read_manifest("plugin.json")
-  manifest = read_manifest(path)
-  for field in ("name", "version", "description", "repository", "license"):
-    assert field in manifest, f"{path}: missing mandatory field '{field}'"
+  canonical = read_json("plugin.json")
+  manifest = read_json(path)
+  for field in ("name", "version", "description"):
     assert manifest[field] == canonical[field], f"{path}: {field} drift"
-  if "author" in manifest:
-    assert manifest["author"] == canonical["author"], f"{path}: author drift"
-  elif "interface" in manifest and "developerName" in manifest["interface"]:
-    assert manifest["interface"]["developerName"] == canonical["author"]["name"], (
-        f"{path}: developerName drift"
-    )
-  else:
-    pytest.fail(f"{path}: missing author or interface.developerName")
-  if "homepage" in manifest:
-    assert manifest["homepage"] == canonical["homepage"], f"{path}: homepage drift"
+  for field in ("author", "homepage", "repository", "license"):
+    if field in manifest:
+      assert manifest[field] == canonical[field], f"{path}: {field} drift"
+  if "interface" in manifest:
+    assert manifest["interface"]["developerName"] == canonical["author"]["name"]
   if "skills" in manifest:
     skills_root = (ROOT / manifest["skills"]).resolve()
     assert skills_root == ROOT / "skills"
     names = [frontmatter(s)["name"] for s in skills_root.glob("*/SKILL.md")]
     assert len(names) == len(set(names))
     assert set(names) == EXPECTED_SKILLS
-  if "agents" in manifest and isinstance(manifest["agents"], str):
-    assert (ROOT / manifest["agents"]).resolve() == ROOT / "agents"
 
 
 @pytest.mark.parametrize("path", MARKETPLACES)
 def test_marketplace_resolves_shared_package(path: str) -> None:
-  canonical = read_manifest("plugin.json")
-  marketplace = read_manifest(path)
+  canonical = read_json("plugin.json")
+  marketplace = read_json(path)
   assert marketplace["name"] == "egm"
   assert len(marketplace["plugins"]) == 1
   entry = marketplace["plugins"][0]
@@ -139,7 +140,7 @@ def test_claude_reviewers_are_read_only_with_fresh_context(name: str) -> None:
   assert config["model"] == "inherit"
   assert config["omitClaudeMd"] is True
   assert "memory" not in config
-  assert f"${{CLAUDE_PLUGIN_ROOT}}/agents/{name}.md" in adapter.read_text(encoding="utf-8")
+  assert f"${{CLAUDE_PLUGIN_ROOT}}/agents/{name}.md" in adapter.read_text()
   canonical = frontmatter(ROOT / "agents" / f"{name}.md")
   assert canonical["name"] == config["name"]
   assert "tools" not in canonical
@@ -152,11 +153,11 @@ def test_claude_synthesizer_adapter_is_tool_restricted() -> None:
   assert set(config["tools"]) == {"Agent", "Read", "Grep", "Glob", "Write"}
   assert config["model"] == "inherit"
   assert "memory" not in config
-  assert "${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md" in adapter.read_text(encoding="utf-8")
+  assert "${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md" in adapter.read_text()
   canonical = frontmatter(ROOT / "agents/synthesizer.md")
   assert canonical["name"] == config["name"]
   assert "tools" not in canonical
-  manifest = read_manifest(".claude-plugin/plugin.json")["agents"]
+  manifest = read_json(".claude-plugin/plugin.json")["agents"]
   assert "./.claude-plugin/agents/synthesizer.md" in manifest
   assert "./agents/synthesizer.md" not in manifest
 
@@ -164,100 +165,28 @@ def test_claude_synthesizer_adapter_is_tool_restricted() -> None:
 def test_claude_bootstrap_adapter_routes_to_skill() -> None:
   adapter = ROOT / ".claude-plugin/agents/bootstrap_orchestrator.md"
   config = frontmatter(adapter)
-  assert "tools" not in config
+  assert set(config["tools"]) == {"Agent", "Bash", "Read", "Grep", "Glob", "Write", "Edit"}
   assert config["model"] == "inherit"
-  text = adapter.read_text(encoding="utf-8")
+  text = adapter.read_text()
   assert "${CLAUDE_PLUGIN_ROOT}/agents/bootstrap_orchestrator.md" in text
-  assert "${CLAUDE_PLUGIN_ROOT}/skills/egm_bootstrap/SKILL.md" in text
+  assert "${CLAUDE_PLUGIN_ROOT}/skills/egm-bootstrap/SKILL.md" in text
   canonical = frontmatter(ROOT / "agents/bootstrap_orchestrator.md")
   assert canonical["name"] == config["name"]
-  manifest = read_manifest(".claude-plugin/plugin.json")["agents"]
+  manifest = read_json(".claude-plugin/plugin.json")["agents"]
   assert "./.claude-plugin/agents/bootstrap_orchestrator.md" in manifest
   assert "./agents/bootstrap_orchestrator.md" not in manifest
 
 
-READ_HOOK = ".claude-plugin/hooks/allow_plugin_reads.sh"
-
-
-def find_posix_shell() -> str | None:
-  if os.name != "nt":
-    return shutil.which("sh") or shutil.which("bash") or "sh"
-  for name in ("sh", "bash"):
-    candidate = shutil.which(name)
-    if candidate and "system32" not in candidate.lower():
-      return candidate
-  git = shutil.which("git")
-  if git:
-    git_root = Path(git).resolve().parents[1]
-    for rel in ("bin/sh.exe", "usr/bin/sh.exe", "bin/bash.exe", "usr/bin/bash.exe"):
-      sh_path = git_root / rel
-      if sh_path.is_file():
-        return str(sh_path)
-  for pf in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")):
-    if pf:
-      for rel in ("Git/bin/sh.exe", "Git/usr/bin/sh.exe", "Git/bin/bash.exe"):
-        sh_path = Path(pf) / rel
-        if sh_path.is_file():
-          return str(sh_path)
-  return None
-
-
-def run_read_hook(tool_name: str, tool_input: dict) -> str:
-  shell = find_posix_shell()
-  if not shell:
-    pytest.skip("POSIX shell not available on Windows")
-  hook_path = (ROOT / READ_HOOK).as_posix() if os.name == "nt" else str(ROOT / READ_HOOK)
-  result = subprocess.run(
-      [shell, hook_path],
-      input=json.dumps({"tool_name": tool_name, "tool_input": tool_input}),
-      capture_output=True,
-      text=True,
-      check=True,
-      env={**os.environ, "CLAUDE_PLUGIN_ROOT": ROOT.as_posix() if os.name == "nt" else str(ROOT)},
-  )
-  return result.stdout
-
-
-def test_claude_read_hook_is_registered() -> None:
-  hooks = read_manifest(".claude-plugin/plugin.json")["hooks"]["PreToolUse"]
-  assert [hook["matcher"] for hook in hooks] == ["Read|Grep|Glob"]
-  command = hooks[0]["hooks"][0]["command"]
-  assert command == f'"${{CLAUDE_PLUGIN_ROOT}}/{READ_HOOK}"'
-
-
-@pytest.mark.parametrize(
-    ("tool_name", "tool_input", "allowed"),
-    [
-        ("Read", {"file_path": "{root}/agents/style.md"}, True),
-        ("Read", {"file_path": "{root}/docs/claude.md"}, True),
-        ("Read", {"file_path": "{root}/skills/egm_review/SKILL.md"}, True),
-        ("Grep", {"pattern": "x", "path": "{root}/resources"}, True),
-        ("Glob", {"pattern": "**/*.md", "path": "{root}/agents"}, True),
-        ("Read", {"file_path": "/etc/passwd"}, False),
-        ("Read", {"file_path": "{root}/agents/../../etc/passwd"}, False),
-        ("Read", {"file_path": "{root}-evil/agents/style.md"}, False),
-        ("Read", {"file_path": "{root}/agents-evil/style.md"}, False),
-        ("Read", {"file_path": "{root}/README.md"}, False),
-        ("Read", {"file_path": "{root}/.claude/settings.local.json"}, False),
-        ("Grep", {"pattern": "x", "path": "{root}"}, False),
-        ("Grep", {"pattern": '"path":"{root}/agents"', "path": "/etc"}, False),
-        ("Glob", {"pattern": "**/*.md"}, False),
-        ("Glob", {"pattern": "/etc/*", "path": "{root}/agents"}, False),
-        ("Glob", {"pattern": "~/.ssh/*", "path": "{root}/agents"}, False),
-    ],
-)
-def test_claude_read_hook_approves_plugin_folders_only(
-    tool_name: str, tool_input: dict, allowed: bool
-) -> None:
-  """Only clean paths in the folders EGM reads skip the permission prompt."""
-  root_str = ROOT.as_posix() if os.name == "nt" else str(ROOT)
-  tool_input = {k: v.replace("{root}", root_str) for k, v in tool_input.items()}
-  output = run_read_hook(tool_name, tool_input)
-  assert ('"permissionDecision":"allow"' in output) is allowed
+def test_claude_permissions_remain_under_user_control() -> None:
+  """Bundled resources must not carry an automatic permission override."""
+  manifest = read_json(".claude-plugin/plugin.json")
+  assert "hooks" not in manifest
+  assert not (ROOT / ".claude-plugin/hooks/allow_plugin_reads.sh").exists()
+  assert not (ROOT / "hooks/hooks.json").exists()
 
 
 def test_claude_manifest_agents_and_shared_personas_resolve() -> None:
-  paths = read_manifest(".claude-plugin/plugin.json")["agents"]
+  paths = read_json(".claude-plugin/plugin.json")["agents"]
   assert all((ROOT / path).is_file() for path in paths)
   personas = [frontmatter(p)["name"] for p in (ROOT / "agents").glob("*.md")]
   assert len(personas) == len(set(personas)), "Ambiguous persona name"

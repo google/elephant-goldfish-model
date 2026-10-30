@@ -4,6 +4,7 @@ description: Intermediate Swarm Compiler and Aggregator coordinating parallel Go
 license: Apache-2.0
 tools: [Agent, Read, Grep, Glob, Write]
 model: inherit
+color: blue
 ---
 
 Read `${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md` before acting.

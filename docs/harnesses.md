@@ -8,24 +8,50 @@ text.
 
 | Harness | Install |
 | --- | --- |
-| Antigravity | `agy plugin install https://github.com/google/elephant-goldfish-model` (or `/plugin` in the IDE) |
+| Antigravity CLI | `agy plugin install https://github.com/google/elephant-goldfish-model` |
+| Antigravity App | Run `/plugin` or see [installation instructions](#antigravity-app-and-antigravity-for-ides) |
+| Antigravity for IDEs | Run `/plugin` or see [installation instructions](#antigravity-app-and-antigravity-for-ides) |
+| Antigravity IDE (standalone) | Not supported; see [installation instructions](#antigravity-app-and-antigravity-for-ides) |
 | Claude Code | `claude plugin marketplace add google/elephant-goldfish-model && claude plugin install egm@egm` |
 | Claude Cowork | Install from claude.ai/plugins or the Cowork plugin panel via marketplace `google/elephant-goldfish-model` |
 | Codex | `codex plugin marketplace add google/elephant-goldfish-model && codex plugin add egm@egm` |
 | ChatGPT | Personal testing: Plugins > Add > Upload plugin archive; see [packaging](codex.md#chatgpt). Workspace import: Admin > Plugins > Add > Import marketplace, repo URL `https://github.com/google/elephant-goldfish-model`, path `.agents/plugins` |
-| Hermes Agent | `hermes plugins install https://github.com/google/elephant-goldfish-model` |
-| OpenClaw | `openclaw plugins install https://github.com/google/elephant-goldfish-model` |
-| Delta | `delta skills tap add https://github.com/google/elephant-goldfish-model` |
+| omp | `omp plugin marketplace add google/elephant-goldfish-model && omp plugin install egm@egm` |
 
 Install the whole plugin. Skill-only installers that copy `skills/` alone
 break EGM, because the skills read `agents/` and
 `resources/document_standards/` at run time.
 
+### Antigravity App and Antigravity for IDEs
+
+- **Antigravity App**: Run `/plugin`, ask the agent `Install https://github.com/google/elephant-goldfish-model`, or manually install into `~/.gemini/config/plugins/egm/` using the commands below.
+- **Antigravity for IDEs (Extension for Visual Studio Code)**: Run `/plugin`, ask the agent `Install https://github.com/google/elephant-goldfish-model`, or manually install into `~/.gemini/config/plugins/egm/` using the commands below.
+- **Antigravity IDE (Standalone)**: Not supported at this time. Although the plugin and skills load from `~/.gemini/config/plugins/egm/`, standalone Antigravity IDE (tested on macOS and Linux) does not expose the fresh-context subagent tool (`invoke_subagent`) required for Goldfish reviews (`/egm-brainstorm` and `/egm-review`).
+
+The Antigravity App and Antigravity for IDEs share the global plugin directory
+`~/.gemini/config/plugins/<name>/`. For a fresh manual installation without the
+`agy` CLI, copy the full runtime bundle into `~/.gemini/config/plugins/egm/`
+(copying into an existing plugin directory can leave obsolete files behind, so
+remove `~/.gemini/config/plugins/egm` first when updating):
+
+```sh
+git clone https://github.com/google/elephant-goldfish-model.git
+cd elephant-goldfish-model
+mkdir -p ~/.gemini/config/plugins/egm
+cp -R plugin.json README.md LICENSE skills agents resources docs assets ~/.gemini/config/plugins/egm/
+```
+
+Reload the window (or restart the Antigravity App), then confirm that `egm`
+appears in the plugin list and that its skills (`/egm-brainstorm`, `/egm-draft`,
+`/egm-review`) are available.
+
 ## Manifests
 
 Root `plugin.json` is the canonical source for plugin identity, version,
-description, and publisher metadata. It declares the portable Agent Plugins
-1.0.0 schema. Update shared values there first, then update the compatibility
+description, and publisher metadata. It follows the portable Agent Plugins
+1.0.0 format; the `$schema` key is omitted because omp routes manifests that
+declare it to a strict validator that rejects `disable-model-invocation`.
+Update shared values there first, then update the compatibility
 manifests; unit tests reject metadata drift. Keep platform-specific fields in
 their existing manifests until installation tests justify removing them.
 
@@ -41,9 +67,7 @@ while `agents/` contains reviewer personas. All hosts share the same `skills/`,
 | Claude Cowork | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | `skills/` (default) | Subagents run inside Cowork; hooks n/a |
 | Codex | `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | `skills` path | Not shipped; general-purpose subagent reads the persona file |
 | ChatGPT | `plugin.json`, `.codex-plugin/plugin.json`; `.agents/plugins/marketplace.json` for workspace import | `skills` path | Detect native tools in the current session; general-purpose agent reads the persona |
-| Hermes Agent | `.hermes/plugin.yaml` | `skills` (default) | Subagent spawns with isolated context and read-only tools |
-| OpenClaw | `.openclaw/openclaw.plugin.json` | `skills` (default) | Subagent spawns with fresh session and read-only tools |
-| Delta | `.delta/plugin.json` | `skills` (default) | Fresh runner subprocess with read-only tools |
+| omp | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` (Claude-compatible fallback) | `skills/` (default) | Personas from `agents/`/`.claude-plugin/agents/` register as native `task` agents |
 
 Persona prompts live in `agents/`, the directory Antigravity
 scans for subagents. Each persona has `name` and `description` frontmatter, so
@@ -54,6 +78,7 @@ When you add a reviewer persona, add a Claude adapter under
 `.claude-plugin/agents/` and list it in `.claude-plugin/plugin.json`.
 The adapter reads the shared persona and sets Claude's read-only tools and
 context isolation. This avoids imposing Claude tool names on other hosts.
+In Claude Code, `/plugin` > Errors will report that the default `agents/` folder is ignored because the manifest sets `"agents"`; this warning is expected and harmless (see [Claude integration](claude.md#claude-code-warning-default-agents-folder-is-ignored)).
 
 ## Delegation
 
@@ -67,9 +92,7 @@ phrase to its own tool:
 | Claude Cowork | Cowork subagents | Yes | Subagents run inside Cowork |
 | Codex | Native spawn/wait tools; inspect the available schema | No | Detect at runtime; direct dispatch fallback |
 | ChatGPT | Native spawn/wait tools when exposed by the current Work session | No | Detect at runtime; direct dispatch fallback |
-| Hermes Agent | Native task/spawn tool (`hermes.spawn`) | Yes | Direct dispatch |
-| OpenClaw | Native subagent tool (`sessions_spawn`) | Yes | Direct dispatch / sub-session |
-| Delta | Runner delegation tool (`delta.spawn`) | Yes | Subprocess runner |
+| omp | `task` tool | Yes | Yes |
 
 Where a harness has no named persona, the skill spawns a general-purpose
 subagent and tells it to read `agents/<file>.md` first. If a harness cannot
@@ -78,13 +101,8 @@ nest subagents, use direct dispatch instead of the synthesizer.
 A Goldfish review needs a fresh context. If a harness has no subagent tool,
 the review skills stop instead of running in the same context. Check actual
 tool availability rather than inferring it from the product name. This applies
-to ChatGPT modes that do not expose native fresh-context delegation.
-
-### Subagent Isolation Guidelines
-
-Goldfish reviews strictly require zero-context, stateless evaluation:
-- **Zero-Context Fresh Session**: Subagents must not inherit parent conversation history. In OpenClaw, spawn reviewer subagents using native `sessions_spawn` with fresh session context. In Hermes Agent and Delta, reviewer subagents are spawned in fresh runner subprocesses with clean environments.
-- **Read-Only Tool Policy**: Goldfish reviewer subagents must be strictly restricted to read-only tools: `Read`, `Grep`, and `Glob`. File modification (`Write`, `Edit`) or shell execution tools must be disabled to ensure review immutability and prevent audit corruption.
+to standalone Antigravity IDE and to ChatGPT modes that do not expose native
+fresh-context delegation.
 
 ## Artifact Directory
 
@@ -107,9 +125,11 @@ the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
 
 **Antigravity**, **Claude Code**, and **Codex** pass automated installation, reviewer isolation, and end-to-end workflow fixtures.
 
-**Claude Cowork** ([#105](https://github.com/google/elephant-goldfish-model/issues/105)), **ChatGPT Work** ([#106](https://github.com/google/elephant-goldfish-model/issues/106)), **Hermes Agent** ([#116](https://github.com/google/elephant-goldfish-model/issues/116)), **OpenClaw** ([#116](https://github.com/google/elephant-goldfish-model/issues/116)), and **Delta** ([#116](https://github.com/google/elephant-goldfish-model/issues/116)) have manifest or adapter structures with open live trace verification gaps.
+**Claude Cowork** ([#105](https://github.com/google/elephant-goldfish-model/issues/105)) and **ChatGPT Work** ([#106](https://github.com/google/elephant-goldfish-model/issues/106)) have working installation paths with open cloud trace verification gaps.
 
-See the [harness test record](../TESTING.md#harness-test-record) for tested surfaces and limits.
+**omp** ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) has a working installation path. Skills are invoked as `/skill:egm-<command>` (omp registers one command per skill; it has no `/egm-*` namespace). Community-verified on omp v18.12.6: all seven skills discover and resolve, and all nine reviewer personas register as subagents. End-to-end workflow fixtures are not yet automated for omp.
+
+See the [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record) for tested surfaces and limits.
 
 We welcome contributors who want to help verify and expand harness support.
 
@@ -125,4 +145,4 @@ support for another harness:
    (`docs/harnesses.md`).
 3. Verify that `/egm-brainstorm`, `/egm-draft`, and `/egm-review` run end to end,
    and attach verification notes or execution transcripts in your Pull Request description
-   (as outlined in the [Pull Request Template](../.github/PULL_REQUEST_TEMPLATE.md)).
+   (as outlined in the [Pull Request Template](https://github.com/google/elephant-goldfish-model/blob/main/.github/PULL_REQUEST_TEMPLATE.md)).

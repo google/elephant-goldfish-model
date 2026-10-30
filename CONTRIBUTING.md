@@ -16,6 +16,16 @@ These general principles guide development of the EGM framework:
 
 ## Contribution Tracks & Workflow
 
+Write a short PR title that starts with an action verb. Use sentence case and
+describe the change. Omit unnecessary words when the meaning stays clear.
+Keep articles such as "a" and "the" when needed for clarity.
+Example: `Explain ignored agents folder warning in Claude Code`.
+
+Add applicable labels: `docs` for documentation, `site` for the website,
+`ci` for GitHub Actions, or `deps` for dependencies. If you cannot apply labels,
+suggest them in the PR description. Maintainers control `design-ready` and
+`pr-ready`. Automation manages `design-needed`.
+
 All contributions must comply with our [AI & Automated Contribution Policy](AI_POLICY.md):
 every pull request requires a human author who has reviewed and tested the change. They
 should be able to explain it themselves.
@@ -28,20 +38,20 @@ Targeted fixes, typo corrections, and test additions that do not alter core
 agent behavior or touch 3+ core files (`skills/`, `agents/`) can be
 submitted directly as a Pull Request without a prior issue or design document.
 PRs exceeding these limits without an approved design doc receive an advisory label
-(`advisory: design-doc-suggested`) recommending two-stage alignment.
+(`design-needed`) recommending two-stage alignment.
 
 ### Track 2: Feature / Architectural Change (Two-Stage Alignment)
 Any new skill, persona, or change exceeding `100` non-test
 lines (or touching `>= 3` core files in `skills/` or `agents/`)
 follows the EGM Spec-Driven Development process:
 
-1.  **Reach Out & Align (`status: approved-for-design`)**:
+1.  **Reach Out & Align (`design-ready`)**:
     Before investing in a large implementation or full specification, open a
     [Feature / Architectural Inquiry Issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
     (`.github/ISSUE_TEMPLATE/feature_proposal.md`) outlining the problem
     statement and proposed `Goals` vs. `Non-Goals`. We recommend using
     `/egm-brainstorm` to complete this section. Maintainers will review and apply
-    `status: approved-for-design` once aligned on direction.
+    `design-ready` once aligned on direction.
 
 2.  **Draft & Review Design Specification**:
     Draft a technical design specification under `docs/designs/<name>.md`. We
@@ -49,17 +59,17 @@ follows the EGM Spec-Driven Development process:
     We also recommend running `/egm-review docs/designs/<name>.md` to stress-test
     the proposal.
 
-4.  **Submit a Design Doc PR (`status: approved-for-pr`)**:
+4.  **Submit a Design Doc PR (`pr-ready`)**:
     Open a dedicated **Design Doc PR** containing `docs/designs/<name>.md`
     and `docs/designs/README.md` (referencing your aligned issue with
     `Refs #<issue>` rather than `Closes #<issue>` so the issue stays open).
     When maintainers merge the Design Doc PR, the specification is checked into
     the codebase and maintainers manually transition the issue label to
-    `status: approved-for-pr`.
+    `pr-ready`.
 
 5.  **Submit the Implementation PR**:
     Once the specification is merged and your issue is labeled
-    `status: approved-for-pr`, open the implementation PR (`Closes #<issue>`)
+    `pr-ready`, open the implementation PR (`Closes #<issue>`)
     referencing `docs/designs/<name>.md`.
 
 ## Automated Validation & Testing

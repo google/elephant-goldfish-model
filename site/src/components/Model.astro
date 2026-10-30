@@ -8,7 +8,7 @@ const essay =
 <section class="section" id="model">
   <div class="wrap">
     <div class="section-head">
-      <h2 class="headline">How the model works</h2>
+      <h2 class="headline">Design with context. Review with fresh eyes.</h2>
       <p class="lead">
         <a href="https://dkr.bio" target="_blank" rel="noopener">Dave Rensin</a> introduces this
         approach in{' '}
@@ -43,40 +43,21 @@ const essay =
       </article>
     </div>
 
-    <hr class="divider" />
-
-    <div class="human">
-      <div>
-        <h3 class="title">You</h3>
-        <p class="role-sub">Final decision</p>
-      </div>
-      <p class="muted">
-        Agents explore options and audit drafts, while engineers make the architectural trade-offs
-        and approve every specification before implementation.
-      </p>
-    </div>
+    <p class="approval muted">
+      You make the architectural decisions and approve the spec before implementation.
+    </p>
   </div>
 </section>
 
 <style>
-  .pair,
-  .human {
+  .pair {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 32px clamp(32px, 6vw, 96px);
   }
 
-  .pair {
-    padding-block-end: clamp(40px, 6vw, 64px);
-  }
-
-  .human {
-    padding-block-start: clamp(32px, 5vw, 48px);
-  }
-
-  @media (max-width: 820px) {
-    .pair,
-    .human {
+  @media (max-width: 640px) {
+    .pair {
       grid-template-columns: 1fr;
     }
   }
@@ -102,9 +83,8 @@ const essay =
     margin-block: 2px 14px;
   }
 
-  .human .muted {
-    font: var(--md-sys-typescale-body-lg);
-    max-inline-size: 50ch;
-    text-wrap: balance;
+  .approval {
+    margin-block-start: 32px;
+    max-inline-size: 70ch;
   }
 </style>

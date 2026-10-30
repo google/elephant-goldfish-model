@@ -626,7 +626,7 @@ All changes will be housed within the open-source repository structure:
 
 ### 4.1 Implementation Files
 
-1.  **`skills/egm_bootstrap/SKILL.md`**
+1.  **`skills/egm-bootstrap/SKILL.md`**
 
     *   **Rationale**: Defines the EGM workflow steps for the bootstrap process.
     *   **YAML Frontmatter Input Schema**:
@@ -680,11 +680,11 @@ All changes will be housed within the open-source repository structure:
             across all modified READMEs, optionally prompts to run Drift Report,
             and exits.
 
-2.  **`skills/egm_bootstrap/TEST.md`**
+2.  **`skills/egm-bootstrap/TEST.md`**
 
     *   **Rationale**: Lists verification and test scenarios for the bootstrap skill.
 
-3.  **`skills/egm_bootstrap/test_scenarios.yaml`**
+3.  **`skills/egm-bootstrap/test_scenarios.yaml`**
 
     *   **Rationale**: Automated integration tests evaluating bootstrap scenarios
         (small tree sequential execution, parallel subtree partitioning, and safety gates).
@@ -775,7 +775,7 @@ sentinel blocks conform to EGM standards.
 
 ### 6.2 Integration Testing & Scenarios
 
-Automated integration test suites in `skills/egm_bootstrap/test_scenarios.yaml` evaluate:
+Automated integration test suites in `skills/egm-bootstrap/test_scenarios.yaml` evaluate:
 
 *   `bootstrap_small_tree`: Verifies sequential execution for a tree with <= 5
     directories, ensuring it generates conforming Peanut and Hay READMEs,

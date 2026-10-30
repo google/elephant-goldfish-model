@@ -4,6 +4,7 @@ description: Architecture and design critic.
 license: Apache-2.0
 tools: [Read, Grep, Glob]
 model: inherit
+color: yellow
 omitClaudeMd: true
 ---
 

@@ -1,77 +1,58 @@
 ---
+import SkillIcon from './SkillIcon.astro';
+
 const steps = [
   {
     name: 'Brainstorm',
-    role: 'Elephant',
+    icon: 'brainstorm',
     command: '/egm-brainstorm',
     body: 'Clarify a rough idea through open-ended questioning and stress-test the hypothesis into a concept brief.',
   },
   {
     name: 'Draft',
-    role: 'Elephant',
+    icon: 'draft',
     command: '/egm-draft',
     body: 'Turn the brief into a living design doc under docs/designs/, section by section.',
   },
   {
     name: 'Review',
-    role: 'Goldfish',
+    icon: 'review',
     command: '/egm-review',
     body: 'Fresh zero-context Goldfish subagents check completeness, clarity, self-containment, and implementation readiness.',
   },
-];
+] as const;
 ---
 
 <section class="section loop">
   <div class="wrap">
     <div class="section-head">
-      <h2 class="headline">From idea to a verified spec</h2>
+      <h2 class="headline">Go from an idea to a verified spec.</h2>
     </div>
     <ol class="steps">
       {
-        steps.map((step, i) => (
+        steps.map((step) => (
           <li class="step">
-            <span class="badge badge-large">{i + 1}</span>
-            <div class="title-row">
-              <h3 class="title">{step.name}</h3>
-              <span class="role">{step.role}</span>
-            </div>
-            <code class="cmd">{step.command}</code>
+            <span class="marker"><SkillIcon skill={step.icon} /></span>
+            <h3 class="title">{step.name}</h3>
+            <span class="cmd">{step.command}</span>
             <p class="muted">{step.body}</p>
           </li>
         ))
       }
-      <li class="step">
-        <span class="badge badge-large" aria-hidden="true">
-          <svg viewBox="0 -960 960 960">
-            <path d="M647-440H160v-80h487L423-744l57-56 320 320-320 320-57-56 224-224Z"></path>
-          </svg>
-        </span>
-        <div class="title-row">
-          <h3 class="title">Build the code</h3>
-          <span class="role">You</span>
-        </div>
-        <span class="no-skill">No skill needed</span>
-        <p class="muted">
-          Hand the verified spec directly to your coding agent to build the feature.
-        </p>
-      </li>
-      <li class="step drift">
-        <span class="marker" aria-hidden="true">
-          <svg viewBox="0 -960 960 960">
-            <path
-              d="M204-318q-22-38-33-78t-11-82q0-134 93-228t227-94h7l-64-64 56-56 160 160-160 160-56-56 64-64h-7q-100 0-170 70.5T240-478q0 26 6 51t18 49l-60 60ZM481-40 321-200l160-160 56 56-64 64h7q100 0 170-70.5T720-482q0-26-6-51t-18-49l60-60q22 38 33 78t11 82q0 134-93 228t-227 94h-7l64 64-56 56Z"
-            ></path>
-          </svg>
-        </span>
-        <div class="drift-head">
-          <h3 class="title">Then weekly</h3>
-          <code class="cmd">/egm-drift-report</code>
-        </div>
-        <p class="muted">
-          Compare your codebase against your specs to find where they diverge.
-        </p>
-      </li>
     </ol>
+    <p class="handoff muted">
+      Once you approve the spec, ask your coding agent to build it.
+    </p>
+    <div class="step drift">
+      <span class="marker"><SkillIcon skill="drift_report" /></span>
+      <div class="drift-head">
+        <h3 class="title">Check for drift</h3>
+        <span class="cmd">/egm-drift-report</span>
+      </div>
+      <p class="muted">
+        After implementation, compare the code with the spec and report where they diverge.
+      </p>
+    </div>
   </div>
 </section>
 
@@ -80,13 +61,13 @@ const steps = [
     background: var(--md-sys-color-surface-container-low);
   }
 
-  /* One continuous rule carries the sequence; each step's number sits on the line. */
+  /* One continuous rule carries the sequence; each step's marker sits on the line. */
   .steps {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     row-gap: 48px;
   }
 
@@ -99,99 +80,40 @@ const steps = [
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-block-start: 32px;
+    padding-block-start: 44px;
     padding-inline-end: 24px;
     border-block-start: 1px solid var(--md-sys-color-outline-variant);
   }
 
-  .step:nth-child(4n) {
+  .steps .step:last-child {
     padding-inline-end: 0;
   }
 
-  /* Badge theming through its documented custom properties. The outline in the band
-     color lifts the number off the rule. */
-  .step :global(.badge),
+  /* The outline in the band color lifts each marker off the rule. */
   .marker {
-    --label-text: var(--md-sys-typescale-label-lg);
-    --size: 28px;
     position: absolute;
-    inset-block-start: -14px;
+    inset-block-start: -20px;
     inset-inline-start: 0;
     outline: 6px solid var(--md-sys-color-surface-container-low);
-  }
-
-  /* Elephant steps (Brainstorm, Draft) and the Goldfish step (Review) use the brand marks. */
-  .step:nth-child(1) :global(.badge),
-  .step:nth-child(2) :global(.badge) {
-    --container-color: var(--egm-color-elephant);
-    --label-text-color: var(--egm-color-on-elephant);
-  }
-
-  .step:nth-child(3) :global(.badge) {
-    --container-color: var(--egm-color-goldfish);
-    --label-text-color: var(--egm-color-on-goldfish);
-  }
-
-  .step:nth-child(4) :global(.badge) {
-    --container-color: var(--md-sys-color-primary);
-    --label-text-color: var(--md-sys-color-on-primary);
-  }
-
-  .marker {
-    display: grid;
-    place-items: center;
-    inline-size: 28px;
-    block-size: 28px;
+    display: flex;
+    inline-size: 40px;
+    block-size: 40px;
     border-radius: 50%;
-    background: var(--md-sys-color-surface-container-low);
-    border: 1px solid var(--md-sys-color-outline);
-    color: var(--md-sys-color-on-surface);
   }
 
-  .step :global(.badge) > svg,
-  .marker > svg {
-    inline-size: 16px;
-    block-size: 16px;
-    fill: currentColor;
+  .handoff {
+    margin-block: 32px 52px;
   }
 
   .cmd {
     font-size: 0.875rem;
-    color: var(--md-sys-color-on-surface);
-    background: var(--md-sys-color-surface-container-high);
-    border-radius: 6px;
-    padding: 2px 8px;
-    inline-size: fit-content;
-  }
-
-  /* Role sits beside the heading, not inside it, so screen readers announce the heading as just the step name. */
-  .title-row {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-  }
-
-  .role {
-    font: var(--md-sys-typescale-label-lg);
     color: var(--md-sys-color-on-surface-variant);
   }
 
-  .no-skill {
-    font: var(--md-sys-typescale-label-md);
-    font-size: 0.875rem;
-    letter-spacing: 0;
-    color: var(--md-sys-color-on-surface-variant);
-    border: 1px dashed var(--md-sys-color-outline);
-    border-radius: 6px;
-    padding: 2px 8px;
-    inline-size: fit-content;
-  }
-
-  /* The weekly check is not a fifth step: same anatomy, laid across the whole rule. */
+  /* The drift check follows implementation, laid across the whole rule. */
   .drift {
-    grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     column-gap: 0;
     align-items: start;
     padding-inline-end: 0;
@@ -210,33 +132,14 @@ const steps = [
     padding-block-start: 2px;
   }
 
-  @media (max-width: 1000px) {
-    .steps {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .step:nth-child(4n) {
-      padding-inline-end: 24px;
-    }
-
-    .step:nth-child(2n) {
-      padding-inline-end: 0;
-    }
-
-    .drift {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-  }
-
-  @media (max-width: 560px) {
+  @media (width < 760px) {
     .steps {
       grid-template-columns: 1fr;
-      row-gap: 40px;
+      row-gap: 52px;
     }
 
-    .step,
-    .step:nth-child(2n),
-    .step:nth-child(4n) {
+    .step {
+      padding-block-start: 40px;
       padding-inline-end: 0;
     }
 

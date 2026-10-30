@@ -15,6 +15,7 @@
 version: 2
 updates:
   - package-ecosystem: npm
+    labels: ["deps"]
     directory: /site
     schedule:
       interval: weekly
@@ -28,6 +29,7 @@ updates:
       site:
         patterns: ["*"]
   - package-ecosystem: github-actions
+    labels: ["deps", "ci"]
     directory: /
     schedule:
       interval: weekly

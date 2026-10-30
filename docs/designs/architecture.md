@@ -61,13 +61,13 @@ The open-source EGM framework is organized into four decoupled subsystems:
 
 ### 1. Skills Layer (`skills/`)
 Modular agent capabilities executable via slash commands or direct invocation:
-*   `egm_brainstorm`: 6-lens shootdown swarm for early concept exploration.
-*   `egm_draft`: Section-by-section specification compiler.
-*   `egm_review`: Orchestrator for the multi-stage review pipeline.
-*   `egm_review_loop`: Concurrent subagent review dispatcher.
-*   `egm_resolve`: Interactive resolution and patch application.
-*   `egm_drift_report`: AST drift scanner between specs and active code.
-*   `egm_bootstrap`: Recursive bottom-up codebase documentation generator.
+*   `egm-brainstorm`: 6-lens shootdown swarm for early concept exploration.
+*   `egm-draft`: Section-by-section specification compiler.
+*   `egm-review`: Orchestrator for the multi-stage review pipeline.
+*   `egm-review-loop`: Concurrent subagent review dispatcher.
+*   `egm-resolve`: Interactive resolution and patch application.
+*   `egm-drift-report`: Agent workflow comparing specs and READMEs to code via host search and file-reading tools.
+*   `egm-bootstrap`: Recursive bottom-up codebase documentation generator.
 
 ### 2. Personas Layer (`agents/`)
 Stateless system prompt instructions for isolated Goldfish reviewer subagents

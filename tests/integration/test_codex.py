@@ -233,7 +233,7 @@ are unavailable. Keep the fixture small and reviews concise.
     root = installed_plugin[3]
     required_reads = {root / "docs/codex.md"}
     required_reads.update(root / "skills" / skill / "SKILL.md" for skill in (
-        "egm_brainstorm", "egm_draft", "egm_review",
+        "egm-brainstorm", "egm-draft", "egm-review",
     ))
     assert required_reads <= successful_reads(trace), "Installed skills not read"
     for name in ("concepts_brief.md", "design_draft.md", "docs/designs/line-count.md"):

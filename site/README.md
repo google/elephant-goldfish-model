@@ -12,7 +12,11 @@ GitHub Pages.
 
 ![Full page, light scheme](screenshots/full-light.png)
 
-![Mobile, 375px wide](screenshots/mobile.png)
+![Full page, dark scheme](screenshots/full-dark.png)
+
+![Mobile, light scheme, 375px wide](screenshots/mobile.png)
+
+![Mobile, dark scheme, 375px wide](screenshots/mobile-dark.png)
 
 </details>
 
@@ -33,6 +37,17 @@ GitHub Pages.
 - Theme only through gBreeze tokens (`src/styles/tokens.css`) and the
   components' documented custom properties. Do not restyle component boxes.
 - Keep skill names and commands identical to the repository README.
+
+## Skill icons
+
+`src/components/SkillIcon.astro` imports the canonical
+`../skills/egm_*/assets/icon.svg` files with `?url`. The website and plugin packages
+use these same assets; do not copy them into `public/` or redraw them in components.
+Each decorative glyph is 28px inside a 40px circle using the existing surface
+tokens, with an adjacent skill name or command providing its accessible label.
+The workflow and skill catalog share this component. The workflow shows
+Brainstorm, Draft, and Review, followed by a short handoff to the coding agent and
+a separate Check for drift follow-up after implementation.
 
 ## Develop
 

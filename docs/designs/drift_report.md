@@ -114,9 +114,9 @@ The drift detection skill is implemented across the following files:
 
 | File Path | Type | Purpose & Reason for Existence |
 | :-------- | :--- | :----------------------------- |
-| `skills/egm_drift_report/SKILL.md` | Skill Definition | Implements `/egm-drift-report` sequential document scanner, divergence heuristics analyzer, and report generator. |
-| `skills/egm_drift_report/TEST.md` | Unit Tests | Verification test scenarios testing drift detection heuristics and report generation. |
-| `skills/egm_drift_report/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating drift detection accuracy and false-positive filtering. |
+| `skills/egm-drift-report/SKILL.md` | Skill Definition | Implements `/egm-drift-report` sequential document scanner, divergence heuristics analyzer, and report generator. |
+| `skills/egm-drift-report/TEST.md` | Test Plan | Points to `pytest tests/unit` and `TESTING.md` (frontmatter and link checks); no drift-specific tests. |
+| `skills/egm-drift-report/test_scenarios.yaml` | Evaluation Scenario | Single `detect_all_drift` scenario with a broad `required_pattern` assertion; `tests/unit/test_scenario_coverage.py` validates structure, but no in-repo runner executes the assertion. |
 
 ## References
 

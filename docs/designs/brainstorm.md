@@ -105,9 +105,9 @@ delegates directly to the shared EGM subagent swarm and document standards:
 
 | File Path | Type | Purpose & Reason for Existence |
 | :-------- | :--- | :----------------------------- |
-| `skills/egm_brainstorm/SKILL.md` | Skill Definition | Implements `/egm-brainstorm` workflow, multi-turn open-ended drilling, shootdown delegation, and brief finalization. |
-| `skills/egm_brainstorm/TEST.md` | Unit Tests | Verification test scenarios validating the brainstorm ideation and multi-lens critique flow. |
-| `skills/egm_brainstorm/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating brainstorm ideation and multi-lens critique flow. |
+| `skills/egm-brainstorm/SKILL.md` | Skill Definition | Implements `/egm-brainstorm` workflow, multi-turn open-ended drilling, shootdown delegation, and brief finalization. |
+| `skills/egm-brainstorm/TEST.md` | Unit Tests | Verification test scenarios validating the brainstorm ideation and multi-lens critique flow. |
+| `skills/egm-brainstorm/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating brainstorm ideation and multi-lens critique flow. |
 
 ### Referenced Personas & Infrastructure Components
 

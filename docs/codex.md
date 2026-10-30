@@ -82,7 +82,7 @@ Do not use `file://` links in Codex chat.
 ## Verification
 
 Run the offline packaging checks with `pytest tests/unit`. The opt-in native
-workflow tests are documented in [TESTING.md](../TESTING.md). They require
+workflow tests are documented in [TESTING.md](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md). They require
 an authenticated Codex CLI and consume model usage. Installing or discovering
 the plugin alone does not establish end-to-end workflow support.
 
@@ -92,12 +92,19 @@ For personal testing, open Plugins > Add > Upload plugin archive in ChatGPT.
 Package the runtime files from the repository root:
 
 ```sh
-zip -r egm-chatgpt.zip plugin.json .codex-plugin skills agents resources docs LICENSE README.md
+python3 scripts/pack_plugin.py --target openai --output /tmp/egm-chatgpt
 ```
 
-Upload the archive, install the plugin, and use **Try in chat** in a new Work
-chat. This path was exercised separately from workspace marketplace import.
+Use a fresh output directory. Upload `/tmp/egm-chatgpt/egm-openai.zip` and
+install the plugin in the ChatGPT desktop app. Use
+**Try in chat** in a new thread that runs locally. The earlier cloud Work
+test in `TESTING.md` predates this package's desktop-only declaration.
 Keep repository marketplace catalogs and development files outside this archive.
+The OpenAI directory package declares local execution because bootstrap uses
+shell commands. Its listing uses the portable manifest's OpenAI extension;
+the Codex compatibility manifest retains matching metadata for native installs.
+Keep `.claude-plugin/` outside the OpenAI archive: its agent adapters belong
+to the Claude Code integration. Public directory plugins cannot include hooks.
 
 Enterprise, Business, and Edu workspaces can import the plugin via Admin > Plugins > Add > Import marketplace.
 Set the repository URL to `https://github.com/google/elephant-goldfish-model` and marketplace path to `.agents/plugins`.

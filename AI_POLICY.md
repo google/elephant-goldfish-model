@@ -17,11 +17,11 @@ review, understand, and explain every submitted change.
    * **a)** Reach out to maintainers first via a
      [Feature Inquiry Issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
      (`.github/ISSUE_TEMPLATE/feature_proposal.md`) to receive
-     `status: approved-for-design`.
+     `design-ready`.
    * **b)** Submit and merge a full EGM design document PR
      (`docs/designs/<name>.md` authored via `/egm-brainstorm`, `/egm-draft`,
      and `/egm-review`, referencing the issue with `Refs #<issue>`) so
-     maintainers can apply `status: approved-for-pr` to the Feature Inquiry Issue.
+     maintainers can apply `pr-ready` to the Feature Inquiry Issue.
    * **c)** Submit and merge an implementation PR of the approved design into
      the codebase (`Closes #<issue>`).
 4. **No Artificial PR Splitting**: Do not artificially split a single logical

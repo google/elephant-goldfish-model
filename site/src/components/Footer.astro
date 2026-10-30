@@ -3,7 +3,6 @@
 const repo = 'https://github.com/google/elephant-goldfish-model';
 
 const links = [
-  { label: 'GitHub', href: repo },
   { label: 'Apache 2.0', href: `${repo}/blob/HEAD/LICENSE` },
   { label: 'Privacy', href: 'https://policies.google.com/privacy' },
   { label: 'Terms', href: 'https://policies.google.com/terms' },
@@ -52,9 +51,8 @@ const links = [
 
 <style>
   .footer {
-    padding-block: 0 40px;
+    padding-block: 0 24px;
   }
-
 
   /* One row: legal on the left, links on the right. When the row cannot hold both,
      the links wrap under the legal line, both flush left. */
@@ -63,8 +61,8 @@ const links = [
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: 16px 40px;
-    padding-block-start: 28px;
+    gap: 4px 24px;
+    padding-block-start: 16px;
   }
 
   /* Same size as the links so the row reads as one line. */
@@ -72,15 +70,16 @@ const links = [
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px 16px;
-    font: var(--md-sys-typescale-label-lg);
+    gap: 4px 8px;
+    font: var(--md-sys-typescale-label-md);
+    font-weight: 400;
   }
 
   /* The G takes the legal line's color. */
   .g {
     flex: none;
-    inline-size: 16px;
-    block-size: 16px;
+    inline-size: 14px;
+    block-size: 14px;
     fill: currentColor;
   }
 
@@ -90,11 +89,14 @@ const links = [
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 24px;
+    gap: 4px 20px;
   }
 
   li a {
-    font: var(--md-sys-typescale-label-lg);
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 24px;
+    font: var(--md-sys-typescale-label-md);
     text-decoration: none;
     color: var(--md-sys-color-on-surface-variant);
   }

@@ -1,13 +1,13 @@
 {
   "name": "egm",
   "owner": {
-    "name": "Google LLC"
+    "name": "Google"
   },
   "plugins": [
     {
       "name": "egm",
       "source": "./",
-      "description": "Elephant-Goldfish Model: spec-driven development with deep-context drafting and zero-context Goldfish reviews."
+      "description": "Draft specs, review designs, and check implementation drift."
     }
   ]
 }
