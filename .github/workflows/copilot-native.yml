@@ -1,0 +1,58 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+name: Copilot native offline probe
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/copilot-native.yml'
+      - '.plugin/**'
+      - 'com.github.copilot/**'
+      - 'skills/**'
+      - 'agents/**'
+      - 'resources/**'
+      - 'docs/**'
+      - 'assets/**'
+      - 'plugin.json'
+      - 'tests/integration/copilot_controlled_probe.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/copilot-native.yml'
+      - '.plugin/**'
+      - 'com.github.copilot/**'
+      - 'skills/**'
+      - 'agents/**'
+      - 'resources/**'
+      - 'docs/**'
+      - 'assets/**'
+      - 'plugin.json'
+      - 'tests/integration/copilot_controlled_probe.py'
+
+permissions:
+  contents: read
+
+jobs:
+  controlled-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install the pinned native CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/copilot.tgz" \
+            https://registry.npmjs.org/@github/copilot-linux-x64/-/copilot-linux-x64-1.0.82.tgz
+          echo 'bea986f7aeb992d80b1c090628c8e9e2e54c747a8bc62f2e4bdccbfa0da93306543e833b27191a49f3a87b262bf7d71a17b27a5482535afe0b751350c86e63ad  '"$RUNNER_TEMP/copilot.tgz" | sha512sum -c -
+          mkdir "$RUNNER_TEMP/copilot"
+          tar -xzf "$RUNNER_TEMP/copilot.tgz" -C "$RUNNER_TEMP/copilot" --strip-components=1
+          echo "$RUNNER_TEMP/copilot" >> "$GITHUB_PATH"
+      - name: Check native child isolation and tool restrictions
+        run: python tests/integration/copilot_controlled_probe.py
