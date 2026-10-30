@@ -76,6 +76,8 @@ def test_install_preserves_resources_and_native_contract(tmp_path: Path) -> None
     ]
     assert set(primary["permission"]["task"]) == {"*", *set(config["agent"]) - {"egm"}}
     assert "Omit task_id" in primary["prompt"]
+    assert "subagent tool" in primary["prompt"]
+    assert "sessionID (V2)" in primary["prompt"]
     assert "foreground completion" in primary["prompt"]
 
 

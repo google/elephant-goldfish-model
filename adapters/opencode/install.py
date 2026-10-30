@@ -95,8 +95,9 @@ def install(destination: Path) -> Path:
             "external_directory": {"*": "ask", f"{bundle}/**": "allow"},
         },
         "prompt": context + "Follow the canonical skill. Dispatch reviewers directly "
-        "with task and the registered persona name as subagent_type. "
-        "Omit task_id for every independent review; never resume a reviewer. "
+        "with the registered persona name: on V1, the task tool with subagent_type; "
+        "on V2, the subagent tool with the agent ID. "
+        "Omit task_id (V1) or sessionID (V2) for every independent review; never resume a reviewer. "
         "Wait for foreground completion. Pass only the task, absolute resource paths, "
         "target, standards, and selected reading list, not conversation history. "
         "Stop if delegation or a required completion is missing. "

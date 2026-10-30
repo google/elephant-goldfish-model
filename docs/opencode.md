@@ -3,7 +3,7 @@
 # OpenCode V1 integration (experimental)
 
 This adapter targets OpenCode CLI **1.18.29**, with V1 `task` and `permission` interfaces.
-It does not target V2 `subagent` or `permissions` interfaces.
+OpenCode 2.x reads the same configuration; [V2](#v2) lists the differences.
 Installation checks do not establish workflow or isolation support.
 Maintainer approval, live workflows, and isolation verification remain pending under [#146](https://github.com/google/elephant-goldfish-model/issues/146).
 The proposed architecture is in [the additional harness design](designs/additional-harnesses.md).
@@ -66,6 +66,7 @@ Resolve user files against the project directory. Never substitute project files
 Dispatch reviewers directly from `egm` with the V1 `task` tool.
 Set `subagent_type` to the persona's canonical frontmatter name.
 Supply `description` and `prompt`. Omit `task_id` to create a fresh session.
+On V2, use the `subagent` tool with the persona name as the agent ID, and omit `sessionID`.
 Use foreground tasks. Do not enable background dispatch or reuse a reviewer session.
 The primary agent performs synthesis and writes reports; no nested synthesizer adapter is installed.
 Bootstrap worker and scout delegation is outside this adapter's scope. Although
@@ -104,6 +105,18 @@ Honor `EGM artifact directory: <path>` in the user's prompt or loaded instructio
 Resolve a relative output directory against the project directory. Otherwise retain the canonical output filenames and working-directory default.
 Preserve each readiness, section, and stage approval gate. Ask one plain-text question when the native question tool is unavailable.
 Wait for the user's answer. Missing tools and elapsed time do not constitute approval.
+
+## V2
+
+OpenCode 2.x converts this configuration: `agent` becomes `agents`, `prompt` becomes `system`,
+and each `permission` map becomes ordered `permissions`, with `task` renamed to `subagent`.
+On 2026-10-27, OpenCode `2.1.4` loaded the configuration from candidate `f8cf522` without warnings.
+`GET /api/agent`, `/api/skill`, and `/api/command` listed the eight agents, seven skills, and seven commands,
+and the reviewers resolved to `read`, `glob`, and `grep`. These requests made no model calls.
+Workflow, runtime enforcement, and isolation remain unverified on V2.
+V2 loads the global and project `AGENTS.md` into every session, subagents included, with no per-agent opt-out.
+`OPENCODE_DISABLE_PROJECT_CONFIG=1` skips project files for the whole process; the global file still loads.
+V2 also merges `.opencode` configuration from every ancestor directory, so a clean profile needs clean ancestors.
 
 ## Verification limits
 
@@ -195,3 +208,9 @@ Reviewed on 2026-10-24. The versioned sources define this adapter's interface:
 - [V1 permission evaluator](https://github.com/anomalyco/opencode/blob/v1.18.29/packages/opencode/src/permission/index.ts)
 - [V1 MCP resource permission paths](https://github.com/anomalyco/opencode/blob/v1.18.29/packages/opencode/src/session/tools.ts)
 - [Current official agent guide](https://opencode.ai/docs/agents/)
+
+V2 sources, reviewed on 2026-10-27:
+
+- [V2 migration from V1](https://opencode.ai/v2/docs/migrate-v1/)
+- [V2 subagent tool](https://opencode.ai/v2/docs/tools/)
+- [V2 instructions and `AGENTS.md` loading](https://opencode.ai/v2/docs/instructions/)
