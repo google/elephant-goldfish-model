@@ -1,0 +1,35 @@
+---
+description: Cursor runtime routing for EGM workflows only.
+alwaysApply: true
+---
+
+Apply these instructions only to an EGM workflow.
+Before execution, identify the absolute path of the selected EGM SKILL.md.
+For EGM_ROOT/skills/<directory>/SKILL.md, ascend three directories to EGM_ROOT.
+Confirm that EGM_ROOT/.cursor-plugin/plugin.json,
+EGM_ROOT/agents/, EGM_ROOT/resources/, and EGM_ROOT/docs/cursor.md exist.
+If the skill path is unavailable, ask for the installed package's absolute path.
+Read EGM_ROOT/docs/cursor.md before following the canonical skill.
+Do not infer a cache location or use another installed EGM version.
+
+Resolve agents/, resources/, and docs/ against EGM_ROOT. Resolve references/
+against the invoked skill directory. Pass absolute file paths to each child.
+This path mapping does not depend on variable substitution in Markdown.
+
+Keep drafting, synthesis, remediation, and report writes in the parent.
+Use direct Task dispatch to the registered EGM reviewer types.
+Start a new task for every independent reviewer. Never resume a reviewer.
+Supply EGM_ROOT, the target and scope, persona and standard paths, and only
+the explicit Goldfish context. Do not include parent history or deliberation.
+Do not pass earlier findings except where the canonical workflow requires them.
+Do not dispatch the canonical synthesizer or bootstrap orchestrator as a
+generic child. Their native adapters are not included in this experiment.
+
+Wait for every reviewer completion before advancing the stage.
+Write each completed stage report before dispatching the next stage.
+For Step 8, pass the absolute path of the existing zoom_out_report.md to the
+reviewer. If the report is missing, stop the review.
+Keep the canonical stage order and human approval gates.
+If a reviewer cannot start, read required files, or finish, stop the stage.
+Report the incomplete review. Do not simulate a reviewer in the parent.
+Missing host evidence leaves isolation unverified, even if findings exist.

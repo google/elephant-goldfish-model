@@ -1,0 +1,49 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# Native loader discovery only. This job does not authenticate or call a model.
+name: Cursor native discovery
+
+on:
+  pull_request:
+    paths:
+      - '.cursor-plugin/**'
+      - 'skills/**'
+      - 'agents/**'
+      - 'resources/**'
+      - 'docs/**'
+      - 'LICENSE'
+      - 'plugin.json'
+      - 'pyproject.toml'
+      - 'tests/conftest.py'
+      - 'tests/unit/test_cursor.py'
+      - 'tests/unit/test_harnesses.py'
+      - '.github/workflows/cursor-native.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discovery:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest==8.3.5 pyyaml==6.0.2
+      - name: Download pinned Cursor CLI
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/cursor.tar.gz" \
+            https://downloads.cursor.com/lab/2026.10.01-e373342/linux/arm64/agent-cli-package.tar.gz
+          echo '785c5f6bf2a60eb1121e27ed8c14f5ee07ed1b5b6692324f2d9a997238245eb5  '"$RUNNER_TEMP/cursor.tar.gz" | sha256sum --check
+          mkdir "$RUNNER_TEMP/cursor"
+          tar -xzf "$RUNNER_TEMP/cursor.tar.gz" --strip-components=1 -C "$RUNNER_TEMP/cursor"
+      - name: Verify native loader
+        env:
+          EGM_CURSOR_BUNDLE: '${{ runner.temp }}/cursor/index.js'
+        run: python -m pytest tests/unit/test_cursor.py
