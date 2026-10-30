@@ -25,6 +25,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || format('{0}-{1}', github.ref, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   unit:
     strategy:
@@ -43,3 +47,23 @@ jobs:
       - run: python -m pip install --group test
       - run: python -m pytest tests/unit
         shell: bash
+
+  ci:
+    name: CI
+    if: ${{ always() }}
+    needs: [unit]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require successful validation
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          node <<'JS'
+          const jobs = JSON.parse(process.env.NEEDS_JSON);
+          for (const [name, job] of Object.entries(jobs)) {
+            if (job.result !== 'success') {
+              console.error(`${name}: ${job.result}`);
+              process.exitCode = 1;
+            }
+          }
+          JS

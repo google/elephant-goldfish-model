@@ -40,7 +40,18 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             const body = pr.body || "";
-            const isBugFix = /\[[xX]\]\s*\*\*Bug Fix/i.test(body);
+            const contributionType = body.split(/^## Contribution Type[ \t]*\r?$/m)[1]?.split(/^##[ \t]+/m)[0] || "";
+            const selectedTracks = [
+              ...Array.from(contributionType.matchAll(/^[ \t]*Track:[ \t]*(.*)$/gmi), match => match[1].trim()),
+              ...Array.from(contributionType.matchAll(/^[ \t]*(?:[-*][ \t]+)?\[[xX]\][ \t]*\*\*([^*\r\n]+)\*\*/gm), match => match[1].trim())
+            ];
+            const validTracks = [
+              "Bug Fix / Minor Patch",
+              "Feature / Architectural Change -- Stage 1: Design Doc PR",
+              "Feature / Architectural Change -- Stage 2: Implementation PR"
+            ];
+            const hasValidTrack = selectedTracks.length === 1 && validTracks.includes(selectedTracks[0]);
+            const isBugFix = hasValidTrack && selectedTracks[0] === validTracks[0];
 
             // Fetch changed files (paginated, capped at 3 pages / 300 files)
             let pageCount = 0;
@@ -160,8 +171,8 @@ jobs:
             const problems = requiredHeadings
               .filter(heading => !body.includes(heading))
               .map(heading => `Missing section: \`${heading}\``);
-            if (!/\[[xX]\]\s*\*\*(Bug Fix|Feature \/ Architectural Change)/.test(body)) {
-              problems.push("No track selected under **Contribution Type**");
+            if (!hasValidTrack) {
+              problems.push("Select exactly one valid track under **Contribution Type**, using Track: or one legacy checked track");
             }
             if (!/\[[xX]\]\s*I am a human contributor/i.test(body)) {
               problems.push("**Human Accountability Affirmation** is not checked");

@@ -52,16 +52,16 @@ function fixture() {
     }
     const body = [
       '## Contribution Type',
-      state.minor ? '[x] **Bug Fix / Minor Patch**' : '[x] **Feature / Architectural Change**',
+      state.track ?? (state.minor ? '[x] **Bug Fix / Minor Patch**' : '[x] **Feature / Architectural Change -- Stage 1: Design Doc PR**'),
       '## Summary of Key Changes',
       '## Human Accountability Affirmation',
-      '[x] I am a human contributor',
+      state.affirmation ?? '[x] I am a human contributor',
       '## Verification',
     ].join('\n')
     await evaluate(github, {
       repo: { owner: 'fixture', repo: 'example' },
-      payload: { pull_request: {
-        number: 1, body, user: { type: 'User' },
+      payload: { action: state.action ?? 'opened', changes: state.editedFields, pull_request: {
+        number: 1, body: state.body ?? body, user: { type: state.bot ? 'Bot' : 'User' },
         labels: labels.map(name => ({ name })),
       } },
     }, { setFailed: message => assert.fail(message) })
@@ -141,4 +141,81 @@ test('unexpected legacy cleanup errors remain visible', async () => {
   const state = fixture()
   const error = Object.assign(new Error('Forbidden'), { status: 403 })
   await assert.rejects(state.run(['ci', legacy], error), error)
+})
+
+for (const track of [
+  'Bug Fix / Minor Patch',
+  'Feature / Architectural Change -- Stage 1: Design Doc PR',
+  'Feature / Architectural Change -- Stage 2: Implementation PR',
+]) {
+  for (const selection of [`Track: ${track}`, `- [x] **${track}** (track requirements)`]) {
+    test(`accept exactly one track: ${selection}`, async () => {
+      const state = fixture()
+      state.track = selection
+      await state.run()
+      assert.equal(state.labels.has('design-needed'), track === 'Bug Fix / Minor Patch')
+    })
+  }
+}
+
+for (const track of [
+  '',
+  'Track: ',
+  'Track: Other',
+  '- [x] **Other**',
+  'Track: Bug Fix / Minor Patch\nTrack: Feature / Architectural Change -- Stage 1: Design Doc PR',
+  '- [x] **Bug Fix / Minor Patch**\n- [x] **Feature / Architectural Change -- Stage 1: Design Doc PR**',
+  'Track: Bug Fix / Minor Patch\n- [x] **Bug Fix / Minor Patch**',
+  'Track: Other\n- [x] **Bug Fix / Minor Patch**',
+]) {
+  test(`reject missing, unknown, or conflicting tracks: ${JSON.stringify(track)}`, async () => {
+    const state = fixture()
+    state.track = track
+    await assert.rejects(state.run(), /track/i)
+  })
+}
+
+test('a track outside Contribution Type cannot satisfy the selection', async () => {
+  const state = fixture()
+  state.track = ''
+  state.affirmation = '[x] I am a human contributor\nTrack: Bug Fix / Minor Patch'
+  await assert.rejects(state.run(), /track/i)
+})
+
+test('new track descriptions still require human affirmation', async () => {
+  const state = fixture()
+  state.track = 'Track: Bug Fix / Minor Patch'
+  state.affirmation = '[ ] I am a human contributor'
+  await assert.rejects(state.run(), /Affirmation/)
+})
+
+test('bots remain exempt from description and affirmation requirements', async () => {
+  const state = fixture()
+  state.bot = true
+  state.body = ''
+  await state.run()
+})
+
+test('filled current PR template passes without deleting track explanations', async () => {
+  const state = fixture()
+  state.body = readFileSync(`${__dirname}/../.github/PULL_REQUEST_TEMPLATE.md`, 'utf8')
+    .replace('Track: <choose one track>', 'Track: Bug Fix / Minor Patch')
+    .replace('[ ] I am a human contributor', '[x] I am a human contributor')
+  await state.run()
+  assert.ok(state.labels.has('design-needed'))
+})
+
+test('body edits and title-only edits validate the current description', async () => {
+  const state = fixture()
+  state.action = 'edited'
+  state.editedFields = { body: { from: 'older description' } }
+  state.track = 'Track: Bug Fix / Minor Patch'
+  state.affirmation = '[ ] I am a human contributor'
+  await assert.rejects(state.run(), /Affirmation/)
+  state.editedFields = { title: { from: 'older title' } }
+  await assert.rejects(state.run(), /Affirmation/)
+  state.affirmation = '[x] I am a human contributor'
+  await state.run()
+  state.track = 'Track: Other'
+  await assert.rejects(state.run(), /track/i)
 })
