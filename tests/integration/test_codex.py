@@ -10,6 +10,7 @@ import shutil
 import shlex
 import subprocess
 import uuid
+import zipfile
 from collections.abc import Iterator
 from urllib.parse import unquote, urlparse
 
@@ -40,10 +41,23 @@ def installed_plugin(
     """Install the candidate through Codex without replacing the user's EGM."""
     assert shutil.which("codex"), "Codex CLI is required for live tests"
     source = tmp_path_factory.mktemp("egm-marketplace")
-    shutil.copytree(repo_root, source, dirs_exist_ok=True, ignore=shutil.ignore_patterns(
-        ".git", ".venv", "__pycache__", "node_modules"))
+    release_zip = os.environ.get("EGM_CODEX_RELEASE_ZIP")
+    if release_zip:
+        with zipfile.ZipFile(release_zip) as bundle:
+            assert bundle.testzip() is None, "Release ZIP is corrupt"
+            bundle.extractall(source)
+    else:
+        shutil.copytree(
+            repo_root, source, dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns(
+                ".git", ".venv", "__pycache__", "node_modules"),
+        )
+    # The OpenAI ZIP omits the marketplace file; use the checked-in metadata for both.
+    marketplace = json.loads(
+        (repo_root / ".agents/plugins/marketplace.json").read_text()
+    )
     marketplace_file = source / ".agents/plugins/marketplace.json"
-    marketplace = json.loads(marketplace_file.read_text())
+    marketplace_file.parent.mkdir(parents=True, exist_ok=True)
     name = "egm-test-" + uuid.uuid4().hex[:12]
     marketplace["name"] = name
     marketplace_file.write_text(json.dumps(marketplace))
@@ -52,6 +66,16 @@ def installed_plugin(
         cli("marketplace", "add", str(source))
         result = cli("add", selector)
         root = pathlib.Path(result["installedPath"])
+        if release_zip:
+            with zipfile.ZipFile(release_zip) as bundle:
+                for relative in bundle.namelist():
+                    installed = root / relative
+                    assert installed.is_file(), (
+                        f"Release file missing from installation: {relative}"
+                    )
+                    assert installed.read_bytes() == bundle.read(relative), (
+                        f"Installed file differs from release ZIP: {relative}"
+                    )
         yield selector, name, source, root
     finally:
         subprocess.run(["codex", "plugin", "remove", selector], check=False)
@@ -110,26 +134,58 @@ def successful_reads(trace: list[dict]) -> set[pathlib.Path]:
     """Inspect executed file reads, not filenames mentioned by the model."""
     paths = set()
     for event in trace:
-        item = event.get("payload", {}).get("item", {})
-        if (item.get("type") != "CommandExecution"
-                or item.get("status") != "completed"
-                or item.get("exit_code") != 0
-                or not (item.get("aggregated_output") or item.get("stdout"))):
+        if (event.get("type") != "event_msg"
+                or event.get("payload", {}).get("type") != "item_completed"):
             continue
-        cwd = pathlib.Path(unquote(urlparse(item["cwd"]).path))
+        item = event["payload"].get("item", {})
+        if (item.get("type") != "CommandExecution"
+                or item.get("status") not in {"completed", "failed"}
+                or not item.get("aggregated_output")):
+            continue
+        output = item["aggregated_output"]
+        exit_code = item.get("exit_code")
+        # A compound `cat` can return useful file contents and then fail on a
+        # later missing operand. Count a file only when its own contents are
+        # visibly present in the captured output.
+        cwd_value = item.get("cwd")
+        if not cwd_value:
+            continue
+        cwd = pathlib.Path(unquote(urlparse(cwd_value).path))
         for command in item.get("parsed_cmd", []):
             if command.get("type") == "read" and command.get("path"):
-                paths.add((cwd / command["path"]).resolve())
+                if exit_code == 0:
+                    paths.add((cwd / command["path"]).resolve())
             elif command.get("type") == "unknown":
-                # Codex labels a multi-file cat as unknown. Accept only literal
-                # absolute operands, never shell expansion or composed commands.
+                # Codex labels compound shell commands as unknown. Inspect
+                # only standalone cat segments with literal absolute paths.
                 raw = command.get("cmd", "")
-                if any(char in raw for char in "$`|;&<>*?{}()\n"):
+                try:
+                    lexer = shlex.shlex(raw, posix=True, punctuation_chars=";")
+                    lexer.whitespace_split = True
+                    tokens = list(lexer)
+                except ValueError:
                     continue
-                args = shlex.split(raw)
-                if (len(args) > 1 and args[0] == "cat"
-                        and all(pathlib.Path(arg).is_absolute() for arg in args[1:])):
-                    paths.update(pathlib.Path(arg).resolve() for arg in args[1:])
+                segments: list[list[str]] = [[]]
+                for token in tokens:
+                    if token == ";":
+                        segments.append([])
+                    else:
+                        segments[-1].append(token)
+                for args in segments:
+                    if (len(args) <= 1 or args[0] != "cat"
+                            or any(char in arg for arg in args
+                                   for char in "$`|&<>*?{}()")
+                            or not all(pathlib.Path(arg).is_absolute() for arg in args[1:])):
+                        continue
+                    for arg in args[1:]:
+                        path = pathlib.Path(arg).resolve()
+                        try:
+                            contents = path.read_text(encoding="utf-8")
+                        except (OSError, UnicodeError):
+                            continue
+                        evidence = contents[:200]
+                        if evidence and evidence in output:
+                            paths.add(path)
     return paths
 
 
@@ -179,16 +235,15 @@ def test_fresh_context_isolation(
     marker = "parent-only-" + uuid.uuid4().hex
     prompt = f"""Native EGM isolation test. Parent-only marker: {marker}
 Do not write or repeat this marker, or pass it to another agent.
-Read the installed egm plugin's Codex integration reference. Use a native
-general-purpose subagent with no inherited turns, using the parameter in its
-actual schema (fork_context: false or fork_turns: "none"). Its exact task is:
+Use a native general-purpose subagent with no inherited turns, using the
+parameter in its actual schema (fork_context: false or fork_turns: "none").
+Its exact task is:
 'Do not use tools. If a parent-only marker is visible in your conversation,
 return it verbatim. Otherwise return exactly UNKNOWN.'
 Wait for its result. Do not simulate its response. Do not use memory services,
 external services, or conversation history. Report the actual child response.
 """
     trace = run_codex(installed_plugin, tmp_path, prompt)
-    assert installed_plugin[3] / "docs/codex.md" in successful_reads(trace)
     assert_isolated_spawns(trace)
     children = child_traces(trace)
     assert len(children) == 1
@@ -231,11 +286,20 @@ are unavailable. Keep the fixture small and reviews concise.
 """
     trace = run_codex(installed_plugin, tmp_path, prompt)
     root = installed_plugin[3]
-    required_reads = {root / "docs/codex.md"}
-    required_reads.update(root / "skills" / skill / "SKILL.md" for skill in (
-        "egm-brainstorm", "egm-draft", "egm-review",
-    ))
-    assert required_reads <= successful_reads(trace), "Installed skills not read"
+    # v0.1.0 uses underscores; current source skill names use hyphens.
+    skill_dirs = {
+        path.name.replace("_", "-"): path
+        for path in (root / "skills").iterdir()
+        if path.is_dir()
+    }
+    assert {"egm-brainstorm", "egm-draft", "egm-review"} <= skill_dirs.keys()
+    required_skill_reads = {
+        skill_dirs[skill] / "SKILL.md"
+        for skill in ("egm-brainstorm", "egm-draft", "egm-review")
+    }
+    reads = successful_reads(trace)
+    assert required_skill_reads <= reads, "Installed skills not read"
+    assert root / "docs/codex.md" in reads, "Codex reference not read"
     for name in ("concepts_brief.md", "design_draft.md", "docs/designs/line-count.md"):
         artifact = tmp_path / name
         assert artifact.is_file(), f"Missing workflow artifact: {name}"
