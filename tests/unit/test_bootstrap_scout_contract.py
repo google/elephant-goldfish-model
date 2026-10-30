@@ -79,5 +79,5 @@ def test_scout_failure_scenario_keeps_good_chunks_and_marks_gap() -> None:
   )
   required = " ".join(
       a["pattern"] for a in assertions if a["type"] == "required_pattern")
-  for needle in ("documentation incomplete", "alpha_parse", "1965", "egm-bootstrap"):
+  for needle in ("documentation incomplete", "covered_fn", "1965", "egm-bootstrap"):
     assert needle in required, f"scenario no longer requires {needle!r}"
