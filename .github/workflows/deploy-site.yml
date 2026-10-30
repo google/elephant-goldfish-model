@@ -14,9 +14,9 @@
 
 # Build and deploy the egm.dev landing site (site/) to GitHub Pages.
 #
-# The site is static: no analytics, no cookies, no third-party scripts, and no
-# requests to Google hosts at runtime. Keep it that way; it is a condition of
-# the open-source release.
+# Analytics and Cookie Notification Bar run only when window.location.hostname
+# is 'egm.dev' and vars.PUBLIC_GA_MEASUREMENT_ID is configured on the repository,
+# so forks and local builds never send data to Google hosts.
 #
 # First deploy (launch day): repository must be public, then Settings > Pages >
 # Source = GitHub Actions, custom domain = egm.dev, Enforce HTTPS. Run this
@@ -58,6 +58,8 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+        env:
+          PUBLIC_GA_MEASUREMENT_ID: ${{ vars.PUBLIC_GA_MEASUREMENT_ID }}
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/dist

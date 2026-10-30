@@ -22,6 +22,7 @@ interface Props {
 const { title, description } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL('/og.png', Astro.site);
+const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID ?? '';
 ---
 
 <!doctype html>
@@ -50,6 +51,123 @@ const ogImage = new URL('/og.png', Astro.site);
     <meta name="twitter:image" content={ogImage} />
     <Font cssVariable="--font-display" preload />
     <Font cssVariable="--font-mono" />
+    {
+      gaMeasurementId && (
+        <script is:inline define:vars={{ gaMeasurementId, pageTitle: title }}>
+          // Load Google Cookie Notification Bar + GA4 only on canonical egm.dev so
+          // forks and local builds never send telemetry to Google servers.
+          if (window.location.hostname === 'egm.dev' && gaMeasurementId) {
+            window.dataLayer = window.dataLayer || [];
+            let analyticsAllowed = false;
+            const disableAnalytics = 'ga-disable-' + gaMeasurementId;
+            window[disableAnalytics] = true;
+            function gtag() {
+              if (!analyticsAllowed && (arguments[0] === 'event' || arguments[0] === 'config')) return;
+              window.dataLayer.push(arguments);
+            }
+            window.gtag = gtag;
+
+            gtag('consent', 'default', {
+              ad_storage: 'denied',
+              ad_user_data: 'denied',
+              ad_personalization: 'denied',
+              analytics_storage: 'denied',
+              wait_for_update: 500,
+            });
+            gtag('set', 'ads_data_redaction', true);
+            gtag('set', 'allow_google_signals', false);
+            gtag('set', 'allow_ad_personalization_signals', false);
+
+            const allowedParams = new Set([
+              'utm_source',
+              'utm_medium',
+              'utm_campaign',
+              'utm_term',
+              'utm_content',
+              'gclid',
+              'dclid',
+              'gclsrc',
+            ]);
+            const cleanUrl = new URL(window.location.href);
+            for (const key of Array.from(cleanUrl.searchParams.keys())) {
+              if (!allowedParams.has(key.toLowerCase())) {
+                cleanUrl.searchParams.delete(key);
+              }
+            }
+            cleanUrl.hash = '';
+
+            let cleanReferrer = '';
+            if (document.referrer) {
+              try {
+                const refUrl = new URL(document.referrer);
+                cleanReferrer = refUrl.origin + refUrl.pathname;
+              } catch {
+                cleanReferrer = '';
+              }
+            }
+
+            const cnbCss = document.createElement('link');
+            cnbCss.rel = 'stylesheet';
+            cnbCss.href =
+              'https://www.gstatic.com/glue/cookienotificationbar/cookienotificationbar.min.css';
+            document.head.appendChild(cnbCss);
+
+            let analyticsStarted = false;
+            const applyConsent = (status) => {
+              analyticsAllowed = status === 'ACCEPTED';
+              window[disableAnalytics] = !analyticsAllowed;
+              gtag('consent', 'update', {
+                analytics_storage: analyticsAllowed ? 'granted' : 'denied',
+                ad_storage: 'denied',
+                ad_user_data: 'denied',
+                ad_personalization: 'denied',
+              });
+              if (!analyticsAllowed) return;
+              if (analyticsStarted) return;
+              analyticsStarted = true;
+
+              gtag('js', new Date());
+              gtag('config', gaMeasurementId, {
+                page_location: cleanUrl.toString(),
+                page_referrer: cleanReferrer,
+                page_title: pageTitle,
+                allow_google_signals: false,
+                allow_ad_personalization_signals: false,
+              });
+
+              const gtagScript = document.createElement('script');
+              gtagScript.async = true;
+              gtagScript.src =
+                'https://www.googletagmanager.com/gtag/js?id=' +
+                encodeURIComponent(gaMeasurementId);
+              document.head.appendChild(gtagScript);
+            };
+            let consentBar;
+            window.glueCookieNotificationBarLoaded = (event) => {
+              // CNB defaults to ACCEPTED when no banner is required, including
+              // configuration fetch failure. That is not affirmative consent.
+              const instance = window.glue?.CookieNotificationBar?.instance;
+              if (event?.detail?.required !== true || !instance || consentBar) return;
+              consentBar = instance;
+              instance.listen('statuschange', (change) => applyConsent(change.detail?.status));
+              applyConsent(event.detail.status);
+            };
+
+            const cnbScript = document.createElement('script');
+            cnbScript.src =
+              'https://www.gstatic.com/glue/cookienotificationbar/cookienotificationbar.min.js';
+            cnbScript.dataset.glueCookieNotificationBarCategory = '2A';
+            cnbScript.dataset.glueCookieNotificationBarSiteId = 'egm.dev';
+            cnbScript.dataset.glueCookieNotificationBarAutoMarginClass = 'footer';
+            // CNB's defaults can grant storage independently of an explicit choice.
+            // Keep those commands separate; the status listener owns GA consent.
+            cnbScript.dataset.glueCookieNotificationBarCustomDataLayerName = 'cookieConsentDataLayer';
+            document.head.appendChild(cnbScript);
+
+          }
+        </script>
+      )
+    }
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
