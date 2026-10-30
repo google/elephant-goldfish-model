@@ -42,8 +42,9 @@ cp -R plugin.json README.md LICENSE skills agents resources docs assets ~/.gemin
 ```
 
 Reload the window (or restart the Antigravity App), then confirm that `egm`
-appears in the plugin list and that its skills (`/egm-brainstorm`, `/egm-draft`,
-`/egm-review`) are available.
+appears in the plugin list and that its skills (`egm-brainstorm`, `egm-draft`,
+`egm-review`) are available. The command form for these skills in the
+Antigravity App and Antigravity for IDEs has not been verified.
 
 ## Manifests
 
@@ -123,9 +124,9 @@ the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
 
 ## Support Status & Contributing Other Harnesses
 
-**Antigravity**, **Claude Code**, and **Codex** pass automated installation, reviewer isolation, and end-to-end workflow fixtures.
+**Antigravity CLI**, **Claude Code**, and **Codex** pass automated installation, reviewer isolation, and end-to-end workflow fixtures.
 
-**Claude Cowork** ([#105](https://github.com/google/elephant-goldfish-model/issues/105)) and **ChatGPT Work** ([#106](https://github.com/google/elephant-goldfish-model/issues/106)) have working installation paths with open cloud trace verification gaps.
+**Claude Cowork** ([#105](https://github.com/google/elephant-goldfish-model/issues/105)) and **ChatGPT Work** ([#106](https://github.com/google/elephant-goldfish-model/issues/106)) have working installation paths with open cloud trace verification gaps. The README's prefix guidance covers only Antigravity (agy CLI), Claude Code, and Codex. For ChatGPT workspace imports, the skills are reached through `@egm` (see [ChatGPT](codex.md#chatgpt)); the command form in Claude Cowork is not recorded yet.
 
 **omp** ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) has a working installation path. Skills are invoked as `/skill:egm-<command>` (omp registers one command per skill; it has no `/egm-*` namespace). Community-verified on omp v18.12.6: all seven skills discover and resolve, and all nine reviewer personas register as subagents. End-to-end workflow fixtures are not yet automated for omp.
 
