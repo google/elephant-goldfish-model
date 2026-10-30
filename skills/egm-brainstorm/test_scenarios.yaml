@@ -87,3 +87,33 @@ scenarios:
           - type: "contains"
             pattern: "RabbitMQ"
             message: "Decision matrix must evaluate RabbitMQ."
+
+  - scenario_id: "author_resolution_fallback_prompts_chat"
+    description: "Verifies that egm-brainstorm asks for author identity in chat when git user.name and GIT_AUTHOR_NAME are unset."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-brainstorm/SKILL.md"
+    turns:
+      - user_input: "I want to brainstorm a new telemetry aggregator feature. No git user.name or GIT_AUTHOR_NAME is set in the environment."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(author|your name|github handle)[^?\\n]*\\?"
+            message: "Brainstorming must ask for author name or handle when git config is unset."
+          - type: "forbidden_pattern"
+            pattern: "(?i)Author:\\*{0,2}\\s*(root\\b|runner\\b|[^\\n]*maintainers)"
+            message: "Brainstorming must not default to maintainers or OS logins."
+
+  - scenario_id: "alternatives_rejection_attribution_by_author"
+    description: "Verifies that rejected alternatives in concepts_brief.md are recorded as author rejections."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-brainstorm/SKILL.md"
+    turns:
+      - user_input: "We weighed Kafka vs RabbitMQ during ideation, and I rejected RabbitMQ due to partition scaling limits. Format the Alternatives Weighed section."
+        assertions:
+          - type: "required_pattern"
+            pattern: "Rejected by author:"
+            message: "Brainstorming must record rejection as author decision."
+          - type: "forbidden_pattern"
+            pattern: "Rejected by maintainer"
+            message: "Brainstorming must not attribute contributor rejections to maintainer."

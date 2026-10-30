@@ -16,6 +16,9 @@ The specification must include a **mandatory evaluation of alternatives**. It
 fails this standard if it proposes a single path without proving that other
 viable designs were considered and rejected for specific, documented reasons
 (including, but not limited to, complexity, cost, performance, or scalability).
+Rejection rationales must state concrete technical or scope trade-offs and must
+not attribute a rejection to a maintainer without linking their issue,
+discussion, or PR.
 
 ## Risks & Limits
 

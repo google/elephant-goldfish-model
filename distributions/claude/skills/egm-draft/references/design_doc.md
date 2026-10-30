@@ -97,7 +97,7 @@ plan is superior.
 
 *   **Pros**: [List benefits]
 *   **Cons**: [List drawbacks]
-*   **Reason for Rejection**: [Why this option was not selected]
+*   **Reason for Rejection**: [Why this option was not selected (e.g., "Rejected by author: technical rationale"). Do not attribute a rejection to a maintainer without linking their issue, discussion, or PR.]
 
 --------------------------------------------------------------------------------
 
