@@ -58,7 +58,11 @@ const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID ?? '';
           // forks and local builds never send telemetry to Google servers.
           if (window.location.hostname === 'egm.dev' && gaMeasurementId) {
             window.dataLayer = window.dataLayer || [];
+            let analyticsAllowed = false;
+            const disableAnalytics = 'ga-disable-' + gaMeasurementId;
+            window[disableAnalytics] = true;
             function gtag() {
+              if (!analyticsAllowed && (arguments[0] === 'event' || arguments[0] === 'config')) return;
               window.dataLayer.push(arguments);
             }
             window.gtag = gtag;
@@ -108,10 +112,17 @@ const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID ?? '';
               'https://www.gstatic.com/glue/cookienotificationbar/cookienotificationbar.min.css';
             document.head.appendChild(cnbCss);
 
-            // CNB loads its consent configuration asynchronously after its script.
-            // Its loaded callback runs after the initial consent commands are queued.
             let analyticsStarted = false;
-            window.glueCookieNotificationBarLoaded = () => {
+            const applyConsent = (status) => {
+              analyticsAllowed = status === 'ACCEPTED';
+              window[disableAnalytics] = !analyticsAllowed;
+              gtag('consent', 'update', {
+                analytics_storage: analyticsAllowed ? 'granted' : 'denied',
+                ad_storage: 'denied',
+                ad_user_data: 'denied',
+                ad_personalization: 'denied',
+              });
+              if (!analyticsAllowed) return;
               if (analyticsStarted) return;
               analyticsStarted = true;
 
@@ -131,6 +142,16 @@ const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID ?? '';
                 encodeURIComponent(gaMeasurementId);
               document.head.appendChild(gtagScript);
             };
+            let consentBar;
+            window.glueCookieNotificationBarLoaded = (event) => {
+              // CNB defaults to ACCEPTED when no banner is required, including
+              // configuration fetch failure. That is not affirmative consent.
+              const instance = window.glue?.CookieNotificationBar?.instance;
+              if (event?.detail?.required !== true || !instance || consentBar) return;
+              consentBar = instance;
+              instance.listen('statuschange', (change) => applyConsent(change.detail?.status));
+              applyConsent(event.detail.status);
+            };
 
             const cnbScript = document.createElement('script');
             cnbScript.src =
@@ -138,6 +159,9 @@ const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID ?? '';
             cnbScript.dataset.glueCookieNotificationBarCategory = '2A';
             cnbScript.dataset.glueCookieNotificationBarSiteId = 'egm.dev';
             cnbScript.dataset.glueCookieNotificationBarAutoMarginClass = 'footer';
+            // CNB's defaults can grant storage independently of an explicit choice.
+            // Keep those commands separate; the status listener owns GA consent.
+            cnbScript.dataset.glueCookieNotificationBarCustomDataLayerName = 'cookieConsentDataLayer';
             document.head.appendChild(cnbScript);
 
           }

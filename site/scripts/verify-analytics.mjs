@@ -30,28 +30,52 @@ async function visit(host, { failed = false, html = enabled } = {}) {
         if (failed) return void request.abort('failed');
         contentType = 'application/javascript';
         body = `window.__cookieScriptLoaded = true;
-          window.__finishConsent = () => {
-            window.dataLayer.unshift(['consent', 'update', { analytics_storage: 'granted' }]);
-            window.__consentInitialized = true;
-            window.glueCookieNotificationBarLoaded();
+          const layer = document.currentScript.dataset.glueCookieNotificationBarCustomDataLayerName;
+          const listeners = [];
+          window.glue = { CookieNotificationBar: { instance: {
+            listen: (name, listener) => { if (name === 'statuschange') listeners.push(listener); }
+          } } };
+          window.__finishConsent = (status = 'UNKNOWN', required = true) => {
+            window[layer] = window[layer] || [];
+            window[layer].unshift(['consent', 'update', { analytics_storage: 'granted' }]);
+            window.glueCookieNotificationBarLoaded({ detail: { required, status } });
+          };
+          window.__changeConsent = status => {
+            listeners.forEach(listener => listener({ detail: { status } }));
+            window[layer].push(['consent', 'update', { analytics_storage: status === 'ACCEPTED' ? 'granted' : 'denied' }]);
           };`;
       } else if (url.hostname === 'www.googletagmanager.com') {
         contentType = 'application/javascript';
-        body = `window.__gaInitializedAfterConsent = window.__consentInitialized === true;
-          window.__gaCommands = Array.from(window.dataLayer, args => Array.from(args));`;
+        body = `window.__gaCommands = [];
+          window.__disabledAtDenial = [];
+          const processCommand = args => {
+            window.__gaCommands.push(Array.from(args));
+            if (args[0] === 'consent' && args[2].analytics_storage === 'denied') {
+              window.__disabledAtDenial.push(window['ga-disable-G-TEST']);
+            }
+            if (['event', 'config'].includes(args[0]) && !window['ga-disable-G-TEST']) {
+              fetch('https://www.google-analytics.com/g/collect?event=' + args[0]);
+            }
+          };
+          window.dataLayer.forEach(processCommand);
+          const push = window.dataLayer.push.bind(window.dataLayer);
+          window.dataLayer.push = (...commands) => { commands.forEach(processCommand); return push(...commands); };`;
       } else {
         contentType = 'text/css';
       }
+    } else if (url.hostname === 'www.google-analytics.com') {
+      requests.push(request.url());
     } else if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
       contentType = 'text/html';
       body = html;
     }
     // Respond to every request; nothing reaches Google or another network host.
-    void request.respond({ status: 200, contentType, body });
+    void request.respond({ status: 200, contentType, headers: { 'access-control-allow-origin': '*' }, body });
   });
   await page.goto(`https://${host}/?private=secret&utm_source=test#private`, { waitUntil: 'load' });
   const gaRequests = () => requests.filter(url => new URL(url).hostname === 'www.googletagmanager.com');
-  return { page, requests, gaRequests, errors };
+  const collects = () => requests.filter(url => new URL(url).hostname === 'www.google-analytics.com');
+  return { page, requests, gaRequests, collects, errors };
 }
 
 try {
@@ -60,14 +84,37 @@ try {
   assert.equal(delayed.gaRequests().length, 0, 'GA must not load before asynchronous configuration completes');
   assert.equal(await delayed.page.evaluate(() => window.dataLayer.some(args => args[0] === 'config')), false);
   await delayed.page.evaluate(() => window.__finishConsent());
+  assert.equal(delayed.gaRequests().length, 0, 'pending consent must not load GA');
+  await delayed.page.evaluate(() => window.__changeConsent('REJECTED'));
+  assert.equal(delayed.gaRequests().length, 0, 'rejected consent must not load GA');
+  assert.equal(delayed.collects().length, 0);
+  await delayed.page.evaluate(() => window.__changeConsent('ACCEPTED'));
   await delayed.page.waitForFunction(() => window.__gaCommands !== undefined);
+  await delayed.page.waitForFunction(() => window.__gaCommands.some(args => args[0] === 'config'));
   assert.equal(delayed.gaRequests().length, 1);
-  assert.equal(await delayed.page.evaluate(() => window.__gaInitializedAfterConsent), true);
   const config = await delayed.page.evaluate(() => window.__gaCommands.find(args => args[0] === 'config')[2]);
   assert.equal(config.page_location, 'https://egm.dev/?utm_source=test');
   assert.equal(config.allow_google_signals, false);
   assert.equal(config.allow_ad_personalization_signals, false);
-  results.push({ case: 'delayed configuration', pass: true, requests: [...delayed.requests] });
+  await delayed.page.waitForNetworkIdle();
+  assert.equal(delayed.collects().length, 1, 'grant must permit the initial measurement');
+  results.push({ case: 'pending, rejected, then granted', pass: true, requests: [...delayed.requests] });
+
+  await delayed.page.evaluate(() => {
+    window.gtag('event', 'positive_control');
+  });
+  await delayed.page.waitForNetworkIdle();
+  assert.equal(delayed.collects().length, 2, 'event fixture must send before revocation');
+  await delayed.page.evaluate(() => {
+    window.__changeConsent('REJECTED');
+    window.gtag('event', 'after_revocation');
+    window.gtag('config', 'G-TEST');
+  });
+  await delayed.page.waitForNetworkIdle();
+  assert.equal(delayed.collects().length, 2, 'revocation must prevent later measurements');
+  assert.equal(await delayed.page.evaluate(() => window['ga-disable-G-TEST']), true);
+  assert.equal(await delayed.page.evaluate(() => window.__disabledAtDenial.at(-1)), true);
+  results.push({ case: 'revocation blocks future measurements', pass: true });
 
   await delayed.page.evaluate(() => { window.__finishConsent(); window.__finishConsent(); });
   assert.equal(await delayed.page.evaluate(() => document.querySelectorAll('script[src*="googletagmanager.com"]').length), 1);
@@ -75,6 +122,18 @@ try {
   assert.deepEqual(delayed.errors, []);
   results.push({ case: 'repeated callbacks', pass: true });
   await delayed.page.close();
+
+  for (const [status, required] of [['REJECTED', true], ['ACCEPTED', false], ['ACCEPTED', true]]) {
+    const initial = await visit('egm.dev');
+    await initial.page.evaluate((state, needed) => window.__finishConsent(state, needed), status, required);
+    await initial.page.waitForNetworkIdle();
+    const granted = status === 'ACCEPTED' && required;
+    assert.equal(initial.gaRequests().length, granted ? 1 : 0);
+    assert.equal(initial.collects().length, granted ? 1 : 0);
+    assert.deepEqual(initial.errors, []);
+    results.push({ case: `initial ${status}, required=${required}`, pass: true });
+    await initial.page.close();
+  }
 
   const failure = await visit('egm.dev', { failed: true });
   assert.equal(failure.gaRequests().length, 0);

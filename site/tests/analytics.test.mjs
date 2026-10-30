@@ -34,10 +34,31 @@ function page({ hostname = 'egm.dev', measurementId = 'G-TEST' } = {}) {
   });
   const gaScripts = () => elements.filter((element) => element.src?.includes('googletagmanager.com'));
   const commands = () => Array.from(window.dataLayer ?? [], (args) => Array.from(args));
-  return { window, elements, gaScripts, commands };
+  function loadConsent({ required = true, status = 'UNKNOWN' } = {}) {
+    const listeners = [];
+    const instance = { listen: (name, listener) => {
+      assert.equal(name, 'statuschange');
+      listeners.push(listener);
+    } };
+    window.glue = { CookieNotificationBar: { instance } };
+    const cookieScript = elements.find(element => element.src?.includes('cookienotificationbar.min.js'));
+    const layer = cookieScript.dataset.glueCookieNotificationBarCustomDataLayerName;
+    window[layer] = [];
+    window[layer].unshift(['consent', 'update', { analytics_storage: 'granted' }]);
+    const loaded = () => window.glueCookieNotificationBarLoaded({ detail: { required, status } });
+    loaded();
+    return {
+      loaded,
+      change: next => {
+        listeners.forEach(listener => listener({ detail: { status: next } }));
+        window[layer].push(['consent', 'update', { analytics_storage: next === 'ACCEPTED' ? 'granted' : 'denied' }]);
+      },
+    };
+  }
+  return { window, elements, gaScripts, commands, loadConsent };
 }
 
-test('delayed cookie-bar configuration gates GA, not the script load event', () => {
+test('pending and rejected consent never load GA; a later affirmative choice starts it', () => {
   const p = page();
   const cookieScript = p.elements.find((element) => element.src?.includes('cookienotificationbar.min.js'));
   assert.ok(cookieScript);
@@ -49,17 +70,23 @@ test('delayed cookie-bar configuration gates GA, not the script load event', () 
   cookieScript.onload?.();
   assert.equal(p.gaScripts().length, 0);
 
-  p.window.gtag('consent', 'update', { analytics_storage: 'granted' });
-  p.window.glueCookieNotificationBarLoaded();
+  const consent = p.loadConsent();
+  assert.equal(p.gaScripts().length, 0);
+  consent.change('REJECTED');
+  p.window.gtag('event', 'should_not_send');
+  assert.equal(p.gaScripts().length, 0);
+  assert.equal(p.commands().some(([command]) => command === 'event'), false);
+  consent.change('ACCEPTED');
   assert.equal(p.gaScripts().length, 1);
   const commands = p.commands();
-  assert.ok(commands.findIndex(([command, type]) => command === 'consent' && type === 'update')
+  assert.ok(commands.findIndex(([command, type, value]) => command === 'consent' && type === 'update' && value.analytics_storage === 'granted')
     < commands.findIndex(([command]) => command === 'config'));
   const config = commands.find(([command]) => command === 'config')[2];
   assert.equal(config.page_location, 'https://egm.dev/guide?utm_source=test');
   assert.equal(config.page_referrer, 'https://example.com/start');
   assert.equal(config.allow_google_signals, false);
   assert.equal(config.allow_ad_personalization_signals, false);
+  assert.equal(p.window['ga-disable-G-TEST'], false);
 });
 
 test('failed cookie-bar initialization never starts GA', () => {
@@ -69,12 +96,38 @@ test('failed cookie-bar initialization never starts GA', () => {
   assert.equal(p.commands()[0][2].analytics_storage, 'denied');
 });
 
-test('repeated loaded callbacks do not duplicate GA or page configuration', () => {
+test('stored affirmative choice starts GA once and revocation blocks future events', () => {
   const p = page();
-  p.window.glueCookieNotificationBarLoaded();
-  p.window.glueCookieNotificationBarLoaded();
+  const consent = p.loadConsent({ status: 'ACCEPTED' });
+  consent.loaded();
   assert.equal(p.gaScripts().length, 1);
   assert.equal(p.commands().filter(([command]) => command === 'config').length, 1);
+  consent.change('REJECTED');
+  assert.equal(p.window['ga-disable-G-TEST'], true);
+  p.window.gtag('event', 'after_revocation');
+  p.window.gtag('config', 'G-TEST');
+  assert.equal(p.commands().some(([command]) => command === 'event'), false);
+  assert.equal(p.commands().filter(([command]) => command === 'config').length, 1);
+  assert.equal(p.commands().at(-1)[2].analytics_storage, 'denied');
+  consent.change('ACCEPTED');
+  assert.equal(p.window['ga-disable-G-TEST'], false);
+  assert.equal(p.gaScripts().length, 1);
+});
+
+for (const options of [{ status: 'REJECTED' }, { required: false, status: 'ACCEPTED' }]) {
+  test(`loaded does not imply affirmative consent: ${JSON.stringify(options)}`, () => {
+    const p = page();
+    p.loadConsent(options);
+    assert.equal(p.gaScripts().length, 0);
+    assert.equal(p.window['ga-disable-G-TEST'], true);
+  });
+}
+
+test('loaded callback without valid vendor details fails closed', () => {
+  const p = page();
+  p.window.glueCookieNotificationBarLoaded();
+  p.window.glueCookieNotificationBarLoaded({ detail: { required: true, status: 'ACCEPTED' } });
+  assert.equal(p.gaScripts().length, 0);
 });
 
 for (const options of [{ hostname: 'localhost' }, { hostname: 'preview.example.com' }, { measurementId: '' }]) {

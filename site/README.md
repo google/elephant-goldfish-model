@@ -39,10 +39,17 @@ GitHub Pages.
   telemetry. On the canonical `https://egm.dev` site only (when
   `PUBLIC_GA_MEASUREMENT_ID` is set at build time and
   `window.location.hostname === 'egm.dev'`), the page loads Google Cookie
-  Notification Bar (`cookienotificationbar.min.js`) with Consent Mode v2 and
-  Google Analytics 4 (`gtag.js`) with client-side URL/referrer scrubbing and
-  Google Signals/Ads personalization disabled. External forks, preview domains,
-  and local builds make zero requests to Google hosts at runtime.
+  Notification Bar (`cookienotificationbar.min.js`). Google Analytics 4
+  (`gtag.js`) loads only after the bar reports an affirmative accepted choice
+  with `loaded.detail.required === true`. Pending, rejected, absent, and failed
+  consent initialization never load GA. CNB's non-required fallback is not
+  affirmative consent. The documented instance `statuschange` listener updates
+  Consent Mode v2. Revocation sets GA's measurement disable flag before queuing
+  denied consent and blocks later event/config calls. CNB uses a separate data
+  layer so its defaults cannot enable analytics or advertising. Google Signals
+  and advertising storage/personalization stay disabled. URLs and referrers are
+  scrubbed before configuration. External forks, preview domains, local builds,
+  and builds without a measurement ID make zero requests to Google hosts.
 
 ## Skill icons
 
