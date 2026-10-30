@@ -199,7 +199,7 @@ The `concepts_brief.md` artifact follows this structure:
 
 ## Alternatives Weighed
 
-[Each option rejected during ideation, with the technical reason (e.g. "Rejected by author: <reason>"). Do not attribute rejections to "maintainer" without explicit evidence. `/egm-draft` copies
+[Each option rejected during ideation, with the technical reason (e.g. "Rejected by author: <reason>"). Do not attribute a rejection to a maintainer without linking their issue, discussion, or PR. `/egm-draft` copies
 these into Alternatives Considered and has no other source for them.]
 
 ## Key Decisions & Staging for Next Steps

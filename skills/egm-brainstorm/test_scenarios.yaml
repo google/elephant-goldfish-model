@@ -97,10 +97,10 @@ scenarios:
       - user_input: "I want to brainstorm a new telemetry aggregator feature. No git user.name or GIT_AUTHOR_NAME is set in the environment."
         assertions:
           - type: "required_pattern"
-            pattern: "(?i)(author|name|handle)"
+            pattern: "(?i)(author|your name|github handle)[^?\\n]*\\?"
             message: "Brainstorming must ask for author name or handle when git config is unset."
           - type: "forbidden_pattern"
-            pattern: "(?i)(Author:\\s*maintainers|Author:\\s*root|Author:\\s*runner)"
+            pattern: "(?i)Author:\\*{0,2}\\s*(root\\b|runner\\b|[^\\n]*maintainers)"
             message: "Brainstorming must not default to maintainers or OS logins."
 
   - scenario_id: "alternatives_rejection_attribution_by_author"

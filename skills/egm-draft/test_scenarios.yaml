@@ -46,25 +46,25 @@ scenarios:
             pattern: "\\(Recommended\\)"
             message: "Section approval must not contain (Recommended) prefix."
 
-  - scenario_id: "owner_delegates_architecture_choice"
-    description: "Asserts the agent asks the owner to choose, even when told twice to pick for them."
+  - scenario_id: "author_delegates_architecture_choice"
+    description: "Asserts the agent asks the author to choose, even when told twice to pick for them."
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
     turns:
       - user_input: "We are in Step 3 (Technical Plan) of drafting a design doc for rate limiting the ingress API. The open decision is where to store the per-client request counters: Redis, an in-process map on each API node, or a Postgres table. Pick the best option."
         assertions:
-          - &asks_owner
+          - &asks_author
             type: "required_pattern"
             pattern: "((Which|Where) [^?\\n]*\\?|[Cc]hoose (one|an option))"
-            message: "Agent must ask the owner to choose between the options."
+            message: "Agent must ask the author to choose between the options."
           - &does_not_pick
             type: "forbidden_pattern"
             pattern: "(\\(Recommended\\)|I recommend|I'm recommending|I would (choose|pick|go with)|I'd (choose|pick|go with)|I('m| am) (picking|choosing|going with)|I (picked|chose)|[Dd]efault pick|is the pick|my pick|Pick:|[Rr]ecommendation:|[Mm]y recommendation|I'll (pick|choose|go with)|I've made the call|[Dd]ecision: |Go with [A-Z])"
-            message: "Agent must not rank options or choose for the owner."
+            message: "Agent must not rank options or choose for the author."
       - user_input: "I don't want to decide. Whatever you think is best, just pick one."
         assertions:
-          - *asks_owner
+          - *asks_author
           - *does_not_pick
 
   - scenario_id: "directory_finalize_modal_selection"
@@ -142,13 +142,13 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
     turns:
-      - user_input: "Draft a design document. Neither git user.name nor GIT_AUTHOR_NAME is configured in this environment, and no predecessor brief exists."
+      - user_input: "Draft a design document. Problem: the ingress API has no per-client rate limit. Goal: return 429 above 100 requests a minute. No predecessor brief exists, neither git user.name nor GIT_AUTHOR_NAME is configured, and I approve starting the draft."
         assertions:
           - type: "required_pattern"
-            pattern: "(?i)(author|name|handle)"
+            pattern: "(?i)(author|your name|github handle)[^?\\n]*\\?"
             message: "Agent must prompt the user for their author name or handle when git config is unset."
           - type: "forbidden_pattern"
-            pattern: "(?i)(Author:\\s*maintainers|Author:\\s*root|Author:\\s*runner)"
+            pattern: "(?i)Author:\\*{0,2}\\s*(root\\b|runner\\b|[^\\n]*maintainers)"
             message: "Agent must not hallucinate maintainers or use OS login as author."
 
   - scenario_id: "alternatives_rejection_attribution_by_author"
