@@ -3,6 +3,14 @@
 We welcome contributions! We all benefit when new ideas, skills, and reviewer
 perspectives are shared across the open-source community.
 
+## Which track is my change?
+
+Before submitting your contribution, please review the relevant guidelines and templates:
+*   For bug fixes and minor patches, refer to the [PR template](.github/PULL_REQUEST_TEMPLATE.md).
+*   For features or architectural changes, follow the [feature issue template](.github/ISSUE_TEMPLATE/feature_proposal.md) and consult the [design documentation](docs/designs/README.md).
+
+Please note that empty or off-topic issues and PRs will be closed.
+
 ## Design Principles
 
 These general principles guide development of the EGM framework:
