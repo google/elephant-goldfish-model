@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: "PR Scope Advisory"
+name: Check PR scope
 
 on:
   # zizmor: ignore[dangerous-triggers] - Only inspects PR metadata/diff stats and posts advisory comment; never checks out or executes untrusted code.
@@ -89,17 +89,27 @@ jobs:
                 per_page: 100
               }
             );
-            const existingComment = comments.find(c => (c.body || "").includes(signature));
+            const existingComment = comments.find(c => c.user?.login === "github-actions[bot]" && (c.body || "").includes(signature));
 
             const shouldAdvise = isBugFix && (nonTestChanges > 100 || coreFilesCount >= 3 || files.length >= 300);
 
             if (shouldAdvise) {
+              const scope = files.length >= 300
+                ? "This PR reaches the 300-file scan limit."
+                : `This PR changes ${nonTestChanges} counted lines and ${coreFilesCount} core files in skills/ or agents/.`;
+              const message = `${signature}\n### Scope check\n\nThank you for your contribution! ${scope} The minor-patch limit is 100 counted lines and fewer than 3 core files. Docs, tests, and lockfiles are excluded from these counts.\n\nAsk a maintainer whether this can proceed as a minor patch or needs the [design process](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CONTRIBUTING.md).\n\nThis notice does not block merging or grant approval.`;
               if (!existingComment) {
-                const message = `${signature}\n### Contribution Scope Advisory\n\nThank you for your contribution! This PR is marked as a **Bug Fix**, but modifies **${nonTestChanges} non-test lines** across **${coreFilesCount} core definition files** (\`skills/\`, \`agents/\`).\n\nFor changes exceeding 100 non-test lines or touching 3+ core files, we recommend reaching out to maintainers first via a [Feature Inquiry Issue](https://github.com/${context.repo.owner}/${context.repo.repo}/issues/new?template=feature_proposal.md) (\`design-ready\`), merging a full EGM design document PR (\`docs/designs/<name>.md\`) authored with \`/egm-brainstorm\`, \`/egm-draft\`, and \`/egm-review\`, and then submitting the implementation PR (\`pr-ready\`).\n\n*Note: This is a non-blocking advisory; your PR remains open in the maintainer queue.*`;
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: pr.number,
+                  body: message
+                });
+              } else if (existingComment.body !== message) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existingComment.id,
                   body: message
                 });
               }
@@ -110,6 +120,13 @@ jobs:
                 labels: [advisoryLabel]
               }).catch(() => {});
             } else {
+              if (existingComment) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existingComment.id
+                });
+              }
               // Bidirectional label cleanup if diff is trimmed or track is switched
               await github.rest.issues.removeLabel({
                 owner: context.repo.owner,
@@ -117,6 +134,18 @@ jobs:
                 issue_number: pr.number,
                 name: advisoryLabel
               }).catch(() => {});
+            }
+
+            const legacyLabel = "advisory: design-doc-suggested";
+            if (pr.labels?.some(label => label.name === legacyLabel)) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                name: legacyLabel
+              }).catch(error => {
+                if (error.status !== 404) throw error;
+              });
             }
 
             // Template conformance: the description must be the filled-in

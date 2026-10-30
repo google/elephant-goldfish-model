@@ -6,6 +6,9 @@ This document provides a step-by-step developer playbook for running unit tests 
 
 ## Setup
 
+Install Node.js 22 or newer for the offline scope-advisory workflow tests.
+These execute the workflow's JavaScript against a fake GitHub API.
+
 ### A. Python Environment Setup
 Create and activate an isolated Python 3.10+ virtual environment:
 
@@ -22,8 +25,9 @@ python3 -m venv .venv
 # Activate environment
 source .venv/bin/activate
 
-# Install testing dependencies
-pip install -r requirements-dev.txt
+# Dependency groups require pip 25.1 or newer
+python -m pip install --upgrade "pip>=25.1"
+python -m pip install --group test
 ```
 
 If your Python version is older than 3.10, install a newer version from [python.org/downloads](https://www.python.org/downloads/) or your system's package manager. Open a new terminal and verify the updated version before continuing. If `python3` still points to the older version, use the newer interpreter explicitly (for example, `python3.12 -m venv .venv`).
