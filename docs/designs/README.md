@@ -6,6 +6,7 @@ operational guardrails.
 
 | Document | Author | Primary Component |
 | :------- | :----- | :---------------- |
+| [ask.md](ask.md)<br>Draft read-only command that answers questions about EGM and suggests the next skill from workspace artifacts. | [@smituparmar01](https://github.com/smituparmar01) | `egm-ask` (#175) |
 | [skill_icons.md](skill_icons.md)<br>Canonical skill artwork shared by plugins, the README, and the website. | [@n3wth](https://github.com/n3wth) | Skill presentation |
 | [runtime_packaging.md](runtime_packaging.md)<br>Draft runtime package boundaries, permissions, and validation. | [@n3wth](https://github.com/n3wth) | Runtime packaging implementation (#136) |
 | [releases.md](releases.md)<br>Draft versioned archives, checksums, and manual release procedure. | [@n3wth](https://github.com/n3wth) | Release implementation (#137) |
