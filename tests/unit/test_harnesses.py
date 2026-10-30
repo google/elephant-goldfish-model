@@ -195,6 +195,7 @@ def test_claude_manifest_agents_and_shared_personas_resolve() -> None:
 def test_bundled_prompt_dependencies_and_harness_guides() -> None:
   assert (ROOT / "docs/claude.md").is_file()
   assert (ROOT / "docs/codex.md").is_file()
+  assert (ROOT / "docs/muse.md").is_file()
   skills = list((ROOT / "skills").glob("*/SKILL.md"))
   for skill in skills:
     text = skill.read_text(encoding="utf-8")
@@ -218,6 +219,6 @@ def test_bundled_prompt_dependencies_and_harness_guides() -> None:
 def test_artifact_directory_override_is_documented_for_each_harness() -> None:
   # The models match this exact line in the user's prompt or instruction file.
   marker = "EGM artifact directory: "
-  for guide in ("docs/claude.md", "docs/codex.md", "docs/harnesses.md"):
+  for guide in ("docs/claude.md", "docs/codex.md", "docs/harnesses.md", "docs/muse.md"):
     text = " ".join((ROOT / guide).read_text(encoding="utf-8").split())
     assert marker in text, f"{guide} does not document `{marker}<path>`"
