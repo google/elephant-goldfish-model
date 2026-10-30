@@ -45,7 +45,8 @@ dependencies. They validate YAML frontmatter schemas and relative link
 integrity, the portable plugin manifest, shared metadata consistency, and
 marketplace/component paths.
 
-The read-hook tests also require a POSIX `sh` on `PATH`. On Windows, use
+The read-hook tests require a POSIX `sh`, and the workflow-gate tests require
+`bash` on `PATH` to execute the workflow's actual shell step. On Windows, use
 Git for Windows and run the tests from Git Bash, or add its `bin` directory
 (containing `sh.exe`) to `PATH` in the current PowerShell session. Create
 the environment with `python -m venv .venv`, then activate it with
