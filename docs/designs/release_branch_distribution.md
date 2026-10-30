@@ -10,15 +10,15 @@ The Claude directory is Anthropic's catalog of plugins. Its submission portal
 scans a plugin folder in a GitHub repository. Today that folder,
 `distributions/claude`, holds the Claude runtime, the plugin package that users
 install. `scripts/pack_plugin.py` generates it and the repository commits it to
-`main`. This design stops committing it. When a maintainer publishes
-a release, a workflow verifies the release's attested `egm-claude-<version>.zip`
+`main`. This design stops committing it. After a maintainer publishes
+a release and dispatches the publisher from `main`, it verifies the attested `egm-claude-<version>.zip`
 and adds its contents as one commit to a generated branch, `release/claude`.
 The directory tracks that branch.
 
 ## Problem Statement
 
-A committed generated folder drifts from its source, and nothing in the
-repository keeps it current. The folder was added in f91dccb. From there to
+A committed generated folder requires manual synchronization with its source.
+The freshness test detects drift but does not regenerate it. The folder was added in f91dccb. From there to
 f0ba151, `git log --oneline f91dccb..f0ba151 -- README.md .claude-plugin agents
 skills docs` lists 48 source commits. `git log --oneline f91dccb^..f0ba151 --
 distributions/claude` lists 38 folder commits, including f91dccb.
@@ -28,8 +28,10 @@ a fresh build. It runs on pull requests, so it catches drift only against a
 `main` that is already stale. PR #208 ("docs: note Antigravity (agy CLI) also
 requires /egm: prefix") changed `README.md` and merged without regenerating the
 folder. The test now fails on `main` and on every open pull request, including
-Dependabot's. PR #209 ("fix(packaging): sync the packaged readme") regenerates
-the folder once. It does not prevent the next drift.
+Dependabot's. This is historical evidence from f0ba151, not current main:
+the packaged README has since been synchronized and #209 is closed.
+The current offline suite passes. A one-time synchronization does not prevent
+the next drift.
 
 ### Directory portal constraints
 
@@ -53,8 +55,9 @@ read on 2026-10-29.
 
 1.  `main` contains no generated copy of the Claude runtime.
 2.  The directory sees a new version only when a maintainer publishes a release.
-3.  The files on `release/claude` are exactly the files of the release's attested
-    `egm-claude-<version>.zip`. The workflow does not rebuild them.
+3.  The plugin subtree on `release/claude` contains exactly the files of the
+    release's attested `egm-claude-<version>.zip`. The workflow does not rebuild
+    them. The subtree is the branch root or the existing submission's fixed path.
 4.  A pull request cannot fail because a generated folder is stale.
 5.  Pull requests still fail if the runtime builder is broken.
 
@@ -77,9 +80,10 @@ depends on, is not measured (see Open Questions).
     Console form at `platform.claude.com/plugins/submissions`? The portal refuses
     a second submission for the same repository and plugin path from another
     organization. The first submission fixes the plugin path. This
-    design puts the plugin at the root of `release/claude`, so the plugin path
-    stays empty. If a submission with plugin path `distributions/claude` exists,
-    the branch layout must match it. The author's account has no submission for
+    design defaults to the root of `release/claude`, with an empty plugin path.
+    If a submission with plugin path `distributions/claude` exists, select that
+    prefix before publication and preserve it throughout rollout. Any other
+    existing path requires a design update before Phase 4. The author's account has no submission for
     this repository.
 2.  **Portal scan timing**: How soon after a push does the directory scan the new
     commit? The portal documents a scheduled check and an optional push webhook
@@ -96,8 +100,9 @@ depends on, is not measured (see Open Questions).
 *   **Given**: A release PR raised `version` in the plugin manifests listed in `docs/releases.md`.
     A `vMAJOR.MINOR.PATCH` tag exists on `main`. **Prepare draft release**
     (`release.yml`) produced a draft with attested ZIPs.
-*   **When**: The maintainer reviews the draft and publishes it.
-*   **Then**: The workflow verifies the Claude ZIP's attestation, extracts it, and
+*   **When**: The maintainer reviews and publishes the draft, then dispatches
+    **Publish Claude runtime branch** from `main` with the released tag.
+*   **Then**: The workflow verifies the attestation, validates the archive before extraction, and
     adds a commit to `release/claude`. The directory scans that commit as a new
     version.
 
@@ -119,9 +124,8 @@ depends on, is not measured (see Open Questions).
 
 ### CUJ 4: Publish an existing release by hand
 
-*   **Given**: A release exists but `release/claude` lacks it. Causes: the branch's first
-    publication, a release made before the workflow existed, a release published
-    with `GITHUB_TOKEN`, or a push that failed.
+*   **Given**: A release exists but `release/claude` lacks it. Causes include the
+    branch's first publication, an omitted dispatch, or a failed push.
 *   **When**: A maintainer runs the workflow from `main` with the tag.
 *   **Then**: The branch gains that release's commit. If the branch already holds
     identical content, the run reports that and changes nothing.
@@ -130,25 +134,27 @@ depends on, is not measured (see Open Questions).
 
 ```mermaid
 flowchart TD
-  A[Maintainer publishes release] --> B[Verify attestation of egm-claude ZIP]
-  B --> C[Extract ZIP]
+  A[Maintainer publishes release and dispatches from main] --> B[Verify attestation and validate archive]
+  B --> C[Safely extract validated regular files]
   C --> D[One commit on release/claude]
   D --> E[Directory portal scans the branch]
 ```
 
 ### Trigger
 
-`.github/workflows/publish-claude-branch.yml` runs on `release: published`, and
-on `workflow_dispatch` with a `tag` input for CUJ 4. The job's `if` skips
-release events for prereleases. For both triggers the workflow checks that the tag matches
+`.github/workflows/publish-claude-branch.yml` runs only on `workflow_dispatch`
+with a `tag` input. The workflow and publisher code must come from `main`,
+never from a release tag. Before checkout, require `github.ref` to equal
+`refs/heads/main`; checkout that same resolved main commit explicitly.
+The workflow checks that the tag matches
 `vMAJOR.MINOR.PATCH` and that the release is neither a draft nor a prerelease.
 It also checks that the tagged commit is an ancestor of `origin/main`
-(this needs `fetch-depth: 0`). A manual run must start from `main`, as `release.yml` requires.
+(this needs `fetch-depth: 0`). Record the trusted main workflow commit separately
+from the release tag and attested build source.
 
-A release event runs against the tagged commit, so only tags that contain the
-workflow file trigger it. GitHub does not start workflow runs from events that
-a workflow causes with the job token. For this reason, a release that another workflow
-publishes with that token does not trigger it. CUJ 4 covers both.
+A `release` event would select the tagged workflow and code, which may be old.
+It is therefore not a write-enabled trigger in this design. The documented
+release procedure includes the explicit main-branch dispatch after publication.
 
 ### Verify and extract
 
@@ -159,29 +165,49 @@ workflow run produced a given file. The release notes tell users to check it wit
 
 The new workflow downloads the single `egm-claude-*.zip` release asset and runs
 the same check with `--signer-workflow <repo>/.github/workflows/release.yml` and
-`--source-ref refs/heads/main`. It then extracts the ZIP. It does not run
+`--source-ref refs/heads/main`. Retain the verified attestation digest, actual
+source SHA, and build-run identity. Reject missing or ambiguous provenance.
+Record both the tag's commit and the actual attested source; do not present
+the former as a provenance assertion. It then validates the entire ZIP before
+creating any extracted files. It does not run
 `pack_plugin.py`. The published bytes are the attested bytes, so the design needs
 no assumption that the builder gives identical output on a different runner.
 
+Archive validation rejects absolute paths, `..` components, drive or UNC paths,
+backslashes, NULs, duplicate or case-colliding paths, and file/directory conflicts.
+Reject symlinks and special file types. Reject more than 4,096 entries or more
+than 64 MiB of total declared uncompressed data before reading entry data, and
+enforce that byte bound while reading. Verify every entry's CRC. These limits
+are above the current runtime's size and require a design change to increase.
+Fail closed on unsupported metadata.
+Only after all entries pass, write regular files beneath a new private staging
+directory using validated relative paths. Never call an unrestricted ZIP
+extractor. Verify the staged paths and bytes again before constructing a commit.
+Any failure removes staging and leaves the remote branch unchanged.
+
 ### Branch commit
 
-`scripts/publish_runtime_branch.py` takes the extracted folder, the ZIP, the tag,
-the source commit, the remote, and the branch name. Its contract:
+`scripts/publish_runtime_branch.py` takes the ZIP, a new staging directory,
+the tag, tagged commit, verified provenance, configured plugin path, remote,
+and branch name. Its contract:
 
 | Rule | Behavior |
 |---|---|
-| Inputs | Tag must match `vMAJOR.MINOR.PATCH` without leading zeroes. The commit must be 40 lowercase hex digits. Violations raise `ValueError`. |
-| Archive | Every ZIP entry must pass its CRC check. The folder must hold the same paths and bytes as the ZIP, which catches extraction faults. |
+| Inputs | Tag must match `vMAJOR.MINOR.PATCH` without leading zeroes. Every commit identity must be 40 lowercase hex digits. Provenance must include the verified SHA-256 digest and build-run identity. Plugin prefix must be empty or `distributions/claude`. Violations raise `ValueError`. |
+| Archive | Validate the complete archive before any extraction using the guards above. The staged folder must hold the same paths and bytes as the ZIP. |
 | Manifest | `.claude-plugin/plugin.json` must exist in the folder, and its `version` must equal the tag without `v`. |
 | Branch lookup | `git ls-remote --exit-code` exit 0 fetches the tip with `--depth=1`. Exit 2 starts an orphan branch. Any other exit raises `RuntimeError`. |
-| Repeat | If the folder equals the branch tree the script returns without committing. This check runs before the Order rule, so repeating the latest release succeeds. |
+| Repeat | If the ZIP paths and bytes under the configured prefix equal the branch tree, the script returns without committing. This check runs before the Order rule, so repeating the latest release succeeds. |
 | Order | The script refuses a version below the branch's. It also refuses the same version with other content. Versions compare as integer triples. |
-| Commit | One commit as `github-actions[bot]`, subject `Release <tag>`, body `Source: <commit>`. The source commit is the commit the tag points to when the workflow runs. The attestation does not prove that the ZIP came from it (see Security). |
+| Commit | One commit as `github-actions[bot]`, subject `Release <tag>`. Body records `Tagged-commit`, `Attested-source`, `Artifact-digest`, `Build-run`, and `Publisher-commit` separately from verified workflow outputs. Tag ancestry is not artifact provenance. |
 | Push | `git push origin HEAD:refs/heads/<branch>` without force. A Git failure raises `RuntimeError` with Git's message. |
 | Bytes | Every Git call runs with `core.autocrlf=false` and `core.safecrlf=false`, so committed bytes equal ZIP bytes on any platform. |
 
-The tree of every commit is the ZIP's tree. The plugin sits at the branch root,
-so its manifest path is `.claude-plugin/plugin.json`. Each commit stores a full
+The tree contains only the ZIP's files under the selected plugin prefix.
+The default manifest path is `.claude-plugin/plugin.json`; for an existing
+`distributions/claude` submission it is
+`distributions/claude/.claude-plugin/plugin.json`. Reject a prefix change after
+the branch's first publication. Each commit stores a full
 copy of about 250 kB, so history grows by about 250 kB per release.
 
 ### Failure handling and ordering
@@ -200,8 +226,11 @@ copy of about 250 kB, so history grows by about 250 kB per release.
 
 ### Security
 
-*   The workflow sets `permissions: {}` at the top and grants `contents: write`
-    only to the one job that pushes.
+*   The workflow sets `permissions: {}` at the top. Verification and extraction
+    use a read-only job. A separate push job gets `contents: write`, consumes
+    only the verified staged files and provenance, and repeats path/byte checks.
+    Neither job executes code from the tag or extracted archive. Both use the
+    same guarded main-branch workflow commit.
 *   The workflow pins actions by commit SHA, as the other workflows do. The tag passes
     through an environment variable. The workflow matches it against a regular expression
     before use. The workflow uses no secrets other than the job token. The token
@@ -210,8 +239,9 @@ copy of about 250 kB, so history grows by about 250 kB per release.
 *   The attestation binds `release/claude` to a ZIP that `release.yml` built on
     `main`. It does not bind the ZIP to the commit the tag points to, and `docs/releases.md`
     allows the attested source to differ from the tag. Anyone who can create a
-    tag already has write access. This design accepts that and relies on the
-    `v*` tag ruleset listed in this section.
+    tag already has write access. This design accepts that difference and records
+    both identities explicitly, rather than labeling the tagged commit as the
+    attested source. It relies on the `v*` tag ruleset listed in this section.
 *   The design does not enforce that only this workflow can push. GitHub rulesets restrict by
     actor, not by workflow. A maintainer with write access can push a normal
     commit to `release/claude`, and the portal scans it as a version.
@@ -304,14 +334,18 @@ request still fails through
 
 | Phase | Change | Gate before the next phase |
 |---|---|---|
-| 1 | Merge PR #209 so `main` is green. | Unit tests pass on `main`. |
+| 1 | Confirm current `main` passes the offline suite; the historical README drift was already fixed and #209 is closed. | Unit tests pass on the recorded main SHA. |
 | 2 | Merge the pull request that adds the script, its tests, and the workflow. | Tests and the repository's workflow scan pass. None of its files go into the runtime package, so the freshness test is unaffected. |
 | 3 | A maintainer adds the two rulesets above. | The rulesets are visible in the repository settings. |
-| 4 | After Open Question 1 (existing submission and layout) is answered, a maintainer runs the workflow by hand with the latest release tag. | `release/claude` exists with one commit, its tree equals the release ZIP, and the portal's Validate step passes on it. |
-| 5 | A maintainer submits in the portal with tracked branch `release/claude` and an empty plugin path. | The portal accepts the submission for scanning. |
+| 4 | After Open Question 1 is answered, configure the fixed plugin prefix and dispatch from main with the latest release tag. | The selected subtree equals the release ZIP, provenance identities are recorded, and portal Validate passes for that exact repository, branch, and plugin path. |
+| 5 | For a new submission, use the validated path from Phase 4. For an existing submission, preserve its repository and plugin path and change only its tracked branch to `release/claude`. | The portal accepts scanning at the selected path, and the owner confirms the listing now tracks the generated branch. |
 | 6 | One pull request deletes `distributions/claude` and the freshness test, and edits the documents listed in the Detailed Implementation Plan. | Unit tests pass, and adding the pull request branch as a marketplace followed by `claude plugin install egm@egm` succeeds. After the next release, `release/claude` gains that release's commit. |
 
-Phase 5 fixes the layout. Rollback for Phases 1 to 4 is to disable the workflow,
+Phase 4 selects the layout; Phase 5 preserves that choice. Phase 6 must not start
+until the actual submission has been verified on the generated branch. Keeping
+the same `distributions/claude` prefix on that branch permits deleting the
+generated copy from `main`; it does not change the submission's plugin path.
+Rollback for Phases 1 to 4 is to disable the workflow,
 have a maintainer lift the `release/claude` ruleset, and delete the branch. The branch is generated and holds nothing that is not in a
 release. After Phase 5, recovery is forward only (see Failure handling and
 ordering). A wrong plugin path needs a new submission. Restoring the committed folder after
@@ -334,29 +368,32 @@ points at it.
 #### 1. `scripts/publish_runtime_branch.py` (Create, Phase 2)
 
 *   **Type / Scope**: Python script, standard library only.
-*   **Proposed Changes**: `verify_archive(folder, archive)` and
-    `publish(folder, tag, commit, remote, branch) -> bool`, as the contract table
-    defines. The command line takes `--folder`, `--archive`, `--tag`,
-    `--commit`, `--remote`, and `--branch` (default `release/claude`). It runs
-    `verify_archive` and then `publish`, and prints `Published <tag> on <branch>`
+*   **Proposed Changes**: `validate_and_extract(archive, staging)` validates all
+    entries before writing files. `verify_archive(folder, archive)` rechecks the
+    staged tree, and `publish` enforces the branch contract above. The command
+    line takes the archive and staging paths, tag, tagged commit, verified
+    provenance record, remote, branch (default `release/claude`), and configured
+    plugin prefix. It validates, extracts, verifies, and then publishes. It prints `Published <tag> on <branch>`
     or `Already current: <tag> on <branch>`.
 
 #### 2. `.github/workflows/publish-claude-branch.yml` (Create, Phase 2)
 
 *   **Type / Scope**: GitHub Actions workflow named **Publish Claude runtime
-    branch**, with one job on `ubuntu-24.04` that uses the runner's `python3`.
-*   **Proposed Changes**: One job with these steps in order.
+    branch**, dispatched only from main, with read-only verification and a
+    separate write-enabled push job on `ubuntu-24.04`.
+*   **Proposed Changes**: These steps run in order across the two jobs.
 
 | Step | Behavior |
 |---|---|
-| Guard | Manual runs only: require `github.ref` to equal `refs/heads/main`. |
-| Checkout | `actions/checkout` pinned by SHA, `fetch-depth: 0`, `persist-credentials: false`. |
-| Resolve tag | Take `github.event.release.tag_name` or `inputs.tag` through `env`. Match the tag against `vMAJOR.MINOR.PATCH`. Resolve the tag's commit. Require it to be an ancestor of `origin/main`. Write `tag` and `commit` to step outputs. |
-| Download and verify | Require the release to be neither draft nor prerelease. `gh release download --pattern 'egm-claude-*.zip'`. Require exactly one file. `gh attestation verify` with the signer workflow and source ref. `unzip` to a runner temp folder. Pass the archive path through `GITHUB_ENV`. |
-| Publish | Build the base64 header from the job token, mask it, export it through `GIT_CONFIG_*` variables, and run the script with remote `https://github.com/<repo>.git`. |
+| Guard | Require `workflow_dispatch` and `github.ref == refs/heads/main` before any checkout or untrusted input use, in both jobs. |
+| Checkout | Pin `actions/checkout` by SHA. Explicitly use the guarded main workflow SHA, `fetch-depth: 0`, and `persist-credentials: false`. Never checkout the tag to execute publisher code. |
+| Resolve tag | Take `inputs.tag` through `env`. Validate semantic-version syntax, resolve its commit, and require main ancestry. Record the tag commit and publisher commit separately. |
+| Download and verify | Require a published non-prerelease. Download exactly one matching Claude ZIP. Verify attestation with the approved signer and main source ref; retain the verified digest, actual source SHA, and build-run identity. Reject incomplete or ambiguous verification output. |
+| Validate and stage | In the read-only job, validate the entire archive before extraction, then write only validated regular files to private staging. Verify staged paths and bytes against the archive. Pass archive, staging, and provenance through a digest-checked job artifact. |
+| Publish | In the write-enabled job, recheck artifact digest, staging bytes, provenance, manifest version, and fixed prefix. Build the masked token header through `GIT_CONFIG_*` only for the push step. Execute only the guarded main publisher code. |
 
-The workflow sets `permissions: {}` at the top level and `contents: write` on the
-job. The job-level `if` skips prereleases for release events. One concurrency
+The workflow sets `permissions: {}` at the top level, read permissions on the
+verification job, and `contents: write` only on the push job. One concurrency
 group, `publish-claude-branch`, has `cancel-in-progress: false`.
 
 #### 3. `tests/unit/test_publish_runtime_branch.py` (Create, Phase 2)
@@ -366,13 +403,17 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
 *   **Proposed Changes**: Each case asserts the remote is unchanged when it
     expects a failure.
     *   First release creates the branch with the bot author, subject, and
-        `Source:` body, and no co-author line.
+        separate tagged/source/digest/run/publisher provenance fields, and no co-author line.
     *   CRLF and LF bytes survive.
     *   A later release fast-forwards, keeps the parent, and removes deleted files.
     *   Identical content publishes nothing.
     *   Unrelated history already on the branch is kept.
     *   `verify_archive` rejects changed, extra, and missing files, and a
         corrupted entry.
+    *   Before any extraction write, reject path traversal, absolute and drive
+        paths, backslashes, duplicate/case-colliding entries, symlinks, special
+        files, file/directory collisions, excessive entry count or size, and
+        failed CRC checks. Assert staging and remote remain unchanged.
     *   `publish` rejects tags `1.2.3`, `v01.2.3`, and `v1.2.3;echo`, commit
         `abc`, a manifest version that differs from the tag, and a folder without a
         manifest. It also rejects a version below the branch's, the same version
@@ -380,8 +421,12 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
     *   An unreachable remote raises `RuntimeError("git ls-remote failed")`.
     *   A `pre-receive` hook that rejects the push raises `RuntimeError("git push
         failed")` (skipped on Windows, which lacks a POSIX shell).
-    *   A real build of the Claude runtime publishes with the manifest at the
-        root.
+    *   A real build publishes at the root and at `distributions/claude` in
+        separate repositories. A later prefix change is rejected.
+    *   Workflow guards reject dispatches from a tag or non-main branch before
+        checkout. Verification failure prevents the write job. The tag's code
+        is never executed. Distinct tag and attested source SHAs remain distinct
+        in the resulting commit metadata.
     *   The command line publishes, repeats as a no-op, and exits nonzero on a
         tampered folder.
 
@@ -395,15 +440,16 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
         becomes unused.
     *   `docs/directory.md`: replace the first five sentences of the paragraph
         that begins "For Anthropic, the generated runtime is checked in" (through
-        "Do not commit ZIPs.") with: "For Anthropic, publishing a release adds
-        the runtime to the `release/claude` branch. In the directory portal,
-        submit repository `google/elephant-goldfish-model` with tracked branch
-        `release/claude` and an empty plugin path. Do not commit the runtime or
+        "Do not commit ZIPs.") with: "For Anthropic, dispatching the publisher
+        from `main` after a release adds the runtime to `release/claude`. In the directory portal,
+        use repository `google/elephant-goldfish-model` with tracked branch
+        `release/claude` and the fixed plugin path validated in rollout. Preserve
+        an existing submission's path. Do not commit the runtime or
         ZIPs to `main`." Keep the OpenAI sentences.
     *   `docs/releases.md`: change step 2 to "Run `pytest tests/unit`. Include any
         migration notes in the PR." Change step 6 to: "Publish the draft manually
-        only after review. Publishing runs **Publish Claude runtime branch**,
-        which adds the release to `release/claude`. If it fails, fix the cause
+        only after review. Then dispatch **Publish Claude runtime branch** from
+        `main` with the released tag to add it to `release/claude`. If it fails, fix the cause
         and run it again from `main` with the tag. Directory publication is
         separate." The numbering does not change.
         This file is in the runtime package. If someone edits it before someone
@@ -434,17 +480,20 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
 ### Verification Plan
 
 *   **Compilation/Build**: Not applicable. The script is interpreted.
-*   **Unit Tests**: `pytest tests/unit` on the Ubuntu and Windows jobs. On `main`
-    at f0ba151, `test_published_claude_runtime_is_current` fails until PR #209
-    merges. With the change from PR #209, the full suite passes locally and on both
-    operating systems in the fork.
+*   **Unit Tests**: Run `pytest tests/unit` on Ubuntu and Windows against the
+    current main integration. The historical failure at f0ba151 and fork runs
+    below do not establish the revised implementation's status. #209 is closed;
+    do not use its merge as a rollout dependency.
 *   **Static Analysis & Linting**: `actionlint` and `zizmor` report nothing on the
     workflow, including `zizmor --persona=auditor`. The repository's Actions
     security scan runs on the pull request.
-*   **Test Coverage Requirement**: Every guard in the script has a test that fails
-    when the guard is removed. The author removed each guard in turn on
-    2026-10-29 to check this.
-*   **E2E/Integration**: The author ran these checks on 2026-10-29 and deleted the throwaway fork afterwards.
+*   **Test Coverage Requirement**: Every implemented guard must have a test that
+    fails when removed. The author's 2026-10-29 mutation checks covered the
+    earlier prototype, not the revised extraction and workflow trust boundaries.
+*   **E2E/Integration**: The author ran these historical prototype checks on
+    2026-10-29 and deleted the fork. They do not verify the revised main-only,
+    two-job workflow, safe extractor, alternate prefix, or provenance fields.
+    Stage 2 must rerun the checks for those revised contracts before rollout.
     *   Locally, against release v0.1.0 of the real repository: attestation
         verification passed, and the 63-entry ZIP published to a scratch bare
         repository as one commit. A repeat made no commit.
