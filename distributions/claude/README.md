@@ -23,11 +23,13 @@ Use it when a feature needs design decisions before implementation. For a small,
 
 Choose your coding agent. Install the complete plugin so its skills can read the reviewer prompts and document standards.
 
-### Antigravity
+### Antigravity CLI
 
 ```sh
 agy plugin install https://github.com/google/elephant-goldfish-model
 ```
+
+For the **Antigravity App** and **Antigravity for IDEs** (Visual Studio Code extension), run `/plugin` or see the [installation instructions](docs/harnesses.md#antigravity-app-and-antigravity-for-ides).
 
 ### Claude Code
 
@@ -49,7 +51,7 @@ Start a new session after installation. For **Claude Cowork** and **ChatGPT Work
 
 Open your project in your coding agent and choose a feature that needs design decisions. This example adds webhook delivery: what should happen when a delivery fails, or the same event arrives twice?
 
-Use the commands below in Antigravity. In Claude Code, use the `/egm:` prefix, for example `/egm:egm-brainstorm`. In Codex, select the corresponding EGM skill from the skill picker. Brainstorming and review require a session that can create fresh subagents.
+The commands below are shown without a prefix. In Antigravity (agy CLI) and Claude Code, add the `/egm:` prefix, for example `/egm:egm-brainstorm`. On agy CLI 1.4.10 an unprefixed name is completed to the prefixed command ([#220](https://github.com/google/elephant-goldfish-model/issues/220)), but 1.4.8 does not ([#196](https://github.com/google/elephant-goldfish-model/issues/196)), so keep the prefix. In Codex, select the corresponding EGM skill from the skill picker. Brainstorming and review require a session that can create fresh subagents.
 
 <img src="skills/egm-brainstorm/assets/icon.svg" width="20" height="20" align="top" alt=""> **Explore the idea**
 

@@ -103,14 +103,18 @@ The skill looks for EGM artifacts in the working directory, or in the folder
 named by an `EGM artifact directory: <path>` line, following the same rule as
 [claude.md](../claude.md). It checks for files by name only and reads at most
 the first heading and section titles of each, so a large draft does not fill
-the context.
+the context. File presence is a stage hint, not evidence that a workflow
+completed. A review report may be partial or left over from an earlier run.
+When completion matters, read its bounded status or summary section. If that
+does not establish completion for the current target, report the stage as
+unknown and ask the user which run or target they mean.
 
 | Artifacts found | Detected stage | Suggested next step |
 | :-------------- | :------------- | :------------------ |
 | None, and no `docs/designs/` | Not started | `/egm-brainstorm` for a new idea, or `/egm-bootstrap` to document an existing codebase |
 | `concepts_brief.md` only | Ideation done | `/egm-draft` (reads `concepts_brief.md` as its first input) |
 | `design_draft.md`, no review report | Draft in progress | Finish the draft, then `/egm-review <path>` |
-| `goldfish_review_report.md` or `consolidated_review_report.md` | Review done | `/egm-resolve` to work through the findings |
+| `goldfish_review_report.md` or `consolidated_review_report.md` | Review artifact present; completion must be checked | `/egm-resolve` only when the current review is complete; otherwise continue the pending review |
 | `docs/designs/*.md` and no in-progress artifacts | Designs checked in | Implement, or `/egm-drift-report` to compare designs with code |
 
 When more than one row matches, the skill names the most advanced stage and
@@ -214,7 +218,8 @@ Adding a skill touches the lists that name every skill:
 
 1.  Empty workspace, no question: suggests `/egm-brainstorm` or `/egm-bootstrap`.
 2.  Only `concepts_brief.md` present: suggests `/egm-draft`.
-3.  `goldfish_review_report.md` present: suggests `/egm-resolve`.
+3.  Complete current review report: suggests `/egm-resolve`. A partial or
+    stale report does not imply completion and does not bypass a pending gate.
 4.  "Which skill compares my designs with code?": recommends
     `/egm-drift-report` and cites its `SKILL.md`.
 5.  Persona-read failure: cites the permission section of `docs/claude.md`.
