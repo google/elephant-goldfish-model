@@ -69,7 +69,7 @@ while `agents/` contains reviewer personas. All hosts share the same `skills/`,
 | Codex | `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | `skills` path | Not shipped; general-purpose subagent reads the persona file |
 | ChatGPT | `plugin.json`, `.codex-plugin/plugin.json`; `.agents/plugins/marketplace.json` for workspace import | `skills` path | Detect native tools in the current session; general-purpose agent reads the persona |
 | omp | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` (Claude-compatible fallback) | `skills/` (default) | Personas from `agents/`/`.claude-plugin/agents/` register as native `task` agents |
-| Muse | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` (Claude-compatible fallback) | `skills/` (default) | 9 adapters import as agents; tool projections unsupported |
+| Muse | `.claude-plugin/plugin.json` (Claude-compatible fallback) | `skills/` (default) | 9 adapters import as agents; tool projections unsupported |
 
 Persona prompts live in `agents/`, the directory Antigravity
 scans for subagents. Each persona has `name` and `description` frontmatter, so
@@ -132,7 +132,7 @@ the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
 
 **omp** ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) has a working installation path. Skills are invoked as `/skill:egm-<command>` (omp registers one command per skill; it has no `/egm-*` namespace). Community-verified on omp v18.12.6: all seven skills discover and resolve, and all nine reviewer personas register as subagents. End-to-end workflow fixtures are not yet automated for omp.
 
-**Muse** (1.4.14) has a working installation path. `muse plugins validate` reports the plugin valid with all seven skills and all nine reviewer adapters supported; every agent tool projection is unsupported, so Claude tool allowlists do not restrict Muse reviewers. Install from a local path; `marketplace add` on this repository discovers zero plugins because Muse reads the Codex catalog first. End-to-end workflow fixtures passed on 2026-10-30 (brainstorm, draft, and uninterrupted review with 15 fresh-context reviewers); named `egm/egm-*` agents cannot be spawned in this runtime, so reviewers used the general-purpose fallback reading the installed persona first. See the [Muse guide](https://github.com/google/elephant-goldfish-model/blob/main/docs/muse.md).
+**Muse** (1.4.14) has a working installation path. `muse plugins validate` reports the plugin valid with all seven skills and all nine agent adapters supported; every agent tool projection is unsupported, so Claude tool allowlists do not restrict Muse reviewers. Install from a local path; `marketplace add` on this repository discovers zero plugins because Muse reads the Codex catalog first. End-to-end workflow fixtures passed on 2026-10-30 (brainstorm, draft, and uninterrupted review with 15 fresh-context reviewers); named `egm/egm-*` agents cannot be spawned in this runtime, so reviewers used the general-purpose fallback reading the installed persona first. See the [Muse guide](https://github.com/google/elephant-goldfish-model/blob/main/docs/muse.md).
 
 See the [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record) for tested surfaces and limits.
 

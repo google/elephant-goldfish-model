@@ -7,7 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 
 Muse loads EGM through its Claude-compatible plugin path: no Muse-native
 manifest is needed. The plugin validates with all seven skills and all nine
-reviewer adapters supported.
+agent adapters supported: seven reviewers, the synthesizer, and the bootstrap
+orchestrator.
+
+The skills route Codex and Claude sessions to their guides, but not Muse
+sessions. A Muse session doesn't read this file unless you point it here.
 
 ## Install and locate the plugin
 
@@ -26,14 +30,15 @@ so it never falls through to the Claude catalog. Install from a local path
 instead, and keep the source free of symlinks (remove scratch directories
 such as `.venv/` first; the installer rejects symlink entries). Approval is
 required once: skills stay active without review while
-the plugin is enabled, but the nine reviewer agent definitions need
+the plugin is enabled, but the nine agent definitions need
 `approve` before activation.
 
 Start a fresh session after installation. The skills surface as
 `plugin:egm:egm-*` with user-invocable-only activation; confirm with
-`muse skills list --source plugin`. Use each skill's discovered absolute
-`SKILL.md` path; do not assume a particular cache directory, version, or
-checkout location.
+`muse skills list --source plugin`. That prints `plugin://` URIs, not
+filesystem paths; get the installed path from the `cache=` field of
+`muse plugins inspect egm`. Do not assume a particular cache directory,
+version, or checkout location.
 
 From `<plugin>/skills/<skill>/SKILL.md`, the plugin root is three parent
 directories above the file. Resolve bundled `agents/`, `resources/`, and
@@ -49,14 +54,9 @@ the Codex one; Claude-only fields such as presentation metadata, `color`,
 and unknown agent frontmatter keys are ignored). Installing or discovering
 the plugin alone does not establish end-to-end workflow support.
 
-If the user's prompt or agent instructions file (`AGENTS.md`) has a line
-`EGM artifact directory: <path>`, write briefs, drafts, and reports to that
-folder: resolve a relative path against the working directory, and create the
-folder if it does not exist.
-
 ## Fresh-context reviewers
 
-Muse imports the nine Claude reviewer adapters as supported agent
+Muse imports the nine Claude adapters as supported agent
 definitions (`egm/egm-design`, `egm/egm-comprehension`, and so on), but
 every agent tool projection is unsupported: Claude tool allowlists do not
 restrict Muse reviewers, so do not assume reviewers are read-only. Inspect
@@ -67,8 +67,9 @@ Use a named reviewer agent when the session exposes it, and pass absolute
 paths to the persona, standards, target document, and explicitly selected
 reading list. Do not pass the parent transcript, private reasoning, or
 answers the document is supposed to explain. When named agents are
-unavailable, fall back to a general-purpose subagent that reads
-`agents/<persona>.md` first. On Muse 1.4.14 the named `egm/egm-*`
+unavailable, fall back to a general-purpose subagent that reads the persona
+file first. Match it by `name` frontmatter, not filename: `egm-design` is
+`agents/design_critic.md`. On Muse 1.4.14 the named `egm/egm-*`
 definitions report `trusted_enabled` in the plugin inventory but spawning
 one is rejected (`agent_definition_unavailable`), so the general-purpose
 fallback is the working path in practice.
@@ -107,7 +108,9 @@ Do not use `file://` links in Muse chat.
 Run the offline packaging checks with `pytest tests/unit`. The end-to-end
 workflow fixture (brainstorm, draft, and uninterrupted review through the
 installed plugin) passed on Muse 1.4.14 on 2026-10-30 with the
-general-purpose reviewer fallback described above; see the [harness test
+general-purpose reviewer fallback described above. It ran headless with
+approvals simulated up front, so interactive approval gates and chat link
+rendering are untested; see the [harness test
 record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record).
 Installing or discovering the plugin alone does not establish end-to-end
 workflow support.
