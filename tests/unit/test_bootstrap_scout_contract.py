@@ -42,11 +42,11 @@ def skill_text() -> str:
         # Any failure mode gets exactly one retry, including timeouts.
         ("failed, timed-out, and short scouts are retried once",
          r"Re-run once any scout that fails, times out, or under-reports coverage"),
-        # After the retry, covered chunks are kept and the gap is marked.
-        ("covered chunks are kept",
-         r"keep the other chunks' results"),
-        ("incomplete marker names the range",
-         r"\(Documentation incomplete: scout failed: <path:start-end>\)"),
+        # After the retry, verified results are kept and the gap is marked.
+        ("verified results are kept",
+         r"keep every result backed by `files_read`"),
+        ("incomplete marker names the uncovered range",
+         r"\(Documentation incomplete: scout failed: <uncovered path:start-end>\)"),
         ("marker goes in every section",
          r"to each of `D`'s three sections"),
         ("uncovered ranges and reason are recorded",

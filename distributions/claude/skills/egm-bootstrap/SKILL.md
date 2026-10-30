@@ -266,10 +266,11 @@ If your harness has no subagent tool, run the scout steps inline within a
             4.  Test files (`*_test.*`, `*Test.*`, `test_*.*`, `*.spec.*`):
                 ignore entirely, including in hybrid directories.
         *   *Child Fault Tolerance*: Re-run once any scout that fails, times
-            out, or under-reports coverage. If it still does, keep the other
-            chunks' results, add `(Documentation incomplete: scout failed:
-            <path:start-end>)` to each of `D`'s three sections, record `D`
-            with the uncovered ranges and the reason, and continue.
+            out, or under-reports coverage. If it still does, keep every
+            result backed by `files_read`, add `(Documentation incomplete:
+            scout failed: <uncovered path:start-end>)` to each of `D`'s three
+            sections, record `D` with the uncovered ranges and the reason, and
+            continue.
 
     *   **Parent Context Propagation**: When processing a parent directory `P`,
         retrieve the compiled interface summaries of its immediate child
