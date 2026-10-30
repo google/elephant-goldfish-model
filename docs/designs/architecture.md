@@ -103,7 +103,7 @@ sequenceDiagram
     Human->>Elephant: /egm-draft
     Elephant->>Artifact: Write docs/designs/FEATURE.md
     Human->>Reviewer: /egm-review docs/designs/FEATURE.md
-    Note over Reviewer: Zoom Out -> Comprehension -> Critic -> Readiness
+    Note over Reviewer: Zoom Out -> Comprehension -> Critic -> Zoom Out -> Readiness
     Reviewer->>Artifact: Write review reports & findings
     Human->>Reviewer: Triage & resolve findings (/egm-resolve)
     Human->>VCS: Open Pull Request with FEATURE.md
@@ -130,14 +130,16 @@ sequenceDiagram
 ### Phase 3: Isolated Verification (The Goldfish)
 
 *   **Command**: `/egm-review`
-*   **Execution**: Executes a 4-tier evaluation pipeline:
+*   **Execution**: Executes a five-stage evaluation pipeline:
     1.  **Step 5: Zoom Out Review**: Evaluates simplicity, YAGNI, and codebase
         reuse against `zoom-out-standard.md`.
     2.  **Step 6: Comprehension Test**: Isolated naive reader audits the doc for
         self-containment and missing background knowledge.
     3.  **Step 7: Critic Review**: Evaluates system design, scale bottlenecks,
         and failure modes against `feature-spec-standard.md`.
-    4.  **Step 8: Implementation Readiness Test**: Verifies file paths, function
+    4.  **Step 8: Intermediate Zoom Out**: Re-audits additions made during the
+        Comprehension and Critic stages against `zoom-out-standard.md`.
+    5.  **Step 9: Implementation Readiness Test**: Verifies file paths, function
         signatures, and test cases against
         `implementation-readiness-standard.md`.
 *   **Subagent Fan-Out/Fan-In**: The `synthesizer` persona spawns isolated
