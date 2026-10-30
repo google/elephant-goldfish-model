@@ -14,10 +14,13 @@ const disabled = await readFile(process.argv[2], 'utf8');
 const browser = await puppeteer.launch({ channel: 'chrome', executablePath: process.env.CHROME_PATH });
 const results = [];
 
-async function visit(host, { failed = false, html = enabled } = {}) {
+async function visit(host, { failed = false, holdGtag = false, html = enabled } = {}) {
   const page = await browser.newPage();
   const requests = [];
   const errors = [];
+  let releaseGtag;
+  let observedGtag;
+  const gtagRequested = new Promise(resolve => { observedGtag = resolve; });
   page.on('pageerror', error => errors.push(error.message));
   await page.setRequestInterception(true);
   page.on('request', request => {
@@ -70,12 +73,18 @@ async function visit(host, { failed = false, html = enabled } = {}) {
       body = html;
     }
     // Respond to every request; nothing reaches Google or another network host.
-    void request.respond({ status: 200, contentType, headers: { 'access-control-allow-origin': '*' }, body });
+    const respond = () => request.respond({ status: 200, contentType, headers: { 'access-control-allow-origin': '*' }, body });
+    if (holdGtag && url.hostname === 'www.googletagmanager.com') {
+      releaseGtag = respond;
+      observedGtag();
+    } else {
+      void respond();
+    }
   });
   await page.goto(`https://${host}/?private=secret&utm_source=test#private`, { waitUntil: 'load' });
   const gaRequests = () => requests.filter(url => new URL(url).hostname === 'www.googletagmanager.com');
   const collects = () => requests.filter(url => new URL(url).hostname === 'www.google-analytics.com');
-  return { page, requests, gaRequests, collects, errors };
+  return { page, requests, gaRequests, collects, errors, gtagRequested, releaseGtag: () => releaseGtag() };
 }
 
 try {
@@ -116,12 +125,35 @@ try {
   assert.equal(await delayed.page.evaluate(() => window.__disabledAtDenial.at(-1)), true);
   results.push({ case: 'revocation blocks future measurements', pass: true });
 
+  await delayed.page.evaluate(() => {
+    window.__changeConsent('ACCEPTED');
+    window.gtag('event', 'after_regrant');
+  });
+  await delayed.page.waitForNetworkIdle();
+  assert.equal(delayed.collects().length, 3, 'a new affirmative grant must permit later events');
+  assert.equal(delayed.gaRequests().length, 1, 'regrant must reuse the loaded script');
+  results.push({ case: 'regrant resumes measurements without duplicate loading', pass: true });
+
   await delayed.page.evaluate(() => { window.__finishConsent(); window.__finishConsent(); });
   assert.equal(await delayed.page.evaluate(() => document.querySelectorAll('script[src*="googletagmanager.com"]').length), 1);
   assert.equal(await delayed.page.evaluate(() => window.dataLayer.filter(args => args[0] === 'config').length), 1);
   assert.deepEqual(delayed.errors, []);
   results.push({ case: 'repeated callbacks', pass: true });
   await delayed.page.close();
+
+  const race = await visit('egm.dev', { holdGtag: true });
+  await race.page.evaluate(() => window.__finishConsent('ACCEPTED'));
+  await race.gtagRequested;
+  assert.equal(await race.page.evaluate(() => window.__gaCommands), undefined);
+  await race.page.evaluate(() => window.__changeConsent('REJECTED'));
+  assert.equal(await race.page.evaluate(() => window['ga-disable-G-TEST']), true);
+  await race.releaseGtag();
+  await race.page.waitForFunction(() => window.__gaCommands !== undefined);
+  await race.page.waitForNetworkIdle();
+  assert.equal(race.collects().length, 0, 'revoking before the script executes must prevent queued measurements');
+  assert.deepEqual(race.errors, []);
+  results.push({ case: 'grant then revoke before GA response executes', pass: true });
+  await race.page.close();
 
   for (const [status, required] of [['REJECTED', true], ['ACCEPTED', false], ['ACCEPTED', true]]) {
     const initial = await visit('egm.dev');
