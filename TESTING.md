@@ -6,6 +6,9 @@ This document provides a step-by-step developer playbook for running unit tests 
 
 ## Setup
 
+Install Node.js 22 or newer for the offline scope-advisory workflow tests.
+These execute the workflow's JavaScript against a fake GitHub API.
+
 ### A. Python Environment Setup
 Create and activate an isolated Python 3.10+ virtual environment:
 
@@ -22,8 +25,9 @@ python3 -m venv .venv
 # Activate environment
 source .venv/bin/activate
 
-# Install testing dependencies
-pip install -r requirements-dev.txt
+# Dependency groups require pip 25.1 or newer
+python -m pip install --upgrade "pip>=25.1"
+python -m pip install --group test
 ```
 
 If your Python version is older than 3.10, install a newer version from [python.org/downloads](https://www.python.org/downloads/) or your system's package manager. Open a new terminal and verify the updated version before continuing. If `python3` still points to the older version, use the newer interpreter explicitly (for example, `python3.12 -m venv .venv`).
@@ -41,7 +45,8 @@ dependencies. They validate YAML frontmatter schemas and relative link
 integrity, the portable plugin manifest, shared metadata consistency, and
 marketplace/component paths.
 
-The read-hook tests also require a POSIX `sh` on `PATH`. On Windows, use
+The read-hook tests require a POSIX `sh`, and the workflow-gate tests require
+`bash` on `PATH` to execute the workflow's actual shell step. On Windows, use
 Git for Windows and run the tests from Git Bash, or add its `bin` directory
 (containing `sh.exe`) to `PATH` in the current PowerShell session. Create
 the environment with `python -m venv .venv`, then activate it with
@@ -50,6 +55,11 @@ in Git Bash. Install the test dependencies as described above.
 Shell scripts use LF line endings through `.gitattributes`, including when
 Git's `core.autocrlf` is enabled. CI runs this offline suite on Ubuntu and
 Windows; this does not establish native host workflow support.
+
+The `CI` check waits for both unit jobs and fails if validation fails, is
+cancelled, or is skipped. Workflows that include site validation must list it
+as a `CI` dependency too. A new push cancels older runs for the same pull
+request. Pushes to `main` keep independent runs.
 
 ```bash
 # Run all unit tests
