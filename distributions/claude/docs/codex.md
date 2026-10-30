@@ -66,6 +66,13 @@ services, or project instructions. Do not retrieve conversation history or
 memory to supply missing design context. An isolation test should use a unique
 parent-only marker and check the actual child result, not the parent's claim.
 
+The `fork_context: false` and `fork_turns: "none"` options concern parent
+conversation turns. They do not prove that Codex excludes host instruction
+files. Issue [#237](https://github.com/google/elephant-goldfish-model/issues/237)
+reports that Codex CLI 0.166.0 injected project and user `AGENTS.md` files
+despite `fork_turns: "none"`. Treat instruction-file exclusion as unverified
+unless a separate child-context probe confirms it for the tested host version.
+
 ## Questions and artifacts
 
 The shared skills' question payloads describe the intended interaction, not a
