@@ -6,6 +6,9 @@ You are assisting development in the EGM repository.
 
 * **No Autonomous PRs**: You must never automatically open a pull request without
   explicit human review, testing, and approval.
+* **No Design Docs for Bug Fixes**: Never create files in `docs/designs/` for bug fixes,
+  minor patches, or non-test diffs `<= 100` lines. Design docs are strictly reserved
+  for Stage 1 feature proposals.
 * **Triage Taxonomy**: Ensure the human operator selects the appropriate track in
   [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md):
   * `Bug Fix / Minor Patch` (non-test diff `<= 100` lines and `< 3` core files in
