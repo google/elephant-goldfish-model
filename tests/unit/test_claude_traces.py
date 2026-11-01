@@ -47,7 +47,7 @@ def test_trace_directory(
 @pytest.mark.parametrize("result", [
     "success", "error", "missing", "unrelated", "empty", "whitespace",
     "empty_text_block", "whitespace_text_block", "valid_text_blocks",
-    "subagent_handback",
+    "subagent_handback", "malformed_handback",
 ])
 def test_child_probe_requires_successful_read(result: str) -> None:
   check = runpy.run_path(str(ROOT / "tests/integration/test_claude.py"))[
@@ -75,10 +75,14 @@ def test_child_probe_requires_successful_read(result: str) -> None:
         "is_error": result == "error",
         "content": content,
     }]}})
-  if result == "subagent_handback":
+  if result in {"subagent_handback", "malformed_handback"}:
     events.append({"type": "assistant", "message": {"content": [{
-        "type": "tool_use", "name": "SubagentHandback",
-        "input": {"message": "UNKNOWN"},
+        "type": "tool_use", "id": "handback", "name": "SubagentHandback",
+        "input": {"message": None if result == "malformed_handback" else "UNKNOWN"},
+    }]}})
+    events.append({"type": "user", "message": {"content": [{
+        "type": "tool_result", "tool_use_id": "handback",
+        "content": [{"type": "text", "text": '{"success":true}'}],
     }]}})
   else:
     events.append({"type": "assistant", "message": {"content": [{
@@ -88,7 +92,11 @@ def test_child_probe_requires_successful_read(result: str) -> None:
   if result in {"success", "valid_text_blocks", "subagent_handback"}:
     check(raw, persona, ["parent-only-marker"])
   else:
-    with pytest.raises(AssertionError, match="successful native tool result"):
+    message = (
+        "Malformed SubagentHandback" if result == "malformed_handback"
+        else "successful native tool result"
+    )
+    with pytest.raises(AssertionError, match=message):
       check(raw, persona, ["parent-only-marker"])
 
 
@@ -118,7 +126,7 @@ def test_child_probe_keeps_unicode_inside_json_records(separator: str) -> None:
 
 
 @pytest.mark.parametrize("result", [
-    "denied", "missing", "unrelated", "success", "empty", "duplicate",
+    "denied", "handback", "missing", "unrelated", "success", "empty", "duplicate",
     "wrong_sentinel", "extra_read",
 ])
 def test_denied_persona_requires_correlated_error(result: str) -> None:
@@ -141,12 +149,22 @@ def test_denied_persona_requires_correlated_error(result: str) -> None:
       events.append(events[-1])
   if result == "extra_read":
     events.append({"type": "assistant", "message": {"content": [read]}})
-  events.append({"type": "assistant", "message": {"content": [{
-      "type": "text", "text": "UNKNOWN" if result == "wrong_sentinel"
-      else "Cannot read the persona.\nRESOURCE_UNREADABLE",
-  }]}})
+  if result == "handback":
+    events.append({"type": "assistant", "message": {"content": [{
+        "type": "tool_use", "id": "handback", "name": "SubagentHandback",
+        "input": {"message": "Cannot read the persona.\nRESOURCE_UNREADABLE"},
+    }]}})
+    events.append({"type": "user", "message": {"content": [{
+        "type": "tool_result", "tool_use_id": "handback",
+        "content": [{"type": "text", "text": '{"success":true}'}],
+    }]}})
+  else:
+    events.append({"type": "assistant", "message": {"content": [{
+        "type": "text", "text": "UNKNOWN" if result == "wrong_sentinel"
+        else "Cannot read the persona.\nRESOURCE_UNREADABLE",
+    }]}})
   raw = "\n".join(json.dumps(event) for event in events)
-  if result == "denied":
+  if result in {"denied", "handback"}:
     check(raw, persona, ["parent-only-marker"], deny_persona=True)
   else:
     with pytest.raises(AssertionError):

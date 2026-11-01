@@ -33,6 +33,8 @@ def assert_child_probe(
   answers = []
   child_reads = []
   read_results = []
+  handback_ids = set()
+  handback_results = []
   for line in raw.split("\n"):
     if not line.strip():
       continue
@@ -40,17 +42,25 @@ def assert_child_probe(
     content = event.get("message", {}).get("content", [])
     for block in content if isinstance(content, list) else []:
       if event.get("type") == "assistant":
-        if block.get("type") == "tool_use":
-          if block.get("name") == "SubagentHandback":
+        if block["type"] == "tool_use":
+          if block["name"] == "SubagentHandback":
             message = block.get("input", {}).get("message")
-            if isinstance(message, str):
-              answers.append(message)
+            assert isinstance(block.get("id"), str) and isinstance(message, str), (
+                "Malformed SubagentHandback"
+            )
+            handback_ids.add(block["id"])
+            answers.append(message)
           else:
-            assert block.get("name") == "Read"
+            assert block["name"] == "Read"
             child_reads.append((block["id"], block["input"]["file_path"]))
-        if block.get("type") == "text":
+        if block["type"] == "text":
           answers.append(block["text"])
       if event.get("type") == "user" and block["type"] == "tool_result":
+        if block["tool_use_id"] in handback_ids:
+          handback_results.append((
+              block["tool_use_id"], bool(block.get("is_error")),
+          ))
+          continue
         result = block.get("content", "")
         if isinstance(result, list):
           result = "".join(
@@ -66,6 +76,10 @@ def assert_child_probe(
       "RESOURCE_UNREADABLE" if deny_persona else "UNKNOWN"
   ]
   assert [path for _, path in child_reads] == [str(persona)]
+  if handback_ids:
+    assert len(handback_ids) == 1 and handback_results == [
+        (next(iter(handback_ids)), False)
+    ], "SubagentHandback has no single successful tool result"
   assert read_results == [(child_reads[0][0], deny_persona, True)], (
       "Persona read has no correlated native denial result" if deny_persona
       else "Persona read has no successful native tool result"
