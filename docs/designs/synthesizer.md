@@ -113,7 +113,8 @@ context:
 
 | File Path | Type | Purpose & Reason for Existence |
 | :-------- | :--- | :----------------------------- |
-| `agents/synthesizer.md` | Persona Prompt | System prompt, tool permissions, and operational logic for the `synthesizer` orchestration persona. |
+| `agents/synthesizer.md` | Persona Prompt | System prompt and operational logic for the `synthesizer` orchestration persona. |
+| `.claude-plugin/agents/synthesizer.md` | Claude Code Adapter | Tool permissions for the synthesizer in Claude Code. |
 
 ## References
 
