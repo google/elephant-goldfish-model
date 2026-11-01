@@ -153,7 +153,9 @@ def test_claude_synthesizer_adapter_is_tool_restricted() -> None:
   assert set(config["tools"]) == {"Agent", "Read", "Grep", "Glob", "Write"}
   assert config["model"] == "inherit"
   assert "memory" not in config
-  assert "${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md" in adapter.read_text()
+  text = " ".join(adapter.read_text(encoding="utf-8").split())
+  assert "${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md" in text
+  assert "Write only the report or brief your task asks for" in text
   canonical = frontmatter(ROOT / "agents/synthesizer.md")
   assert canonical["name"] == config["name"]
   assert "tools" not in canonical
