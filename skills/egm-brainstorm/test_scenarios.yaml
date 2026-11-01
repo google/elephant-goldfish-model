@@ -87,3 +87,35 @@ scenarios:
           - type: "contains"
             pattern: "RabbitMQ"
             message: "Decision matrix must evaluate RabbitMQ."
+  - scenario_id: "brief_author_and_rejection_attribution"
+    description: "Records the configured author and avoids attributing decisions to maintainers."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-brainstorm/SKILL.md"
+    turns:
+      - user_input: "The repository's git config user.name is Dana Lee. I rejected Redis because the team cannot operate another service. Add that to the Alternatives Weighed section of the brief."
+        assertions:
+          - type: "required_pattern"
+            pattern: "Dana Lee"
+            message: "Brief should use the provided git author name."
+          - type: "required_pattern"
+            pattern: "Rejected by author"
+            message: "Rejected alternatives should be attributed to the author."
+          - type: "forbidden_pattern"
+            pattern: "[Rr]ejected by maintainer"
+            message: "Brief must not invent maintainer decisions."
+
+  - scenario_id: "brief_author_prompt_when_git_name_is_unset"
+    description: "Asks the user for an author name when git config has none."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-brainstorm/SKILL.md"
+    turns:
+      - user_input: "git config user.name is unset. Start a new concepts brief."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(what|which).{0,40}author"
+            message: "Brainstorming must ask the user for an author name."
+          - type: "forbidden_pattern"
+            pattern: "(?i)maintainers?"
+            message: "Brainstorming must not substitute maintainer identity."

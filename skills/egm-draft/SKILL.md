@@ -60,15 +60,27 @@ the aligned problem and requirements from the brainstorm phase.
     strictly one question (`len(questions) == 1`), be the sole tool call in the
     turn, and provide clear, action-oriented options without `(Recommended)`
     prefixes.
-13. **Owner Decides Architecture**: When a design decision has more than one
+13. **Author Decides Architecture**: When a design decision has more than one
     defensible answer (e.g., data model, component boundaries, storage,
     protocols), present up to three options, each with its mechanism,
-    trade-offs, and the conditions under which it fails, and ask the owner to
+    trade-offs, and the conditions under which it fails, and ask the author to
     choose through a single-select gate. Do not rank the options, mark a
-    default, or pick one. If the owner asks you to choose ("just pick one"),
+    default, or pick one. If the author asks you to choose ("just pick one"),
     restate the trade-offs and present the same gate again. Decide mechanical
     choices with one defensible answer (e.g., file naming, formatting)
     yourself.
+14. **Author and Decision Attribution**: Before creating a new `design_draft.md`
+    or final design document, run `git config user.name` in the target
+    repository and use its non-empty value exactly in the `Author` field. If
+    the command is unavailable or returns an empty value, ask the user what
+    author name to use and wait for their answer. Never infer an author from
+    the repository name, organization, or maintainers. When resuming a draft
+    with a populated `Author` field, preserve it unless the user asks to change
+    it. Record a rejected alternative as `Rejected by author: <specific
+    technical reason>` only when that reason is stated by the author in the
+    conversation or predecessor brief; ask for the reason if it is missing.
+    Never attribute an author's decision to a maintainer or imply maintainer
+    consensus.
 
 ## Inputs
 
@@ -198,7 +210,9 @@ this strict generation order:
 1.  **Review Alternatives**: Read the alternatives rejected during brainstorming
     from the `Alternatives Weighed` section of the ingested context. Do not
     rely on memory: drafting often runs in a new session. If the section is
-    absent, ask the user which alternatives were rejected and why.
+    absent, ask the user which alternatives were rejected and why. Attribute
+    each decision to the author with `Rejected by author: <specific technical
+    reason>`; do not claim that a maintainer rejected or approved it.
 2.  **Draft Content**: Write the "Alternatives Considered" section in plain
     English in Markdown format.
 3.  **Detail Reasons**: For each alternative, explicitly state *why* it was

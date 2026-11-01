@@ -86,6 +86,16 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
     strictly one question (`len(questions) == 1`), be the sole tool call in the
     turn, and provide clear, action-oriented options without `(Recommended)`
     prefixes.
+14. **Author and Decision Attribution**: Before creating a new
+    `concepts_brief.md`, run `git config user.name` in the target repository and
+    use its non-empty value exactly in the `Author` field. If the command is
+    unavailable or returns an empty value, ask the user what author name to use
+    and wait for their answer. Never infer an author from the repository name,
+    organization, or maintainers. When refining a brief with a populated
+    `Author` field, preserve it unless the user asks to change it. Record each
+    rejected alternative as `Rejected by author: <specific technical reason>`
+    based on the author's stated decision; ask for the reason if it is missing.
+    Never attribute the decision to a maintainer or imply maintainer consensus.
 
 ## The Goldfish Brainstorming Lenses
 
@@ -199,7 +209,9 @@ The `concepts_brief.md` artifact follows this structure:
 ## Alternatives Weighed
 
 [Each option rejected during ideation, with the reason. `/egm-draft` copies
-these into Alternatives Considered and has no other source for them.]
+these into Alternatives Considered and has no other source for them. Attribute
+each as `Rejected by author: <specific technical reason>`; never imply a
+maintainer decision.]
 
 ## Key Decisions & Staging for Next Steps
 
