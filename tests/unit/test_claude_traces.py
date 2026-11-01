@@ -47,7 +47,7 @@ def test_trace_directory(
 @pytest.mark.parametrize("result", [
     "success", "error", "missing", "unrelated", "empty", "whitespace",
     "empty_text_block", "whitespace_text_block", "valid_text_blocks",
-    "subagent_handback", "malformed_handback",
+    "subagent_handback", "malformed_handback", "malformed_handback_input",
 ])
 def test_child_probe_requires_successful_read(result: str) -> None:
   check = runpy.run_path(str(ROOT / "tests/integration/test_claude.py"))[
@@ -75,10 +75,16 @@ def test_child_probe_requires_successful_read(result: str) -> None:
         "is_error": result == "error",
         "content": content,
     }]}})
-  if result in {"subagent_handback", "malformed_handback"}:
+  if result in {
+      "subagent_handback", "malformed_handback", "malformed_handback_input",
+  }:
+    tool_input = (
+        ["UNKNOWN"] if result == "malformed_handback_input"
+        else {"message": None if result == "malformed_handback" else "UNKNOWN"}
+    )
     events.append({"type": "assistant", "message": {"content": [{
         "type": "tool_use", "id": "handback", "name": "SubagentHandback",
-        "input": {"message": None if result == "malformed_handback" else "UNKNOWN"},
+        "input": tool_input,
     }]}})
     events.append({"type": "user", "message": {"content": [{
         "type": "tool_result", "tool_use_id": "handback",
@@ -93,7 +99,7 @@ def test_child_probe_requires_successful_read(result: str) -> None:
     check(raw, persona, ["parent-only-marker"])
   else:
     message = (
-        "Malformed SubagentHandback" if result == "malformed_handback"
+        "Malformed SubagentHandback" if result.startswith("malformed_handback")
         else "successful native tool result"
     )
     with pytest.raises(AssertionError, match=message):

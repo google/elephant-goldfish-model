@@ -35,6 +35,7 @@ def assert_child_probe(
   read_results = []
   handback_ids = set()
   handback_results = []
+  handback_count = 0
   for line in raw.split("\n"):
     if not line.strip():
       continue
@@ -44,12 +45,17 @@ def assert_child_probe(
       if event.get("type") == "assistant":
         if block["type"] == "tool_use":
           if block["name"] == "SubagentHandback":
-            message = block.get("input", {}).get("message")
-            assert isinstance(block.get("id"), str) and isinstance(message, str), (
+            tool_input = block.get("input")
+            assert (
+                isinstance(block.get("id"), str)
+                and isinstance(tool_input, dict)
+                and isinstance(tool_input.get("message"), str)
+            ), (
                 "Malformed SubagentHandback"
             )
+            handback_count += 1
             handback_ids.add(block["id"])
-            answers.append(message)
+            answers.append(tool_input["message"])
           else:
             assert block["name"] == "Read"
             child_reads.append((block["id"], block["input"]["file_path"]))
@@ -77,7 +83,7 @@ def assert_child_probe(
   ]
   assert [path for _, path in child_reads] == [str(persona)]
   if handback_ids:
-    assert len(handback_ids) == 1 and handback_results == [
+    assert handback_count == 1 and handback_results == [
         (next(iter(handback_ids)), False)
     ], "SubagentHandback has no single successful tool result"
   assert read_results == [(child_reads[0][0], deny_persona, True)], (
