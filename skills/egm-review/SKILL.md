@@ -72,8 +72,7 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
 
 *   **`TargetFile`**: Absolute or relative path to the design document.
 *   **`GoldfishContext`** (Optional): Reading list to establish the system
-    baseline. If omitted, the system defaults to no additional context (but
-    always automatically reads files linked or referenced in the design doc).
+    baseline. If omitted, it holds only the linked files that Step 1 adds.
 *   **`Step` (Optional)**: Specific pipeline preset or stage to run (e.g.
     `interactive`, `uninterrupted`, `feature_spec`, `implementation`, or an
     individual stage `5`, `6`, `7`, `8`, `9`). If omitted, the user is prompted.
@@ -89,16 +88,33 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
         use structured question tools such as `ask_question`, as providing an
         arbitrary file path is an open-ended text input, not a choice between
         fixed options) and end your turn.
-2.  Once `TargetFile` is provided, verify if `GoldfishContext` is provided (or
-    if the user explicitly stated in their prompt to proceed with no additional
-    context). If missing:
+2.  Once `TargetFile` is provided, verify if `GoldfishContext` is provided (an
+    empty list counts as provided, as does the user explicitly stating in their
+    prompt to proceed with no additional context). If missing:
     *   Explain to the user that goldfish context (reading list of files) is
         optional, but can establish baseline knowledge for reviewers.
-    *   Clarify that reviewers **always automatically read** files explicitly
-        mentioned or linked in the target design document itself.
+    *   Clarify that linked files inside the working directory are added
+        before the review starts, and that other links and URLs need approval.
     *   Prompt the user in chat via regular text if they wish to provide
         additional context files. Do NOT use structured question tools for
         open-ended file paths.
+3.  **Linked Files (run later)**: Do not run this during intake. Run it once,
+    after the Step 2 preset is chosen and right before the first review stage
+    of any flow (including `uninterrupted`): read `TargetFile` and collect the
+    files it links to.
+    Skip links that are only a section anchor (`#...`), drop the `#fragment`
+    from other links, resolve each relative link against the design
+    document's own folder, and skip links to files that do not exist. Add each
+    link whose real path (after following symbolic links) stays inside the
+    working directory to `GoldfishContext`. If any link resolves outside the
+    working directory or is a URL, list those links in chat via regular text,
+    ask which to include, and end your turn. Add only the ones the user
+    approves, and tell the user which links were left out. Some reviewers
+    cannot open URLs, so save each approved page as a file and pass its path.
+    In every flow, pass `GoldfishContext` to Stages 5, 7, 8, and 9; when a
+    stage uses the synthesizer, tell it to give these files to each reviewer.
+    Do not pass it to Stage 6 (Comprehension Test), which reads the document
+    with no outside context.
 
 ### Step 2: Curated Pipeline Preset Selection
 
@@ -348,9 +364,9 @@ plain chat):
 ### Subflow: Critic Review
 
 1.  **Invoke Antagonistic Review Loop**: Invoke `egm-review-loop` in-thread on
-    `FeatureRange` with reviewers `[egm-design, egm-structural, egm-style]` and
+    `FeatureRange` with reviewers `[egm-design, egm-structural, egm-style]`,
     standards `{"egm-design": "feature-spec-standard", "egm-structural":
-    "feature-spec-standard"}`.
+    "feature-spec-standard"}`, and `GoldfishContext`.
 2.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
     `critic_report.md` (give its path).
 3.  **Checkpoint Gate**: Present the Stage 7 gate:
@@ -378,7 +394,8 @@ plain chat):
     `DetailedRange` with reviewers `[egm-implementation-readiness,
     egm-codebase-details, egm-style]` and standards
     `{"egm-implementation-readiness": "implementation-readiness-standard",
-    "egm-codebase-details": "implementation-readiness-standard"}`.
+    "egm-codebase-details": "implementation-readiness-standard"}`, and
+    `GoldfishContext`.
 2.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
     `implementation_readiness_report.md` (give its path).
 3.  **Terminal Checkpoint Gate**: Present the Stage 9 terminal gate:
