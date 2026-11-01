@@ -57,7 +57,8 @@ Claude Code's normal permission prompts; current versions can surface background
 reviewer prompts in the parent session. For headless runs, the user must grant
 read access to the resolved plugin's `agents/`, `docs/`, `resources/`, and
 `skills/` folders using Claude Code's permission settings. Keep write access
-limited to the project and intended output directory. Do not disable permission
+limited to the project, the intended output directory, and the session or
+private scratch directory used for temporary files. Do not disable permission
 checks or grant access to every installed plugin. A reviewer that cannot read
 its persona or standard must report the limitation and stop; it has not reviewed.
 

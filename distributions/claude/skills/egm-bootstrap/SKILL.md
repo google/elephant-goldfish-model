@@ -57,6 +57,9 @@ If your harness has no subagent tool, run the scout steps inline.
 3.  **Temporary File Isolation**: Parallel workers sharing the workspace must
     perform all status tracking, check-pointing, and log writing in independent,
     worker-specific directories outside the project repository workspace.
+    Create each worker's directory in the host's scratch directory (in
+    Antigravity, `<appDataDir>/brain/<conversation_id>/scratch/`) or with
+    `mktemp -d`; never reuse a fixed, shared path under `/tmp/`.
 4.  **Tool Usage (CRITICAL)**: Use your shell, file-reading, file-writing, and file-editing tools for directory discovery and contract/README
     generation. Adhere to clean Markdown formatting directly during generation
     (standard headers, tables, and fenced code blocks). If a project markdown
