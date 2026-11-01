@@ -116,10 +116,12 @@ or to an agent instructions file that your harness loads (`CLAUDE.md` or
 EGM artifact directory: .dev/docs
 ```
 
-A relative path is relative to the working directory. Design docs and other
-project files do not move. Claude Code reads a project `AGENTS.md` only when
-the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
-`.gitignore`.
+A relative path is relative to the working directory. If a path set in an
+instructions file resolves outside the working directory, EGM asks you to
+confirm it before creating the folder or writing there. Design docs and other
+project files do not move. Claude Code reads a
+project `AGENTS.md` only when the project has no `CLAUDE.md`. To keep the files
+out of git, add the folder to `.gitignore`.
 
 ## Support Status & Contributing Other Harnesses
 
