@@ -45,13 +45,25 @@ codex plugin marketplace add google/elephant-goldfish-model
 codex plugin add egm@egm
 ```
 
+### Pi
+
+```sh
+git clone https://github.com/google/elephant-goldfish-model.git
+cd elephant-goldfish-model
+pi install "$PWD/distributions/pi"
+```
+
+Pi ships no subagent tool, so Goldfish reviews also need a subagent extension and
+the package's reviewer definitions installed; see the [Pi installation
+steps](docs/harnesses.md#pi).
+
 Start a new session after installation. For **Claude Cowork** and **ChatGPT Work**, see the [setup guide](docs/harnesses.md).
 
 ## Try your first design
 
 Open your project in your coding agent and choose a feature that needs design decisions. This example adds webhook delivery: what should happen when a delivery fails, or the same event arrives twice?
 
-The commands below are shown without a prefix. In Antigravity (agy CLI) and Claude Code, add the `/egm:` prefix, for example `/egm:egm-brainstorm`. On agy CLI 1.4.10 an unprefixed name is completed to the prefixed command ([#220](https://github.com/google/elephant-goldfish-model/issues/220)), but 1.4.8 does not ([#196](https://github.com/google/elephant-goldfish-model/issues/196)), so keep the prefix. In Codex, select the corresponding EGM skill from the skill picker. Brainstorming and review require a session that can create fresh subagents.
+The commands below are shown without a prefix. In Antigravity (agy CLI) and Claude Code, add the `/egm:` prefix, for example `/egm:egm-brainstorm`. On agy CLI 1.4.10 an unprefixed name is completed to the prefixed command ([#220](https://github.com/google/elephant-goldfish-model/issues/220)), but 1.4.8 does not ([#196](https://github.com/google/elephant-goldfish-model/issues/196)), so keep the prefix. In Codex, select the corresponding EGM skill from the skill picker. In Pi, invoke the skill as `/skill:egm-brainstorm`. Brainstorming and review require a session that can create fresh subagents.
 
 <img src="skills/egm-brainstorm/assets/icon.svg" width="20" height="20" align="top" alt=""> **Explore the idea**
 

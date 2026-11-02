@@ -73,8 +73,9 @@ that project instructions or memory were excluded.
 
 Reviewers must be unable to modify files or execute mutation-capable tools.
 Use host-enforced permissions rather than prompt instructions as proof.
-Claude's `Read`, `Grep`, and `Glob` are one host-specific example. Other hosts
-must map the same no-mutation requirement to their own verified controls.
+Claude's `Read`, `Grep`, and `Glob` are one host-specific example, and Pi's
+`read`, `grep`, and `find` are another. Other hosts must map the same
+no-mutation requirement to their own verified controls.
 Do not assume those literal tool names or a universal `tools` argument.
 
 If a host cannot meet the isolation or permission requirements, its Goldfish

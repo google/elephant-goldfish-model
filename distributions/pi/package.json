@@ -1,0 +1,20 @@
+{
+  "name": "egm",
+  "version": "0.1.0",
+  "description": "Draft specs, review designs, and check implementation drift.",
+  "keywords": [
+    "pi-package",
+    "spec-driven-development",
+    "design-documents",
+    "design-review"
+  ],
+  "author": {
+    "name": "Google"
+  },
+  "homepage": "https://egm.dev",
+  "repository": "https://github.com/google/elephant-goldfish-model",
+  "license": "Apache-2.0",
+  "pi": {
+    "skills": ["./skills"]
+  }
+}
