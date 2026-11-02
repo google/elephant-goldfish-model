@@ -153,7 +153,14 @@ def test_claude_synthesizer_adapter_is_tool_restricted() -> None:
   assert set(config["tools"]) == {"Agent", "Read", "Grep", "Glob", "Write"}
   assert config["model"] == "inherit"
   assert "memory" not in config
-  assert "${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md" in adapter.read_text()
+  text = " ".join(adapter.read_text(encoding="utf-8").split())
+  assert "${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md" in text
+  assert "Write only the report or brief your task asks for" in text
+  assert "Do not create or change any other file" in text
+  assert ("use the working directory and say so in your completion message, "
+          "unless your task names that folder") in text
+  guide = " ".join((ROOT / "docs/claude.md").read_text(encoding="utf-8").split())
+  assert "name the artifact directory you are using in its task" in guide
   canonical = frontmatter(ROOT / "agents/synthesizer.md")
   assert canonical["name"] == config["name"]
   assert "tools" not in canonical

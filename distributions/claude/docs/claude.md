@@ -141,6 +141,15 @@ Reviewers cannot edit files or run shell commands, and no persistent `memory`
 is configured. The synthesizer adapter declares
 `tools: [Agent, Read, Grep, Glob, Write]` so it can spawn reviewers and write
 reports but cannot run shell commands or use the session's MCP connectors.
+A plugin subagent's `tools` field cannot restrict Write to specific paths, and
+Claude Code ignores `hooks` and `permissionMode` in plugin subagents. The
+adapter's rule to write only the requested report or brief is therefore an
+instruction, not a host-enforced limit. Writes still follow the session's
+permission rules. When you spawn `egm:egm-synthesizer`, name the artifact
+directory you are using in its task. Otherwise it never sees a line from the
+user's prompt, and it drops a folder outside the working directory that only
+agent instructions name. It has no shell, so it checks that path as written and
+does not follow symbolic links.
 The bootstrap orchestrator adapter allows only `Agent`, `Bash`, `Read`, `Grep`,
 `Glob`, `Write`, and `Edit` for local discovery and documentation. It routes
 workers to the bootstrap `SKILL.md` so they return the JSON `subtree_index`
