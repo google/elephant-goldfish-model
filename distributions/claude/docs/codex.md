@@ -28,9 +28,10 @@ user's project for bundled personas or standards.
 If the user's prompt or agent instructions file (`AGENTS.md`) has a line
 `EGM artifact directory: <path>`, write briefs, drafts, and reports to that
 folder. Resolve a relative path against the working directory. If a path from
-`AGENTS.md` resolves outside the working directory, ask the user to confirm it
-before creating the folder or writing there; if no one can confirm, use the
-working directory and say why. Create the folder if it does not exist.
+`AGENTS.md` resolves outside the working directory, after following symbolic
+links, ask the user to confirm it before creating the folder or writing there.
+If they decline or no one can confirm, use the working directory and say why.
+Create the folder if it does not exist.
 
 In ChatGPT Work, a skill may be exposed through a cloud resource identifier
 while supporting files live in the installed local bundle. Use the installed

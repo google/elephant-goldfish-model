@@ -221,6 +221,12 @@ def test_artifact_directory_override_is_documented_for_each_harness() -> None:
   for guide in ("docs/claude.md", "docs/codex.md", "docs/harnesses.md"):
     text = " ".join((ROOT / guide).read_text(encoding="utf-8").split())
     assert marker in text, f"{guide} does not document `{marker}<path>`"
-    assert "resolves outside the working directory" in text, (
-        f"{guide} does not ask before using a folder outside the working "
-        "directory")
+    for phrase in (
+        "resolves outside the working directory",
+        "following symbolic links",
+        "confirm it before creating the folder or writing there",
+        "decline or no one can confirm",
+    ):
+      assert phrase in text, (
+          f"{guide} does not ask before using a folder outside the working "
+          f"directory: missing `{phrase}`")

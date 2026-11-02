@@ -32,9 +32,10 @@ session, and the deliverables must outlive it.
 If the user's prompt or agent instructions file (`CLAUDE.md` or `AGENTS.md`)
 has a line `EGM artifact directory: <path>`, write them to that folder instead.
 Resolve a relative path against the working directory. If a path from an
-instructions file resolves outside the working directory, ask the user to
-confirm it before creating the folder or writing there; if no one can confirm,
-use the working directory and say why. Create the folder if it does not exist.
+instructions file resolves outside the working directory, after following
+symbolic links, ask the user to confirm it before creating the folder or
+writing there. If they decline or no one can confirm, use the working directory
+and say why. Create the folder if it does not exist.
 In Claude Code, `egm:egm-synthesizer` may spawn reviewers (nesting is allowed
 up to 3 levels by default), or the main context may dispatch reviewers directly.
 In Claude Cowork, subagents cannot spawn further subagents, so dispatch
