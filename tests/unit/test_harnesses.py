@@ -182,8 +182,10 @@ def test_scratch_files_use_private_directories() -> None:
                "skills/egm-bootstrap/SKILL.md"):
     text = " ".join((ROOT / path).read_text(encoding="utf-8").split())
     assert "mktemp -d" in text, f"{path} does not name a private directory"
-    assert "fixed, shared path" in text, (
-        f"{path} does not forbid fixed, shared scratch paths")
+  skill = " ".join((ROOT / "skills/egm-bootstrap/SKILL.md").read_text(
+      encoding="utf-8").split())
+  assert "never use a fixed, shared path." in skill
+  assert "nothing later in this skill reads them" in skill
 
 
 def test_claude_permissions_remain_under_user_control() -> None:

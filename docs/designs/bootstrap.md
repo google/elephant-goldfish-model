@@ -751,7 +751,7 @@ All changes will be housed within the open-source repository structure:
 *   **State Collision on Shared Workspace**: Mitigated by storing execution
     checkpoints in worker-specific scratchpad directories under `<appDataDir>`
     (or private `mktemp -d` directories on other hosts), avoiding modifications
-    to the workspace.
+    to the workspace. If neither is available, workers skip these files.
 *   **Worker failures leaving partial files**: Handled as an incremental
     progress feature. The Correction & Modification Policy preserves partial
     progress and corrects existing files on subsequent runs, allowing developers
