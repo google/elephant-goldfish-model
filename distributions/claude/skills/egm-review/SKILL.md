@@ -94,27 +94,26 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
     *   Explain to the user that goldfish context (reading list of files) is
         optional, but can establish baseline knowledge for reviewers.
     *   Clarify that linked files inside the working directory are added
-        before the review starts, and that other links and URLs need approval.
+        automatically, and that other links and URLs need approval.
     *   Prompt the user in chat via regular text if they wish to provide
         additional context files. Do NOT use structured question tools for
         open-ended file paths.
 3.  **Linked Files (run later)**: Do not run this during intake. Run it once,
-    after the Step 2 preset is chosen and right before the first review stage
-    of any flow (including `uninterrupted`): read `TargetFile` and collect the
-    files it links to.
-    Skip links that are only a section anchor (`#...`), drop the `#fragment`
-    from other links, and resolve each relative link against the design
-    document's own folder. Add each link whose real path (after following
-    symbolic links) stays inside the working directory to `GoldfishContext`,
-    skipping files that do not exist. If any link resolves outside the
-    working directory or is a URL, list those links in chat via regular text,
-    ask which to include, and end your turn. Add only the ones the user
-    approves, and tell the user which links were left out. Some reviewers
-    cannot open URLs, so save each approved page as a file in the working
-    directory (or your harness's artifact directory) and pass its path.
-    Pass `GoldfishContext` to every stage except Stage 6 (Comprehension
-    Test), which reads the document alone; when a stage uses the synthesizer,
-    tell it to give these files to each reviewer.
+    after the Step 2 preset is chosen and right before the first stage that
+    takes `GoldfishContext` (any stage but Stage 6), in any flow including
+    `uninterrupted`. Read `TargetFile`, skip anchor-only links (`#...`), drop
+    the `#fragment` from other links, and resolve each relative link against
+    the design document's folder. Add each link whose real path (after
+    following symbolic links) stays inside the working directory to
+    `GoldfishContext`, skipping files that do not exist. If any link resolves
+    outside the working directory or is a URL, list those links in chat as
+    regular text, ask which to include, and end your turn; if no one can
+    answer, as in a headless run, leave them all out and keep going. Add only
+    approved ones and tell the user which were left out. Some reviewers cannot
+    open URLs, so save each approved page as a file in the working directory
+    (or your harness's artifact directory) and pass its path. Pass
+    `GoldfishContext` to every stage except Stage 6, which reads the document
+    alone; tell any synthesizer to give these files to each reviewer.
 
 ### Step 2: Curated Pipeline Preset Selection
 
@@ -264,6 +263,7 @@ plain chat):
     *   **Resume Notification**: When the author replies in chat indicating
         edits are complete:
         *   Re-read `TargetFile` to recalculate line shifts.
+        *   If Step 1.3 has run, apply its rules to links added since then.
         *   Re-run the current stage subflow.
         *   **1-Audit Convergence Cap**: Each stage allows a maximum of 1
             re-audit. If manual doc updates are requested again after a
