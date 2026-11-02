@@ -59,7 +59,8 @@ If your harness has no subagent tool, run the scout steps inline.
     worker-specific directories outside the project repository workspace.
     Create each worker's directory in the host's scratch directory (in
     Antigravity, `<appDataDir>/brain/<conversation_id>/scratch/`) or with
-    `mktemp -d`; never reuse a fixed, shared path under `/tmp/`.
+    `mktemp -d`; never use a fixed, shared path. If neither is available, skip
+    these files: nothing later in this skill reads them.
 4.  **Tool Usage (CRITICAL)**: Use your shell, file-reading, file-writing, and file-editing tools for directory discovery and contract/README
     generation. Adhere to clean Markdown formatting directly during generation
     (standard headers, tables, and fenced code blocks). If a project markdown

@@ -749,8 +749,9 @@ All changes will be housed within the open-source repository structure:
     executing any VCS tracking/commit commands (`jj`/`g4`), deferring operations
     to EGM session completion.
 *   **State Collision on Shared Workspace**: Mitigated by storing execution
-    checkpoints in worker-specific scratchpad directories under `<appDataDir>`,
-    avoiding modifications to the workspace.
+    checkpoints in worker-specific scratchpad directories under `<appDataDir>`
+    (or private `mktemp -d` directories on other hosts), avoiding modifications
+    to the workspace.
 *   **Worker failures leaving partial files**: Handled as an incremental
     progress feature. The Correction & Modification Policy preserves partial
     progress and corrects existing files on subsequent runs, allowing developers

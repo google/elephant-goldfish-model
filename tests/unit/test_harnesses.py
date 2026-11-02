@@ -177,6 +177,15 @@ def test_claude_bootstrap_adapter_routes_to_skill() -> None:
   assert "./agents/bootstrap_orchestrator.md" not in manifest
 
 
+def test_scratch_files_use_private_directories() -> None:
+  for path in ("resources/execution_instructions.md",
+               "skills/egm-bootstrap/SKILL.md"):
+    text = " ".join((ROOT / path).read_text(encoding="utf-8").split())
+    assert "mktemp -d" in text, f"{path} does not name a private directory"
+    assert "fixed, shared path" in text, (
+        f"{path} does not forbid fixed, shared scratch paths")
+
+
 def test_claude_permissions_remain_under_user_control() -> None:
   """Bundled resources must not carry an automatic permission override."""
   manifest = read_json(".claude-plugin/plugin.json")
