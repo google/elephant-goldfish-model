@@ -723,9 +723,11 @@ All changes will be housed within the open-source repository structure:
     perform all status tracking, check-pointing, and log writing in independent,
     worker-specific directories using their unique `conversationId` under the
     application data directory (e.g.
-    `<appDataDir>/brain/<conversation_id>/scratch/`). They must not write any
+    `<appDataDir>/brain/<conversation_id>/scratch/`), or in private
+    `mktemp -d` directories on other hosts. They must not write any
     temporary files inside the source repository workspace, leaving the
-    source tree unmodified.
+    source tree unmodified, and never use a fixed, shared path. If neither
+    directory is available, they skip these files.
 *   **Antigravity Framework**: Antigravity is the agent SDK ecosystem and
     runtime framework for autonomous coding assistants.
 *   **Token Optimization**: Goldfish scouts are read-only, ephemeral, and only
