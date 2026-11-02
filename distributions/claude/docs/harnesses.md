@@ -120,10 +120,11 @@ A relative path is relative to the working directory. If a path set in an
 instructions file resolves outside the working directory, after following
 symbolic links, EGM asks you to confirm it before creating the folder or
 writing there. If you decline or no one can confirm, as in a headless run, the
-files go to the working directory. A path in your prompt needs no confirmation.
-Design docs and other project files do not move. Claude Code reads a project
-`AGENTS.md` only when the project has no `CLAUDE.md`. To keep the files out of
-git, add the folder to `.gitignore`.
+files go to the working directory. The answer isn't saved, so a new session
+asks again. A path in your prompt needs no confirmation. Design docs and other
+project files do not move. Claude Code reads a project `AGENTS.md` only when
+the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
+`.gitignore`.
 
 ## Support Status & Contributing Other Harnesses
 
