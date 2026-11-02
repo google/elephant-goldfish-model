@@ -8,6 +8,8 @@
     "node": ">=22.23.4"
   },
   "scripts": {
+    "test": "node --test",
+    "test:browser": "node scripts/verify-analytics.mjs",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
