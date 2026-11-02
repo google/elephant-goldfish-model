@@ -219,6 +219,20 @@ def test_bundled_prompt_dependencies_and_harness_guides() -> None:
 def test_artifact_directory_override_is_documented_for_each_harness() -> None:
   # The models match this exact line in the user's prompt or instruction file.
   marker = "EGM artifact directory: "
-  for guide in ("docs/claude.md", "docs/codex.md", "docs/harnesses.md"):
+  for guide, fallback in (
+      ("docs/claude.md", "use the working directory and say why"),
+      ("docs/codex.md", "use the working directory and say why"),
+      ("docs/harnesses.md", "the files go to the working directory"),
+  ):
     text = " ".join((ROOT / guide).read_text(encoding="utf-8").split())
     assert marker in text, f"{guide} does not document `{marker}<path>`"
+    for phrase in (
+        "resolves outside the working directory",
+        "following symbolic links",
+        "confirm it before creating the folder or writing there",
+        "decline or no one can confirm",
+        fallback,
+    ):
+      assert phrase in text, (
+          f"{guide} does not ask before using a folder outside the working "
+          f"directory: missing `{phrase}`")
