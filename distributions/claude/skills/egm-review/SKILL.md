@@ -103,18 +103,18 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
     of any flow (including `uninterrupted`): read `TargetFile` and collect the
     files it links to.
     Skip links that are only a section anchor (`#...`), drop the `#fragment`
-    from other links, resolve each relative link against the design
-    document's own folder, and skip links to files that do not exist. Add each
-    link whose real path (after following symbolic links) stays inside the
-    working directory to `GoldfishContext`. If any link resolves outside the
+    from other links, and resolve each relative link against the design
+    document's own folder. Add each link whose real path (after following
+    symbolic links) stays inside the working directory to `GoldfishContext`,
+    skipping files that do not exist. If any link resolves outside the
     working directory or is a URL, list those links in chat via regular text,
     ask which to include, and end your turn. Add only the ones the user
     approves, and tell the user which links were left out. Some reviewers
-    cannot open URLs, so save each approved page as a file and pass its path.
-    In every flow, pass `GoldfishContext` to Stages 5, 7, 8, and 9; when a
-    stage uses the synthesizer, tell it to give these files to each reviewer.
-    Do not pass it to Stage 6 (Comprehension Test), which reads the document
-    with no outside context.
+    cannot open URLs, so save each approved page as a file in the working
+    directory (or your harness's artifact directory) and pass its path.
+    Pass `GoldfishContext` to every stage except Stage 6 (Comprehension
+    Test), which reads the document alone; when a stage uses the synthesizer,
+    tell it to give these files to each reviewer.
 
 ### Step 2: Curated Pipeline Preset Selection
 
@@ -279,7 +279,8 @@ plain chat):
 1.  **Uninterrupted Stage Execution**: Execute all five review stages in
     sequence without interactive checkpoint pauses between steps. For each
     stage, write the individual report file to the working directory (or your
-    harness's artifact directory, if it has one):
+    harness's artifact directory, if it has one). Pass `GoldfishContext` to
+    every step except Step 6:
     *   **Step 5 (Initial Zoom Out)**: Spawn `egm-synthesizer` (or direct
         subagent) with `Reviewers: [egm-zoom-out]` on `full file` → write
         `zoom_out_report.md`.
@@ -316,6 +317,7 @@ plain chat):
     as Step 8 (Intermediate Zoom Out), include `zoom_out_report.md` path in
     context and focus on additions/mitigations from Comprehension and Critic
     stages.
+    In both stages, pass `GoldfishContext`.
 2.  **Delivery**: Write findings to `zoom_out_report.md` (Stage 5) or
     `intermediate_zoom_out_report.md` (Stage 8) using your file-writing tool.
 3.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
