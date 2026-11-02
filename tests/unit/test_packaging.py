@@ -364,3 +364,11 @@ def test_published_claude_runtime_is_current(tmp_path: Path) -> None:
       "<output-dir>`; replace `distributions/claude` with the generated "
       "`egm-claude` folder."
   )
+
+
+def test_pi_package_matches_the_canonical_bundle(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+  """The Pi package copy must not drift from the canonical bundle."""
+  check = runpy.run_path(str(ROOT / "scripts/check_pi_distribution.py"))["main"]
+  assert check(["--check"]) == 0, capsys.readouterr().err

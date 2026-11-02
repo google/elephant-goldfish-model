@@ -55,10 +55,16 @@ deliberately: Pi loads none of them, and this README references no artwork.
 
 ## Limitations
 
-Pi is not a supported EGM harness yet. No native installation, reviewer
-isolation, or end-to-end workflow run is recorded. See the Pi section of the
+Pi is not a supported EGM harness yet. On 2026-11-02 the package installed from
+an isolated Pi config directory, all seven `egm-*` skills loaded and answered as
+`/skill:egm-*`, and one `egm-comprehension` reviewer spawned in REVIEW mode
+against a real 396-line design document and returned 18 findings. A full
+`/egm-*` workflow run and a parent-only canary are still missing. The isolation
+we tested is directory-based rather than harness-enforced: that reviewer child
+still loaded the machine's `~/.agents/skills` catalogue, and Pi has no per-agent
+equivalent of `omitClaudeMd`. See the Pi section of the
 [harness guide](docs/harnesses.md#pi) for install steps, the tool mapping, and
-the known limits, and `PORTING-NOTES.md` for the evidence gaps.
+the known limits, and `PORTING-NOTES.md` for why the package is shaped this way.
 
 ## License
 

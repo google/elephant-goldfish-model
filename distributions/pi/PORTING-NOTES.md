@@ -145,9 +145,11 @@ unchanged; every difference lives in `subagents/`.
    its Pi section before the first EGM skill. Adding one sentence to each
    `skills/*/SKILL.md` needs `skills/` write access, which this change did not
    have.
-5. **No native evidence.** No Pi installation, workflow, isolation, or
-   permission probe was run for this change. Offline checks cannot substitute
-   for those probes, so the harness guide keeps Pi out of the supported list.
+5. **Evidence is partial, and the record says which half.** A Pi installation
+   and a reviewer spawn were both run; a full `/egm-*` workflow and a
+   parent-only canary were not. See `## Verification state` below and the Pi row
+   in `TESTING.md`. The harness guide keeps Pi out of the supported list on that
+   basis.
 6. **The Claude runtime needs one regeneration.** `distributions/claude/` is
    generated output that mirrors the shared docs, and `README.md` and
    `docs/harnesses.md` are part of it. Editing either file leaves
@@ -180,11 +182,17 @@ Two items, in order of how much they block a maintainer.
   copied byte, checks metadata parity with `plugin.json`, and confirms the seven
   skills, nine personas, and five standards are present. `pytest tests/unit`
   covers link integrity, Markdown tables, and manifest metadata.
-* Not run: any native Pi install, skill load, reviewer spawn, or workflow. See
-  `TESTING.md` for the evidence a supported-harness claim needs.
-* The freshness check is a script, not a unit test, because `tests/` was
-  outside this change's edit surface. Promoting it into
-  `tests/unit/test_packaging.py` is a one-function follow-up.
+* Run: `pi install ./distributions/pi` in an isolated `PI_CODING_AGENT_DIR`
+  loaded all seven `egm-*` skills, and each answered as `/skill:egm-*`; one
+  `egm-comprehension` reviewer was spawned in REVIEW mode against a real
+  396-line design document and returned 18 findings. The full invocation is
+  recorded in `TESTING.md`.
+* Not run: any end-to-end `/egm-brainstorm`, `/egm-draft` or `/egm-review`
+  workflow, and no parent-only canary, so the isolation claim is narrowed to
+  what was observed — see the limit above.
+* The freshness check is a unit test: `test_pi_package_matches_the_canonical_bundle`
+  in `tests/unit/test_packaging.py` fails when a copied file drifts, which is
+  what `tests/unit` and therefore CI now enforce.
 
 ## Follow-ups a maintainer may want
 
@@ -192,9 +200,8 @@ Two items, in order of how much they block a maintainer.
    `docs/harnesses.md`; the builder compares every path and byte.
 2. Add a Pi sentence to each `skills/*/SKILL.md` preamble, so a Pi session is
    pointed at the harness guide the way Claude and Codex sessions are.
-3. Promote `scripts/check_pi_distribution.py` into `tests/unit` (or generate
-   `distributions/pi/` from the pack script) so drift fails CI instead of
-   depending on a manual run.
+3. ~~Promote `scripts/check_pi_distribution.py` into `tests/unit`.~~ Done:
+   `test_pi_package_matches_the_canonical_bundle`.
 4. Consider a root `package.json` with the `pi` manifest, so Pi installs the
    repository itself and the copied tree disappears.
 5. Run a native Pi probe and record it in `TESTING.md` before moving Pi out of

@@ -200,19 +200,26 @@ the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
 
 **omp** ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) has a working installation path. Skills are invoked as `/skill:egm-<command>` (omp registers one command per skill; it has no `/egm-*` namespace). Community-verified on omp v18.12.6: all seven skills discover and resolve, and all nine reviewer personas register as subagents. End-to-end workflow fixtures are not yet automated for omp.
 
-**Pi** has a documented installation path and no native evidence, and Pi
+**Pi** has a documented installation path and no end-to-end proof, and Pi
 support is conditional on a package Google does not test, pin, or license-review.
 Pi core ships no subagent tool, so Goldfish reviews require a third-party Pi
 subagent extension — EGM has checked only Gentle Agents in `gentle-pi` 4.5.1,
-tests no other, and the review skills stop when no such tool is present. Two
-limits are known before any such run: that extension, not Pi, decides where
-agent definitions live and how a child session is spawned, so one working
-example does not establish another extension; and Pi has no per-agent equivalent
-of Claude's `omitClaudeMd`, so a reviewer child starts a fresh conversation but
-still loads the working directory's `AGENTS.md` and `CLAUDE.md`. No Pi
-installation, reviewer isolation, or workflow run is recorded in the test record
-yet, and Pi stays out of the supported list until a native run clears those
-conditions.
+tests no other, and the review skills stop when no such tool is present.
+
+Verified on 2026-11-02: the package installs from an isolated Pi config
+directory, and all seven `egm-*` skills load and answer as `/skill:egm-*`. One
+`egm-comprehension` reviewer spawned in REVIEW mode against a real 396-line
+design document and returned 18 findings.
+
+Not verified: no full `/egm-*` workflow ran end to end, and no parent-only
+canary shows that parent conversation was excluded. The isolation above is
+directory-based rather than enforced by Pi: that child still loaded the
+machine's `~/.agents/skills` catalogue, and Pi has no per-agent equivalent of
+Claude's `omitClaudeMd`, so a reviewer child starts a fresh conversation but
+still loads the working directory's `AGENTS.md` and `CLAUDE.md`. The extension,
+not Pi, decides where agent definitions live and how a child session is spawned,
+so one working example does not establish another extension. Pi therefore stays
+out of the supported list.
 
 See the [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record) for tested surfaces and limits.
 
