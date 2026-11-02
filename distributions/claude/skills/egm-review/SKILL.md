@@ -72,7 +72,7 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
 
 *   **`TargetFile`**: Absolute or relative path to the design document.
 *   **`GoldfishContext`** (Optional): Reading list to establish the system
-    baseline. If omitted, it holds only the linked files that Step 1 adds.
+    baseline. If omitted, it holds only the linked files that Step 1.3 adds.
 *   **`Step` (Optional)**: Specific pipeline preset or stage to run (e.g.
     `interactive`, `uninterrupted`, `feature_spec`, `implementation`, or an
     individual stage `5`, `6`, `7`, `8`, `9`). If omitted, the user is prompted.
