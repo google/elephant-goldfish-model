@@ -280,7 +280,7 @@ plain chat):
     sequence without interactive checkpoint pauses between steps. For each
     stage, write the individual report file to the working directory (or your
     harness's artifact directory, if it has one). Pass `GoldfishContext` to
-    every step except Step 6:
+    every step except Step 6.
     *   **Step 5 (Initial Zoom Out)**: Spawn `egm-synthesizer` (or direct
         subagent) with `Reviewers: [egm-zoom-out]` on `full file` → write
         `zoom_out_report.md`.
@@ -317,7 +317,7 @@ plain chat):
     as Step 8 (Intermediate Zoom Out), include `zoom_out_report.md` path in
     context and focus on additions/mitigations from Comprehension and Critic
     stages.
-    In both stages, pass `GoldfishContext`.
+    In both Stage 5 and Stage 8, pass `GoldfishContext`.
 2.  **Delivery**: Write findings to `zoom_out_report.md` (Stage 5) or
     `intermediate_zoom_out_report.md` (Stage 8) using your file-writing tool.
 3.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
