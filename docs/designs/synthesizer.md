@@ -39,12 +39,12 @@ sequenceDiagram
     autonumber
     participant Elephant as Root Elephant Context
     participant Synth as Synthesizer Persona (Intermediate Orchestrator)
-    participant Swarm as Goldfish Swarm (A/B Parallel Subagents)
+    participant Swarm as Goldfish Swarm (Parallel Subagents, optional A/B)
     participant Artifact as Artifact File (goldfish_review_report.md)
 
     Elephant->>Synth: invoke_subagent (TargetFile, Reviewers, Standards)
     Note over Synth: Inspect Mode: REVIEW vs BRAINSTORM
-    Synth->>Swarm: invoke_subagent (Concurrent A/B Subagents)
+    Synth->>Swarm: invoke_subagent (Concurrent Subagents, optional A/B)
     Note over Swarm: Independent Audits in Zero-Context Windows
     Swarm-->>Synth: Return raw findings & critiques
     Note over Synth: Deduplicate, Triage (Blocker/Major/Nit), Normalize Links
@@ -59,13 +59,10 @@ context:
 
 ### 1. `Mode: REVIEW` (Document Audit)
 
-*   **Redundant Subagent Spawning (A/B Sampling)**: Launches two independent
+*   **Redundant Subagent Spawning (A/B Sampling)**: May launch two independent
     instances of each requested reviewer (e.g., `Hostile Design Critic A` and
     `Hostile Design Critic B`) to maximize finding recall and eliminate
     non-deterministic evaluation gaps.
-*   **Role Title Enforcement**: Subagent roles are strictly suffixed with
-    `Auditor`, `Reviewer`, or `Critic` for clear observability in execution
-    dashboards.
 *   **Severity Triage**: Categorizes all aggregated findings into three tiers:
     *   🔴 **Blocker**: Architectural flaws, unaddressed SPOFs, missing file
         targets, or unresolvable dependencies.
@@ -76,8 +73,8 @@ context:
 *   **Link Normalization**: Constructs clean markdown links for all referenced
     lines: `[path:Lstart-end](path#Lstart-Lend)`.
 *   **Artifact Emission**: Writes the consolidated report to
-    `goldfish_review_report.md` (or `zoom_out_report.md` /
-    `comprehension_report.md`).
+    `goldfish_review_report.md`. `egm-review` writes the per-stage reports
+    such as `zoom_out_report.md` and `comprehension_report.md`.
 
 --------------------------------------------------------------------------------
 
