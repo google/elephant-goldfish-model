@@ -200,11 +200,9 @@ Two items, in order of how much they block a maintainer.
    `docs/harnesses.md`; the builder compares every path and byte.
 2. Add a Pi sentence to each `skills/*/SKILL.md` preamble, so a Pi session is
    pointed at the harness guide the way Claude and Codex sessions are.
-3. ~~Promote `scripts/check_pi_distribution.py` into `tests/unit`.~~ Done:
-   `test_pi_package_matches_the_canonical_bundle`.
-4. Consider a root `package.json` with the `pi` manifest, so Pi installs the
+3. Consider a root `package.json` with the `pi` manifest, so Pi installs the
    repository itself and the copied tree disappears.
-5. Run a native Pi probe and record it in `TESTING.md` before moving Pi out of
+4. Run a native Pi probe and record it in `TESTING.md` before moving Pi out of
    the unverified group in `docs/harnesses.md`.
 
 ## First real run

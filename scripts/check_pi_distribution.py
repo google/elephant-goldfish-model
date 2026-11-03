@@ -26,7 +26,8 @@ COPY = (
     "skills/*/references/*.json",
     "agents/*.md", "resources/*.md", "resources/document_standards/*.md",
     "docs/claude.md", "docs/codex.md", "docs/faq.md", "docs/getting_started.md",
-    "docs/harnesses.md", "docs/index.md", "docs/privacy.md", "docs/releases.md",
+    "docs/harnesses.md", "docs/index.md", "docs/muse.md", "docs/privacy.md",
+    "docs/releases.md",
 )
 HAND_WRITTEN = ("package.json", "PORTING-NOTES.md", "README.md",
                 "subagents/*.md")

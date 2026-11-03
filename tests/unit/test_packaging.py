@@ -371,4 +371,8 @@ def test_pi_package_matches_the_canonical_bundle(
 ) -> None:
   """The Pi package copy must not drift from the canonical bundle."""
   check = runpy.run_path(str(ROOT / "scripts/check_pi_distribution.py"))["main"]
-  assert check(["--check"]) == 0, capsys.readouterr().err
+  assert check(["--check"]) == 0, (
+      f"{capsys.readouterr().err}Pi package differs from the canonical "
+      "bundle. Regenerate with `python3 scripts/check_pi_distribution.py "
+      "--write`."
+  )

@@ -5,10 +5,13 @@
     `.h`, `.cc`, `.py`, `.go`) in the source tree. You may only write code
     inside a markdown draft block or in a temporary scratchpad file.
     *   **Scratchpad Location (CRITICAL)**: You MUST write any temporary
-        scratchpad code files ONLY outside the project source tree (e.g.,
-        under `/tmp/` or your conversation's active scratch directory). You
-        are STRICTLY FORBIDDEN from creating `.h`, `.cc`, `.py`, `.go`, or any
-        other code files anywhere inside the project source tree.
+        scratchpad code files ONLY outside the project source tree, in your
+        conversation's active scratch directory or, if your harness has none,
+        a new private directory created with `mktemp -d`. If neither is
+        available, keep the code in a markdown draft block. Do not use fixed,
+        shared paths such as `/tmp/scratch.py`. You are STRICTLY FORBIDDEN
+        from creating `.h`, `.cc`, `.py`, `.go`, or any other code files
+        anywhere inside the project source tree.
     *   **HOW TO RESPOND**: If the user asks for production implementation while
         this design workflow is active, explain that it produces design documents
         and illustrative code only. Label any markdown or scratchpad example
