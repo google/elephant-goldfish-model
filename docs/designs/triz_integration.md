@@ -426,6 +426,9 @@ checkpoints at each stage.
     *   In `IF Mode: BRAINSTORM` Step 1: Update the subagent dispatch list to
         launch the 7-lens swarm in parallel, adding `inventive_catalyst` with
         the role title `Inventive Catalyst Brainstormer`.
+    *   In `IF Mode: BRAINSTORM` Step 1: Add the `Failed Reviewers` rule from
+        `Mode: REVIEW` Step 1: retry a lens once, then report it as `not run`
+        in `concepts_brief.md`, never as a lens with zero findings.
     *   In `IF Mode: BRAINSTORM` Step 2: Update aggregation instructions:
         *"Collect findings from all 7 Goldfish, deduplicate overlapping points,
         synthesize inventive contradictions and pattern resolutions alongside
@@ -465,23 +468,18 @@ checkpoints at each stage.
     1.  The detailed report schema for Inventive Opportunities is defined
         strictly inside `agents/inventive_catalyst.md`'s `# Output Format`,
         avoiding a duplicate multiline schema block in `SKILL.md`.
-    2.  `Subflow: Initial Strategic Review (Step 5)` and the Step 5 bullet in
-        `Subflow: Uninterrupted Full Flow` concisely add
-        `egm-inventive-catalyst` to `Reviewers`.
-    3.  Existing verbose commentary in the preset table or stage preambles is
-        tightened by ~500 bytes to create safe headroom below 24,000 bytes.
+    2.  `Subflow: Zoom Out Review` stays shared. Its Step 5 case and the Step 5
+        bullet in `Subflow: Uninterrupted Full Flow` add
+        `egm-inventive-catalyst`. This brings the body to about 23,885 bytes,
+        so nothing else needs cutting.
 *   **Proposed Changes**:
-    *   In Step Selection, update the Step 5 label to: `Step 5: Initial
-        Strategic Review (Zoom Out & Inventive Catalyst)`.
-    *   Split the shared `Subflow: Zoom Out Review` into two dedicated subflows:
-        1.  `Subflow: Initial Strategic Review (Step 5)`: Spawns both
-            `egm-zoom-out` and `egm-inventive-catalyst` in parallel across `full
-            file`. The Step 5 bullet in `Subflow: Uninterrupted Full Flow`, which
-            the `Consolidated report` preset runs, gets the same `Reviewers` and
-            writes both into `zoom_out_report.md`.
-        2.  `Subflow: Intermediate Zoom Out Review (Step 8)`: Spawns only
-            `egm-zoom-out` to perform ruthless YAGNI pruning of changes
-            introduced during Steps 6 and 7.
+    *   In `Subflow: Zoom Out Review` step 1, after the Step 8 clause, add:
+        "When running as Step 5, also spawn `egm-inventive-catalyst` in
+        parallel and write both into `zoom_out_report.md`." Step 8 still runs
+        only `egm-zoom-out`.
+    *   In the Step 5 bullet of `Subflow: Uninterrupted Full Flow`, which the
+        `Consolidated report` preset runs, change `Reviewers: [egm-zoom-out]`
+        to `Reviewers: [egm-zoom-out, egm-inventive-catalyst]`.
 
 *Phase 2 Checkpoint*: Validate skill frontmatter and subflow parsing via `pytest
 tests/unit/test_frontmatter.py`.
@@ -549,8 +547,9 @@ using `pytest tests/unit/test_link_integrity.py`.
     *   `skills/egm-review/TEST.md`: Update Step 5 test expectation to verify
         Initial Strategic Review with parallel Zoom Out and Catalyst execution.
     *   `skills/egm-brainstorm/test_scenarios.yaml`: Add behavioral test
-        scenarios asserting regex matches for `Inventive Contradictions &
-        Opportunities` and TRIZ pattern recommendations.
+        scenarios asserting that the `## Analysis` section names an inventive
+        contradiction, the catalog pattern suggested for it, and its secondary
+        trade-offs.
     *   `skills/egm-review/test_scenarios.yaml`: Add a scenario validating
         detection of false architectural compromises in Step 5.
     *   `tests/unit/test_frontmatter.py`: Add validation asserting frontmatter
