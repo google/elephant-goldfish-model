@@ -67,6 +67,8 @@ so the command follows the `egm-` prefix that every other EGM skill uses.
 *   General programming help unrelated to EGM. For those questions the skill
     says that it only covers EGM and stops.
 *   Keeping its own state or memory between calls.
+*   Running shell commands such as `git status`. Stage detection uses artifact
+    files only.
 
 ## System Architecture & Workflow
 
@@ -125,8 +127,9 @@ user's prompt or agent instructions file replaces the working directory, as
 claude.md describes.
 
 The skill checks for files by name. The only file content it reads from the
-workspace is the first lines of `goldfish_review_report.md`, to find a
-`Status: resolved` line.
+workspace is the first lines of `goldfish_review_report.md`: the
+`Status: resolved` line and the `**Target:**` line. It suggests the step after
+resolution only when that target is the design the user means.
 
 File presence is a stage hint, not evidence that a workflow completed. A review
 report may be partial or left over from an earlier run. If the files do not
@@ -146,9 +149,27 @@ same table, and a renamed artifact is updated in one place.
 | `concepts_brief.md` (egm-brainstorm) | Ideation done | `egm-draft`, which reads `concepts_brief.md` as its first input |
 | `design_draft.md` (egm-draft), no matching `docs/designs/<feature>.md` | Draft in progress | Continue `egm-draft` until it writes `docs/designs/<feature>.md` |
 | `docs/designs/<feature>.md`, no review reports | Ready for review | `egm-review docs/designs/<feature>.md` |
-| `zoom_out_report.md`, `comprehension_report.md`, `critic_report.md`, `intermediate_zoom_out_report.md`, `implementation_readiness_report.md`, or `consolidated_review_report.md` (egm-review) | Review in progress; completion must be checked | Continue the pending review. When the current review is complete, `egm-resolve` on its findings |
+| `zoom_out_report.md`, `comprehension_report.md`, `critic_report.md`, `intermediate_zoom_out_report.md`, `implementation_readiness_report.md`, or `consolidated_review_report.md` (egm-review) | Review started; completion unknown | Ask whether the review of this target finished. If it did, `egm-resolve` on its findings. If not, continue the pending review |
 | `goldfish_review_report.md` (egm-resolve) without `Status: resolved` | Resolution in progress | Return to the resolve step that is waiting for an answer, or run `egm-resolve` again |
-| `goldfish_review_report.md` with `Status: resolved` | Findings resolved | Open the design PR or implement. Later, `egm-drift-report` compares designs with code |
+| `goldfish_review_report.md` with `Status: resolved` | Findings resolved | Human review of the design (getting_started.md, step 4); implement only after the checks below pass |
+
+**Before suggesting implementation.** A checked-in design or a resolved report
+alone does not justify implementing. The skill suggests implementation only
+when all of these hold:
+
+1.  **Target is known.** The user named the design, or the `**Target:**` line
+    of the resolved report names exactly one `docs/designs/<feature>.md` and
+    the user confirms it. If several designs could match, the skill asks which
+    one the user means.
+2.  **No review is pending for that target.** If review reports exist, the
+    user confirms that the review finished, and no review or resolve step in
+    the recent conversation is waiting for an answer.
+3.  **No approval is pending.** The skill cannot see human approval of a
+    design, so it asks whether the design was approved. Until the user
+    confirms, it suggests the human review step instead of implementation.
+
+If any check fails, the skill suggests the pending step instead. It does not
+answer or resume that step itself (see Rules).
 
 The rows are in workflow order. When several rows match, the skill names the
 latest matching stage and lists every artifact it saw, so the user can correct
@@ -209,7 +230,7 @@ when the user asks for it.
 | **"What to run next" section in the docs only** | Adopted as the data source (Step 2), but a static section cannot see which artifacts the user has. |
 | **Write the answer to an artifact file** | Help answers are short. A file per question adds clutter, and the user has to open it. |
 | **Model-invocable skill** | The model would trigger it on any "how do I" message, which collides with regular task prompts (a stated non-goal). |
-| **Name it `/ask-egm` as in the issue** | The maintainers chose `/egm-ask` on #175. It matches the `egm-` prefix of all seven current skills. |
+| **Name it `/ask-egm` as in the issue** | The maintainers chose `/egm-ask` on #175. It matches the `egm-` prefix of every current skill. |
 
 ## Risks & Mitigations
 
@@ -224,7 +245,8 @@ when the user asks for it.
     gate option.
 *   **Instructions planted in workspace files.** Text inside a review report
     could be read as instructions while write tools are present. Mitigation:
-    from the workspace, the skill reads only file names and one `Status:` line.
+    from the workspace, the skill reads only file names and the `Status:` and
+    `**Target:**` lines of one report.
     All prose it reads comes from plugin-owned docs and frontmatter.
 *   **Context cost in the main thread.** Mitigation: each question type reads
     only its listed files, and the answer is capped at 20 lines.
@@ -266,10 +288,10 @@ skills' suites and covers at least:
 
 1.  Empty workspace, no question: suggests `egm-brainstorm` or `egm-bootstrap`.
 2.  Only `concepts_brief.md` present: suggests `egm-draft`.
-3.  Complete current review: suggests `egm-resolve`. A partial or stale report
-    does not imply completion and does not bypass a pending gate.
-4.  `critic_report.md` present without a complete review: suggests continuing
-    `egm-review`, not starting it again.
+3.  Review reports present for the current target: asks whether that review
+    finished before suggesting `egm-resolve`, and does not bypass a pending gate.
+4.  `critic_report.md` present and the user says the review did not finish:
+    suggests continuing `egm-review`, not starting it again.
 5.  `concepts_brief.md` and `docs/designs/x.md` both present: names the latest
     stage and lists both files.
 6.  "Please fix my draft for me": makes no edits and names the skill that does
@@ -280,15 +302,12 @@ skills' suites and covers at least:
 9.  "Which skill compares my designs with code?": recommends
     `egm-drift-report` and cites its `SKILL.md`.
 10. Persona-read failure: cites `docs/claude.md`.
+11. Resolved report and two checked-in designs, no target named: asks which
+    design the user means and whether it was approved; does not suggest
+    implementation.
 
 Static checks: `pytest tests/unit` (frontmatter, scenario coverage, skill body
 size limit, packaging, and link integrity).
-
-## Open Questions
-
-1.  Should stage detection also look at `git status` (for example, uncommitted
-    changes under `docs/designs/`)? This design leaves it out to keep the skill
-    free of shell commands.
 
 ## References
 
