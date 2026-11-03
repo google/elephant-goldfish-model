@@ -151,6 +151,21 @@ def test_rejects_symlinked_runtime_paths(
     build(source, "openai", tmp_path / "output")
 
 
+@pytest.mark.parametrize("target", ["claude", "openai"])
+def test_reads_manifests_as_utf8(source: Path, tmp_path: Path, target: str) -> None:
+  # Only a non-UTF-8 default encoding, like cp1252 on the windows-2025 runner,
+  # fails this. The UTF-8 bytes of "Ё" include 0x81, which cp1252 cannot decode.
+  for name in ("plugin.json", ".claude-plugin/plugin.json",
+               ".codex-plugin/plugin.json"):
+    path = source / name
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    manifest["description"] = "Ёlephant — goldfish"
+    path.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+  _, archive = build(source, target, tmp_path / "output")
+  with zipfile.ZipFile(archive) as bundle:
+    assert "Ёlephant" in bundle.read("plugin.json").decode("utf-8")
+
+
 @pytest.mark.parametrize("reference", ["../escape.svg", "/tmp/icon.svg",
                                        "./assets/missing.svg"])
 def test_rejects_escaping_or_missing_manifest_assets(
