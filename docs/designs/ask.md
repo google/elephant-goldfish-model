@@ -302,8 +302,9 @@ skills' suites and covers at least:
 9.  "Which skill compares my designs with code?": recommends
     `egm-drift-report` and cites its `SKILL.md`.
 10. Persona-read failure: cites `docs/claude.md`.
-11. Resolved report and two checked-in designs, no target named: asks which
-    design the user means and whether it was approved; does not suggest
+11. Resolved report and two checked-in designs, and the user names neither:
+    asks the user to confirm the design (the report's `**Target:**`, or which
+    one if that is unclear) and whether it was approved; does not suggest
     implementation.
 
 Static checks: `pytest tests/unit` (frontmatter, scenario coverage, skill body
