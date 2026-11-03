@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 
 from pack_plugin import build
 
@@ -53,33 +54,37 @@ def prepare(root: Path, tag: str, output: Path, commit: str) -> None:
     if len(commit) != 40 or any(char not in "0123456789abcdef" for char in commit):
         raise ValueError("Source commit must be a full Git SHA")
     output.mkdir(parents=True, exist_ok=False)
-    checksums = []
-    for target in ("claude", "openai"):
-        _, archive = build(root, target, output / "build")
-        destination = output / f"egm-{target}-{version}.zip"
-        archive.rename(destination)
-        digest = hashlib.sha256(destination.read_bytes()).hexdigest()
-        checksums.append(f"{digest}  {destination.name}\n")
-    (output / "SHA256SUMS").write_text("".join(checksums), encoding="utf-8")
-    (output / "RELEASE_NOTES.md").write_text(
-        f"# EGM {version}\n\nDeclared source: `{commit}`\nTag: `{tag}`\n\n"
-        "Local source identity is caller-supplied and is not verified by this script. "
-        "Publish only workflow-built candidates after exact-artifact checks.\n\n"
-        "Runtime archives: Claude and OpenAI. Verify downloads with "
-        "`sha256sum -c SHA256SUMS`.\n\n"
-        "For CI-built candidates, verify each ZIP with "
-        "`gh attestation verify FILE --repo google/elephant-goldfish-model "
-        "--signer-workflow google/elephant-goldfish-model/.github/workflows/release.yml "
-        "--source-ref refs/heads/main`. "
-        "Provenance identifies the main-branch workflow run; the tagged source "
-        "commit is recorded above. Local builds have no attestation.\n\n"
-        "## Changes\n\nMaintainer: summarize changes and migration steps before publishing.\n\n"
-        "## Verification\n\nOffline unit tests and runtime packaging are checked by CI. "
-        "Live installation, workflow execution, reviewer isolation, directory approval, "
-        "and cloud-host support are not established by this build. "
-        "Maintainer: attach exact-bundle host evidence and limitations before publishing.\n",
-        encoding="utf-8",
-    )
+    try:
+        checksums = []
+        for target in ("claude", "openai"):
+            _, archive = build(root, target, output / "build")
+            destination = output / f"egm-{target}-{version}.zip"
+            archive.rename(destination)
+            digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+            checksums.append(f"{digest}  {destination.name}\n")
+        (output / "SHA256SUMS").write_text("".join(checksums), encoding="utf-8")
+        (output / "RELEASE_NOTES.md").write_text(
+            f"# EGM {version}\n\nDeclared source: `{commit}`\nTag: `{tag}`\n\n"
+            "Local source identity is caller-supplied and is not verified by this script. "
+            "Publish only workflow-built candidates after exact-artifact checks.\n\n"
+            "Runtime archives: Claude and OpenAI. Verify downloads with "
+            "`sha256sum -c SHA256SUMS`.\n\n"
+            "For CI-built candidates, verify each ZIP with "
+            "`gh attestation verify FILE --repo google/elephant-goldfish-model "
+            "--signer-workflow google/elephant-goldfish-model/.github/workflows/release.yml "
+            "--source-ref refs/heads/main`. "
+            "Provenance identifies the main-branch workflow run; the tagged source "
+            "commit is recorded above. Local builds have no attestation.\n\n"
+            "## Changes\n\nMaintainer: summarize changes and migration steps before publishing.\n\n"
+            "## Verification\n\nOffline unit tests and runtime packaging are checked by CI. "
+            "Live installation, workflow execution, reviewer isolation, directory approval, "
+            "and cloud-host support are not established by this build. "
+            "Maintainer: attach exact-bundle host evidence and limitations before publishing.\n",
+            encoding="utf-8",
+        )
+    except Exception:
+        shutil.rmtree(output, ignore_errors=True)
+        raise
 
 
 if __name__ == "__main__":
