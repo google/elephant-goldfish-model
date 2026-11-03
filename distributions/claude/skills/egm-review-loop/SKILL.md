@@ -60,7 +60,7 @@ The caller or user provides exactly these parameters:
     each URL as a new file in the working directory (or your harness's artifact
     directory) and pass its absolute path instead. If a page cannot be saved,
     ask the user for a local copy and end your turn; if no one can answer,
-    leave it out and tell the user.
+    as in a headless run, leave it out, tell the user, and keep going.
 
 ## Path & Standard Resolution Logic
 
