@@ -59,8 +59,8 @@ The caller or user provides exactly these parameters:
     reviewers cannot open URLs, so before the first round save the raw page of
     each URL as a new file in the working directory (or your harness's artifact
     directory) and pass its absolute path instead. If a page cannot be saved,
-    ask the user for a local copy; if no one can answer, leave it out and tell
-    the user.
+    ask the user for a local copy and end your turn; if no one can answer,
+    leave it out and tell the user.
 
 ## Path & Standard Resolution Logic
 
