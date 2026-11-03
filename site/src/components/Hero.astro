@@ -1,0 +1,93 @@
+---
+import Button from './gb/Button.astro';
+
+const prompt = 'Install https://github.com/google/elephant-goldfish-model';
+---
+
+<section class="hero" id="top">
+  <div class="wrap hero-inner">
+    <h1 class="display">
+      Design with an elephant.<br />
+      Review with a goldfish.
+    </h1>
+    <p class="lead">
+      Thousands of Google engineers use this <span class="nowrap">open-source</span> plugin to
+      draft specs with <span class="nowrap">deep-context</span> agents and{' '}
+      <span class="nowrap">stress-test</span> them with <span class="nowrap">zero-context</span>{' '}
+      subagents before writing code.
+    </p>
+    <div class="cta">
+      <Button
+        color="filled"
+        size="md"
+        class="hero-copy-btn"
+        label="Copy install prompt"
+        data-copy={prompt}
+      >
+        <svg class="icon-copy" viewBox="0 -960 960 960" aria-hidden="true">
+          <path
+            d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"
+          ></path>
+        </svg>
+        <svg class="icon-check" viewBox="0 -960 960 960" aria-hidden="true">
+          <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"></path>
+        </svg>
+        <span class="label-stack">
+          <span class="label-default">Copy install prompt</span>
+          <span class="label-copied" aria-hidden="true">Copied</span>
+        </span>
+      </Button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding-block: clamp(80px, 12vw, 160px) clamp(48px, 7vw, 96px);
+  }
+
+  .hero-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+  }
+
+  .lead {
+    max-inline-size: 54ch;
+    text-wrap: balance;
+  }
+
+  .cta {
+    margin-block-start: 8px;
+  }
+
+  /* Keep button width fixed when label swaps from "Copy install prompt" to "Copied". */
+  .label-stack {
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .label-default,
+  .label-copied {
+    grid-area: 1 / 1;
+  }
+
+  .label-copied,
+  .icon-check,
+  :global(.copied) .label-default,
+  :global(.copied) .icon-copy {
+    display: none;
+  }
+
+  :global(.copied) .label-default {
+    display: inline;
+    visibility: hidden;
+  }
+
+  :global(.copied) .label-copied,
+  :global(.copied) .icon-check {
+    display: block;
+  }
+</style>

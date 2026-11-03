@@ -1,0 +1,13 @@
+{
+  "name": "egm",
+  "owner": {
+    "name": "Google"
+  },
+  "plugins": [
+    {
+      "name": "egm",
+      "source": "./",
+      "description": "Draft specs, review designs, and check implementation drift."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "egm",
+  "interface": {
+    "displayName": "Elephant-Goldfish Model"
+  },
+  "plugins": [
+    {
+      "name": "egm",
+      "source": "./",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

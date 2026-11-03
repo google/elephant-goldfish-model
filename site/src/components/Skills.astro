@@ -1,0 +1,144 @@
+---
+import SkillIcon from './SkillIcon.astro';
+
+const repo = 'https://github.com/google/elephant-goldfish-model';
+
+// Authoring skills first, then review skills. This is also the mobile reading order.
+const skills = [
+  {
+    name: 'Brainstorm',
+    command: '/egm-brainstorm',
+    icon: 'brainstorm',
+    body: 'Test an idea and write a concept brief.',
+  },
+  {
+    name: 'Draft',
+    command: '/egm-draft',
+    icon: 'draft',
+    body: 'Turn a brief or existing notes into a design document.',
+  },
+  {
+    name: 'Resolve',
+    command: '/egm-resolve',
+    icon: 'resolve',
+    body: 'Work through review findings and agree on changes.',
+  },
+  {
+    name: 'Bootstrap',
+    command: '/egm-bootstrap',
+    icon: 'bootstrap',
+    body: 'Create or update documentation for an existing codebase.',
+  },
+  {
+    name: 'Review',
+    command: '/egm-review',
+    icon: 'review',
+    body: 'Review a design with fresh agents across five stages.',
+  },
+  {
+    name: 'Review loop',
+    command: '/egm-review-loop',
+    icon: 'review_loop',
+    body: 'Run a configured group of reviewers for a specific review task.',
+  },
+  {
+    name: 'Drift Report',
+    command: '/egm-drift-report',
+    icon: 'drift_report',
+    body: 'Compare checked-in documents with the current source code.',
+  },
+] as const;
+---
+
+<section class="section skills" id="skills">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="headline">Included skills</h2>
+    </div>
+    <ul class="list" aria-label="Skills">
+      {
+        skills.map((skill) => (
+          <li>
+            <a
+              class="ripple focus-ring-outer list-item"
+              href={`${repo}/blob/main/skills/${skill.command.slice(1)}/SKILL.md`}
+              target="_blank"
+              rel="noopener"
+            >
+              <span class="list-item-leading">
+                <SkillIcon skill={skill.icon} />
+              </span>
+              <span class="list-item-content">
+                <span>{skill.name}</span>
+                <span class="cmd">{skill.command}</span>
+                <span class="list-item-supporting-text">{skill.body}</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  /* Keep each skill's purpose and command together in a borderless catalog. */
+  .skills .list {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(4, auto);
+    gap: 16px 32px;
+    border-radius: 0;
+  }
+
+  .skills .list-item {
+    text-decoration: none;
+    --container-shape: var(--md-sys-shape-corner-md);
+    --label-text: var(--md-sys-typescale-title-lg);
+    --top-space: 14px;
+    --bottom-space: 16px;
+    --leading-space: 8px;
+    --trailing-space: 8px;
+    --between-space: 16px;
+    align-items: flex-start;
+    block-size: 100%;
+    /* Keep the first and last rows' hover corners consistent with the middle rows. */
+    border-radius: var(--container-shape);
+  }
+
+  .skills .list-item-leading {
+    display: flex;
+    align-items: center;
+    flex: none;
+    inline-size: 40px;
+    min-height: 0;
+  }
+
+  .skills .list-item-content {
+    min-inline-size: 0;
+  }
+
+  .skills .list-item-supporting-text {
+    max-inline-size: 40ch;
+    margin-block-start: 8px;
+    text-wrap: pretty;
+  }
+
+  .cmd {
+    margin-block-start: 6px;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.55;
+    color: var(--md-sys-color-on-surface-variant);
+  }
+
+  @media (max-width: 760px) {
+    .skills .list {
+      grid-auto-flow: row;
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      row-gap: 4px;
+    }
+  }
+</style>

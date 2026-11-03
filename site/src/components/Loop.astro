@@ -1,0 +1,151 @@
+---
+import SkillIcon from './SkillIcon.astro';
+
+const steps = [
+  {
+    name: 'Brainstorm',
+    icon: 'brainstorm',
+    command: '/egm-brainstorm',
+    body: 'Clarify a rough idea through open-ended questioning and stress-test the hypothesis into a concept brief.',
+  },
+  {
+    name: 'Draft',
+    icon: 'draft',
+    command: '/egm-draft',
+    body: 'Turn the brief into a living design doc under docs/designs/, section by section.',
+  },
+  {
+    name: 'Review',
+    icon: 'review',
+    command: '/egm-review',
+    body: 'Fresh zero-context Goldfish subagents check completeness, clarity, self-containment, and implementation readiness.',
+  },
+] as const;
+---
+
+<section class="section loop">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="headline">Go from an idea to a verified spec.</h2>
+    </div>
+    <ol class="steps">
+      {
+        steps.map((step) => (
+          <li class="step">
+            <span class="marker"><SkillIcon skill={step.icon} /></span>
+            <h3 class="title">{step.name}</h3>
+            <span class="cmd">{step.command}</span>
+            <p class="muted">{step.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="handoff muted">
+      Once you approve the spec, ask your coding agent to build it.
+    </p>
+    <div class="step drift">
+      <span class="marker"><SkillIcon skill="drift_report" /></span>
+      <div class="drift-head">
+        <h3 class="title">Check for drift</h3>
+        <span class="cmd">/egm-drift-report</span>
+      </div>
+      <p class="muted">
+        After implementation, compare the code with the spec and report where they diverge.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .loop {
+    background: var(--md-sys-color-surface-container-low);
+  }
+
+  /* One continuous rule carries the sequence; each step's marker sits on the line. */
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 48px;
+  }
+
+  .step .muted {
+    text-wrap: balance;
+  }
+
+  .step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-block-start: 44px;
+    padding-inline-end: 24px;
+    border-block-start: 1px solid var(--md-sys-color-outline-variant);
+  }
+
+  .steps .step:last-child {
+    padding-inline-end: 0;
+  }
+
+  /* The outline in the band color lifts each marker off the rule. */
+  .marker {
+    position: absolute;
+    inset-block-start: -20px;
+    inset-inline-start: 0;
+    outline: 6px solid var(--md-sys-color-surface-container-low);
+    display: flex;
+    inline-size: 40px;
+    block-size: 40px;
+    border-radius: 50%;
+  }
+
+  .handoff {
+    margin-block: 32px 52px;
+  }
+
+  .cmd {
+    font-size: 0.875rem;
+    color: var(--md-sys-color-on-surface-variant);
+  }
+
+  /* The drift check follows implementation, laid across the whole rule. */
+  .drift {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    column-gap: 0;
+    align-items: start;
+    padding-inline-end: 0;
+  }
+
+  /* Same column arithmetic as the steps, so the description starts under step two. */
+  .drift-head {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-inline-end: 24px;
+  }
+
+  .drift .muted {
+    max-inline-size: 60ch;
+    padding-block-start: 2px;
+  }
+
+  @media (width < 760px) {
+    .steps {
+      grid-template-columns: 1fr;
+      row-gap: 52px;
+    }
+
+    .step {
+      padding-block-start: 40px;
+      padding-inline-end: 0;
+    }
+
+    .drift {
+      grid-template-columns: 1fr;
+      row-gap: 10px;
+    }
+  }
+</style>

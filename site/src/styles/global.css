@@ -1,0 +1,180 @@
+/*
+ * Page-level styles. Layout, typography helpers, and plain links only.
+ * gBreeze component boxes (.btn, .card, .list-item, ...) are never restyled
+ * here; per-instance theming goes through the components' documented
+ * custom properties inside each section component.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-body-md);
+  font-family: var(--font-display);
+  letter-spacing: var(--md-sys-typescale-body-md-tracking);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+/* Plain prose links only. gBreeze anchors (.btn, .icon-btn, .list-item) keep the package
+   colors and focus ring; an unlayered rule here would beat their @layer styles. */
+a:not(.btn, .icon-btn, .list-item) {
+  color: inherit;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 0.18em;
+}
+
+a:not(.btn, .icon-btn, .list-item):hover {
+  text-decoration-color: currentColor;
+}
+
+a:not(.btn, .icon-btn, .list-item):focus-visible {
+  outline: 3px solid var(--md-sys-color-secondary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+svg {
+  display: block;
+}
+
+/* Inline SVG icons inside gBreeze buttons follow the component's icon tokens. */
+.btn > svg,
+.icon-btn > svg {
+  inline-size: var(--icon-size);
+  block-size: var(--icon-size);
+  flex: none;
+  fill: currentColor;
+}
+
+/* Same for list item slots, which expose the md-gb-icon tokens. */
+.list-item-leading > svg,
+.list-item-trailing > svg {
+  inline-size: var(--md-icon-size);
+  block-size: var(--md-icon-size);
+  flex: none;
+  fill: var(--md-icon-color);
+}
+
+/* Layout */
+:root {
+  /* Section rhythm: one scale, three steps. Tight for asides, loose before a change of register. */
+  --section-y-tight: clamp(48px, 6vw, 80px);
+  --section-y: clamp(72px, 9vw, 120px);
+  --section-y-loose: clamp(96px, 12vw, 160px);
+}
+
+.wrap {
+  inline-size: min(100% - 48px, 1160px);
+  margin-inline: auto;
+}
+
+@media (max-width: 640px) {
+  .wrap {
+    inline-size: min(100% - 32px, 1160px);
+  }
+}
+
+.section {
+  padding-block: var(--section-y);
+}
+
+.section-tight {
+  padding-block: var(--section-y-tight);
+}
+
+.section-head {
+  max-inline-size: 760px;
+  margin-block-end: clamp(32px, 5vw, 56px);
+}
+
+.display {
+  font: var(--md-sys-typescale-display-lg);
+  letter-spacing: var(--md-sys-typescale-display-lg-tracking);
+  text-wrap: balance;
+}
+
+.headline {
+  font: var(--md-sys-typescale-headline-lg);
+  letter-spacing: var(--md-sys-typescale-headline-lg-tracking);
+  text-wrap: balance;
+  margin-block: 12px 16px;
+}
+
+.title {
+  font: var(--md-sys-typescale-title-lg);
+  letter-spacing: var(--md-sys-typescale-title-lg-tracking);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+.lead {
+  font: var(--md-sys-typescale-body-lg);
+  letter-spacing: var(--md-sys-typescale-body-lg-tracking);
+  color: var(--md-sys-color-on-surface-variant);
+  max-inline-size: 58ch;
+  text-wrap: balance;
+}
+
+.muted {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: 16px;
+  inset-block-start: -100px;
+  padding: 10px 16px;
+  border-radius: 20px;
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font: var(--md-sys-typescale-label-lg);
+  z-index: 100;
+}
+
+.skip-link:focus {
+  inset-block-start: 16px;
+}

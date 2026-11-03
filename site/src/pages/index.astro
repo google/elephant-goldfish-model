@@ -1,0 +1,26 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import Model from '../components/Model.astro';
+import Loop from '../components/Loop.astro';
+import Skills from '../components/Skills.astro';
+import Install from '../components/Install.astro';
+import Footer from '../components/Footer.astro';
+
+const title = 'Elephant-Goldfish Model';
+const description =
+  'Open-source plugin for spec-driven development with AI coding agents. Deep-context agents draft the design, and zero-context subagents stress-test it before you write code.';
+---
+
+<Base title={title} description={description}>
+  <Nav />
+  <main id="main">
+    <Hero />
+    <Model />
+    <Loop />
+    <Skills />
+    <Install />
+  </main>
+  <Footer />
+</Base>

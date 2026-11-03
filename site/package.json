@@ -1,0 +1,26 @@
+{
+  "name": "egm-site",
+  "private": true,
+  "type": "module",
+  "description": "Landing site for the Elephant-Goldfish Model, served at https://egm.dev",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "capture": "astro build && node scripts/capture.mjs"
+  },
+  "dependencies": {
+    "@material/web": "2.5.0",
+    "astro": "^7.4.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "puppeteer-core": "25.15.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,35 @@
+---
+/**
+ * gBreeze icon button, native-element form (ICON_BUTTON_CLASSES in
+ * @material/web/labs/gb/components/iconbutton/icon-button.js).
+ * Put an inline <svg> in the default slot; no icon font is loaded.
+ * With `href` it renders as a link, like the element does.
+ */
+interface Props {
+  color?: 'filled' | 'tonal' | 'outlined' | 'standard';
+  size?: 'xs' | 'sm' | 'md';
+  label: string;
+  href?: string;
+  target?: '_blank' | '_self';
+  class?: string;
+  [key: `data-${string}`]: string | undefined;
+}
+
+const { color = 'standard', size = 'sm', label, href, target, class: className, ...data } = Astro.props;
+const classes = ['ripple', 'focus-ring-outer', 'icon-btn', `icon-btn-${color}`, `icon-btn-${size}`, className]
+  .filter(Boolean)
+  .join(' ');
+const rel = target === '_blank' ? 'noopener' : undefined;
+---
+
+{
+  href ? (
+    <a class={classes} href={href} target={target} rel={rel} aria-label={label} {...data}>
+      <slot />
+    </a>
+  ) : (
+    <button type="button" class={classes} aria-label={label} {...data}>
+      <slot />
+    </button>
+  )
+}

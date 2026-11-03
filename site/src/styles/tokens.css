@@ -1,0 +1,70 @@
+/*
+ * Theme overrides for the gBreeze baseline (@material/web/labs/gb/styles/m3.css).
+ *
+ * This file is intentionally unlayered. Every package stylesheet declares
+ * `@layer md.sys, md.comp.*`, so these :root declarations win the cascade
+ * without !important. Only token names from the package are redefined here;
+ * no component box styles live in this file.
+ *
+ * Palette: GDM-style neutral canvas, near-black primary for the pill CTA
+ * (antigravity.google), Google blue reserved for focus rings and links.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Typeface: Google Sans Flex (self-hosted, OFL). --font-display comes from Astro's <Font>. */
+  --md-ref-typeface-brand: var(--font-display);
+  --md-ref-typeface-plain: var(--font-display);
+
+  /* Surfaces */
+  --md-sys-color-surface: light-dark(#ffffff, #0f1013);
+  --md-sys-color-surface-container-low: light-dark(#f8f9fa, #15171b);
+  --md-sys-color-surface-container: light-dark(#f1f3f4, #1b1e23);
+  --md-sys-color-surface-container-high: light-dark(#e9ebee, #23272d);
+  --md-sys-color-on-surface: light-dark(#1f1f1f, #e8eaed);
+  --md-sys-color-on-surface-variant: light-dark(#5f6368, #9aa0a6);
+  --md-sys-color-outline: light-dark(#80868b, #5f6368);
+  --md-sys-color-outline-variant: light-dark(#dadce0, #2b3037);
+
+  /* Primary: the one filled pill per screen */
+  --md-sys-color-primary: light-dark(#1f1f1f, #ffffff);
+  --md-sys-color-on-primary: light-dark(#ffffff, #1f1f1f);
+  --md-sys-color-primary-container: light-dark(#e8f0fe, #0b57d0);
+  --md-sys-color-on-primary-container: light-dark(#041e49, #d3e3fd);
+
+  /* Brand Semantic Roles: GM3 Primary Tonal Duo (P1-H)
+     Elephant (Primary 50/70) and Goldfish (Orange 60/70) with accessible on-colors.
+     Keep in sync with public/favicon.svg. */
+  --egm-color-elephant: light-dark(#1b6ef3, #7cacf8);
+  --egm-color-on-elephant: light-dark(#ffffff, #041e49);
+  --egm-color-elephant-container: light-dark(#d3e3fd, #041e49);
+  --egm-color-goldfish: light-dark(#e86e00, #ff8d41);
+  --egm-color-on-goldfish: light-dark(#2c1600, #2c1600);
+  --egm-color-goldfish-container: light-dark(#ffe8d6, #582400);
+
+  /* Secondary: focus ring and links */
+  --md-sys-color-secondary: light-dark(#0b57d0, #a8c7fa);
+  --md-sys-color-on-secondary: light-dark(#ffffff, #062e6f);
+  --md-sys-color-secondary-container: light-dark(#f1f3f4, #2b3037);
+  --md-sys-color-on-secondary-container: light-dark(#1f1f1f, #e8eaed);
+
+
+  /* Type scale: tightened display sizes for the hero, otherwise package defaults */
+  --md-sys-typescale-display-lg: 500 clamp(2.625rem, 1rem + 4.8vw, 5rem) / 1.04 var(--md-ref-typeface-brand);
+  --md-sys-typescale-display-lg-tracking: -0.025em;
+  --md-sys-typescale-headline-lg: 500 clamp(2rem, 1.4rem + 2.4vw, 3rem) / 1.1 var(--md-ref-typeface-brand);
+  --md-sys-typescale-headline-lg-tracking: -0.015em;
+  --md-sys-typescale-title-lg: 500 1.375rem / 1.3 var(--md-ref-typeface-brand);
+  --md-sys-typescale-title-lg-tracking: 0;
+  --md-sys-typescale-body-lg: 400 1.125rem / 1.6 var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-lg-tracking: 0;
+  --md-sys-typescale-body-md: 400 1rem / 1.55 var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-lg: 500 0.9375rem / 1.25rem var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-lg-tracking: 0;
+  --md-sys-typescale-label-md: 500 0.8125rem / 1rem var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-md-tracking: 0.04em;
+
+  /* Shape */
+  --md-sys-shape-corner-lg: 20px;
+  --md-sys-shape-corner-md: 14px;
+}

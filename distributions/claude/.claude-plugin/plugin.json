@@ -1,0 +1,29 @@
+{
+  "name": "egm",
+  "displayName": "Elephant-Goldfish Model",
+  "version": "0.1.0",
+  "description": "Draft specs, review designs, and check implementation drift.",
+  "author": {
+    "name": "Google"
+  },
+  "homepage": "https://egm.dev",
+  "repository": "https://github.com/google/elephant-goldfish-model",
+  "license": "Apache-2.0",
+  "keywords": ["spec-driven-development", "design-documents", "design-review"],
+  "icon": "./.claude-plugin/icon.png",
+  "documentationUrl": "https://github.com/google/elephant-goldfish-model/blob/main/docs/claude.md",
+  "supportUrl": "https://github.com/google/elephant-goldfish-model/issues",
+  "privacyPolicyUrl": "https://github.com/google/elephant-goldfish-model/blob/main/docs/privacy.md",
+  "termsOfServiceUrl": "https://github.com/google/elephant-goldfish-model/blob/main/LICENSE",
+  "agents": [
+    "./.claude-plugin/agents/bootstrap_orchestrator.md",
+    "./.claude-plugin/agents/codebase_details.md",
+    "./.claude-plugin/agents/comprehension.md",
+    "./.claude-plugin/agents/design_critic.md",
+    "./.claude-plugin/agents/implementation_readiness.md",
+    "./.claude-plugin/agents/structural.md",
+    "./.claude-plugin/agents/style.md",
+    "./.claude-plugin/agents/synthesizer.md",
+    "./.claude-plugin/agents/zoom_out.md"
+  ]
+}

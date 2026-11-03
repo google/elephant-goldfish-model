@@ -1,0 +1,90 @@
+---
+import Mark from './Mark.astro';
+
+const essay =
+  'https://medium.com/@drensin/elephants-goldfish-and-the-new-golden-age-of-software-engineering-c33641a48874';
+---
+
+<section class="section" id="model">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="headline">Design with context. Review with fresh eyes.</h2>
+      <p class="lead">
+        <a href="https://dkr.bio" target="_blank" rel="noopener">Dave Rensin</a> introduces this
+        approach in{' '}
+        <a href={essay} target="_blank" rel="noopener">
+          Elephants, Goldfish, and the New Golden Age of Software Engineering
+        </a>
+        . Drafting agents hold full repository context while reviewing subagents start with a blank
+        slate to expose blind spots early.
+      </p>
+    </div>
+
+    <div class="pair">
+      <article class="role">
+        <Mark variant="elephant" class="glyph" />
+        <h3 class="title">Elephant</h3>
+        <p class="role-sub">Full context</p>
+        <p class="muted">
+          Deep-context agents load system history, architecture, component boundaries, and user
+          journeys. The Elephant runs structured brainstorming, probes operational limits, and
+          drafts the specification.
+        </p>
+      </article>
+      <article class="role">
+        <Mark variant="goldfish" class="glyph" />
+        <h3 class="title">Goldfish</h3>
+        <p class="role-sub">Zero context</p>
+        <p class="muted">
+          Stateless, isolated subagents read only the draft spec and live source code, without
+          conversation bias. A Goldfish swarm stress-tests the design from conflicting perspectives
+          before you write code.
+        </p>
+      </article>
+    </div>
+
+    <p class="approval muted">
+      You make the architectural decisions and approve the spec before implementation.
+    </p>
+  </div>
+</section>
+
+<style>
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px clamp(32px, 6vw, 96px);
+  }
+
+  @media (max-width: 640px) {
+    .pair {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .role {
+    max-inline-size: 46ch;
+  }
+
+  .role .muted {
+    text-wrap: balance;
+  }
+
+  .pair :global(.glyph) {
+    inline-size: 56px;
+    block-size: 56px;
+    margin-block-end: 20px;
+  }
+
+  .role-sub {
+    font: var(--md-sys-typescale-title-lg);
+    letter-spacing: var(--md-sys-typescale-title-lg-tracking);
+    color: var(--md-sys-color-on-surface-variant);
+    margin-block: 2px 14px;
+  }
+
+  .approval {
+    margin-block-start: 32px;
+    max-inline-size: 70ch;
+  }
+</style>

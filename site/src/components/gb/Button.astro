@@ -1,0 +1,44 @@
+---
+/**
+ * gBreeze button, native-element form.
+ *
+ * Emits the class names from BUTTON_CLASSES, RIPPLE_CLASSES and
+ * FOCUS_RING_CLASSES in @material/web@2.5.0 (labs/gb/components/{button,ripple,focus}),
+ * which is exactly what <md-gb-button> renders inside its shadow root.
+ * Styles come from the package stylesheets imported in Base.astro.
+ */
+interface Props {
+  color?: 'filled' | 'elevated' | 'tonal' | 'outlined' | 'text';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  href?: string;
+  target?: '_blank' | '_self';
+  class?: string;
+  label?: string;
+  [key: `data-${string}`]: string | undefined;
+}
+
+const { color = 'text', size = 'sm', href, target, class: className, label, ...data } = Astro.props;
+const classes = ['ripple', 'focus-ring-outer', 'btn', `btn-${color}`, `btn-${size}`, className]
+  .filter(Boolean)
+  .join(' ');
+const rel = target === '_blank' ? 'noopener' : undefined;
+---
+
+{
+  href ? (
+    <a class={classes} href={href} target={target} rel={rel} aria-label={label} {...data}>
+      <slot />
+    </a>
+  ) : (
+    <button type="button" class={classes} aria-label={label} {...data}>
+      <slot />
+    </button>
+  )
+}
+
+<style>
+  /* The package styles the box. Links only need the UA underline removed. */
+  a.btn {
+    text-decoration: none;
+  }
+</style>
