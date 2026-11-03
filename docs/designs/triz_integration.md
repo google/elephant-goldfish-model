@@ -38,7 +38,7 @@ TRIZ introduces an **inventive and transformative** dimension. Rather than
 merely flagging trade-offs or accepting compromises (e.g., higher reliability
 requires higher latency), TRIZ systematically identifies **technical
 contradictions** and applies recognized inventive principles (such as Inversion,
-Separation, and Self-Service) to resolve the conflict without premature
+Segmentation, and Self-Service) to resolve the conflict without premature
 surrender to false compromises.
 
 This integration delivers:
@@ -201,6 +201,7 @@ Evaluate the feature concept from an inventive contradiction-resolution perspect
 
 ### IF Mode: REVIEW (Document Audit - Step 5 Initial Strategic Review)
 Audit the target document at the strategic, high-altitude level:
+0. **Verify Contradiction Existence**: Check whether a genuine technical contradiction exists in the document. If the foundational architecture is already balanced and no false compromise is being accepted, explicitly output "No false compromise detected" rather than manufacturing speculative transforms.
 1. **Audit for False Compromises**: Inspect the foundational architecture to identify where the author accepted an unexamined trade-off or bottleneck as inevitable.
 2. **Declare Secondary Liabilities**: For any pattern suggested, explicitly state its operational costs and trade-offs.
 
@@ -216,7 +217,8 @@ Audit the target document at the strategic, high-altitude level:
 Report your findings back to the orchestrator in plain, natural language.
 
 #### IF Mode: BRAINSTORM
-For each contradiction identified, include:
+If no false compromise is detected, output: "No false compromise detected".
+Otherwise, for each contradiction identified, include:
 1. **Severity**: [Blocker | Major | Nit]
 2. **Dimension**: Contradiction Elimination & Inventive Transforms
 3. **Contradiction**: Parameter [X] versus Parameter [Y].
@@ -225,7 +227,8 @@ For each contradiction identified, include:
 6. **Ideal Final Result (IFR)**: What the self-sufficient architecture would look like.
 
 #### IF Mode: REVIEW
-For each finding, include:
+If no false compromise is detected, output: "No false compromise detected".
+Otherwise, for each finding, include:
 1. **Severity**: [Major | Nit] (Advisory findings)
 2. **Affected Scope**: Section header or architectural subsystem.
 3. **False Compromise**: Description of the accepted trade-off in the text.
@@ -267,18 +270,24 @@ For each finding, include:
     *   `egm-zoom-out`: Audits for YAGNI, over-engineering, and root-problem
         alignment against `zoom-out-standard.md`.
     *   `egm-inventive-catalyst`: Audits for foundational false compromises and
-        inventive opportunities across `full file`.
-2.  **Advisory Checkpoint Gate**: Step 5 is already an interactive manual
-    checkpoint gate. Findings from the Catalyst are reported in
-    `zoom_out_report.md` under an **Inventive Opportunities** section. The
-    author can choose to pivot their architecture early before proceeding.
+        inventive opportunities across `full file` without a document standard
+        (relying on its self-contained inlined catalog, analogous to
+        `egm-comprehension`).
+2.  **Advisory Checkpoint Gate**: Step 5 is an interactive manual checkpoint
+    gate. Findings from the Catalyst are reported in `zoom_out_report.md` under
+    an **Inventive Opportunities** section. The author can choose to pivot
+    their architecture early before proceeding. In `Subflow: Uninterrupted Full
+    Flow`, these advisory opportunities in `zoom_out_report.md` are excluded
+    from the mandatory defect repair traceability matrix.
 3.  **Unidirectional Review Pipeline**: Because foundational compromises are
     evaluated in Step 5:
     *   Step 6 (`egm-comprehension`) audits the doc for clarity.
     *   Step 7 (`egm-design`, `egm-structural`, `egm-style`) audits
         implementation mechanics without cyclic whiplash.
     *   Step 8 (`egm-zoom-out`) acts as the final pruning shears before Step 9
-        readiness testing.
+        readiness testing, evaluating adopted inventive resolutions in the
+        context of resolved trade-offs so legitimate conflict resolutions are
+        not treated as premature complexity.
 
 --------------------------------------------------------------------------------
 
@@ -408,7 +417,8 @@ checkpoints at each stage.
     `.claude-plugin/agents/`, `.cursor-plugin/agents/`,
     `com.github.copilot/agents/egm-inventive-catalyst.agent.md`, the reviewer
     list in `adapters/opencode/install.py`, and the persona list in
-    `scripts/pack_plugin.py`. Regenerate `distributions/claude/`.
+    `scripts/pack_plugin.py`. Update reviewer and adapter counts in
+    `docs/harnesses.md` from nine to ten. Regenerate `distributions/claude/`.
 
 *Phase 1 Checkpoint*: Validate YAML frontmatter across all agent files using
 `pytest tests/unit/test_frontmatter.py`.
@@ -433,6 +443,10 @@ checkpoints at each stage.
         *"Collect findings from all 7 Goldfish, deduplicate overlapping points,
         synthesize inventive contradictions and pattern resolutions alongside
         risk dimensions, and compile them into `concepts_brief.md`."*
+    *   In Step 5 of `egm-review`: `egm-inventive-catalyst` is dispatched
+        alongside `egm-zoom-out`; findings under `## Inventive Opportunities`
+        are recorded directly into `zoom_out_report.md` without altering
+        `goldfish_review_report.md`'s strict Blocker/Major/Nit defect schema.
 
 #### 4. `skills/egm-brainstorm/SKILL.md` (Modify)
 
@@ -540,7 +554,7 @@ using `pytest tests/unit/test_link_integrity.py`.
 
 *   **Type / Scope**: Test Suite & Evaluation Scenarios
 *   **Rationale**: Ensure automated test coverage for the 7-lens swarm and Step
-    5 Catalyst integration.
+    5 Catalyst integration across all harnesses.
 *   **Proposed Changes**:
     *   `skills/egm-brainstorm/TEST.md`: Update test expectations and lens
         enumeration to include Inventive Catalyst (7 lenses).
@@ -549,11 +563,22 @@ using `pytest tests/unit/test_link_integrity.py`.
     *   `skills/egm-brainstorm/test_scenarios.yaml`: Add behavioral test
         scenarios asserting that the `## Analysis` section names an inventive
         contradiction, the catalog pattern suggested for it, and its secondary
-        trade-offs.
-    *   `skills/egm-review/test_scenarios.yaml`: Add a scenario validating
-        detection of false architectural compromises in Step 5.
+        trade-offs, plus a scenario validating the "No false compromise
+        detected" early-exit guardrail when the input is already optimal.
+    *   `skills/egm-review/test_scenarios.yaml`: Add scenarios validating
+        detection of false architectural compromises in Step 5 and the early-exit
+        guardrail.
     *   `tests/unit/test_frontmatter.py`: Add validation asserting frontmatter
         conformance for all markdown files under `agents/`.
+    *   `adapters/opencode/install.py`: Update `agents["egm"]["prompt"]`
+        lead-in string from "complete all six brainstorm reviewers" to "all seven".
+    *   `tests/unit/test_opencode_adapter.py`: Update agent count assertion
+        from 8 to 9 (`assert len(config["agent"]) == 9`).
+    *   `tests/unit/test_harnesses.py`: Add `"inventive_catalyst"` to the central
+        `REVIEWERS` tuple.
+    *   `scripts/pack_plugin.py`: Add `agents/inventive_catalyst.md` to the
+        `REQUIRED_SHARED` list to ensure Claude distribution packaging passes
+        `tests/unit/test_packaging.py`.
 
 *Phase 4 Checkpoint*: Run the unit suite. `test_skill_load_limits.py` and
 `test_scenario_coverage.py` cover the skill changes:
