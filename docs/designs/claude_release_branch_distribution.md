@@ -1,4 +1,4 @@
-# Release-branch distribution for the Claude directory
+# Claude release-branch distribution
 
 *   **Author:** [@n3wth](https://github.com/n3wth)
 *   **Status:** Draft
@@ -458,7 +458,7 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
     *   `docs/designs/runtime_packaging.md`: replace the paragraph that begins
         "Generate `distributions/claude` from the same builder" with "Publish the
         Claude runtime to `release/claude` from the attested release archive. See
-        [Release-branch distribution](release_branch_distribution.md)."
+        [Claude release-branch distribution](claude_release_branch_distribution.md)."
     *   `docs/designs/runtime_packaging.md`: also change "overwrite refusal,
         reproducibility, and generated freshness" to "overwrite refusal, and
         reproducibility". `docs/designs/releases.md` stays unchanged.
@@ -466,7 +466,7 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
         do not edit its copies independently." with "Do not edit generated
         copies independently."
     *   Run `grep -rn "distributions/claude" . --exclude-dir=.git
-        --exclude=release_branch_distribution.md` before and after. The
+        --exclude=claude_release_branch_distribution.md` before and after. The
         expected hits before are `docs/directory.md`, `docs/releases.md`,
         `docs/designs/runtime_packaging.md`, `docs/designs/skill_icons.md`,
         `tests/unit/test_packaging.py`, and `distributions/claude/docs/releases.md`.
