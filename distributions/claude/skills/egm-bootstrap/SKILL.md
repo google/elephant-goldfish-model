@@ -54,9 +54,9 @@ If your harness has no subagent tool, run the scout steps inline.
     `git add`). All filesystem changes must be written locally using standard
     file-writing tools. Tracking
     and submitting is deferred to the human user.
-3.  **Temporary File Isolation**: Parallel workers sharing the workspace must
-    perform all status tracking, check-pointing, and log writing in independent,
-    worker-specific directories outside the project repository workspace.
+3.  **Temporary File Isolation**: Each worker keeps its status, checkpoint,
+    and log files in its own directory outside the workspace (host scratch or
+    `mktemp -d`), never a fixed, shared path. If neither exists, skip them.
 4.  **Tool Usage (CRITICAL)**: Use your shell, file-reading, file-writing, and file-editing tools for directory discovery and contract/README
     generation. Adhere to clean Markdown formatting directly during generation
     (standard headers, tables, and fenced code blocks). If a project markdown

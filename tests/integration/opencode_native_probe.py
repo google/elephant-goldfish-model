@@ -230,7 +230,7 @@ def main() -> None:
             ), 'Parent marker reached child'
             assert all(
                 {t['function']['name'] for t in r['tools']}
-                == {'read', 'glob', 'grep'}
+                == {'read', 'glob'}
                 for r in children
             ), 'Unexpected child tools'
             results = [
@@ -267,7 +267,7 @@ def main() -> None:
                 'opencode_version': version,
                 'model': 'scripted local mock',
                 'native_child_completed': True,
-                'child_tools': ['glob', 'grep', 'read'],
+                'child_tools': ['glob', 'read'],
                 'parent_marker_seen_in_parent': True,
                 'parent_marker_in_child': False,
                 'fixture_env_read': 'denied',

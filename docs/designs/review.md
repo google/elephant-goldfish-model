@@ -96,8 +96,9 @@ flowchart TD
     *   *Personas*: [`implementation_readiness`](../../agents/implementation_readiness.md),
         [`codebase_details`](../../agents/codebase_details.md), [`style`](../../agents/style.md).
     *   *Standards*: `implementation-readiness-standard.md`, `re-implementation-standard.md`.
-    *   *Focus*: Verifies that every file touched is listed with rationale, API
-        signatures match current codebase reality, and step-by-step test plans exist.
+    *   *Focus*: Verifies that every file touched is listed as an explicit
+        repository-relative write boundary with rationale, API signatures match
+        current codebase reality, and step-by-step test plans exist.
 
 --------------------------------------------------------------------------------
 
@@ -113,7 +114,7 @@ All reviewer persona prompts reside under [`agents/`](../../agents/):
 | [`agents/implementation_readiness.md`](../../agents/implementation_readiness.md) | Tech Lead Auditor | Ensures implementation plans contain unambiguous, deterministic instructions, complete file lists, and verification steps. |
 | [`agents/codebase_details.md`](../../agents/codebase_details.md) | Codebase Auditor | Cross-references referenced paths, classes, and function signatures against live source code to prevent drift and hallucinated APIs. |
 | [`agents/structural.md`](../../agents/structural.md) | Layout Validator | Enforces standard heading hierarchy, table formatting, and document template conformance. |
-| [`agents/style.md`](../../agents/style.md) | Technical Copy Editor | Strips conversational filler, enforces factual, objective tone, and ensures adherence to concise technical writing standards. |
+| [`agents/style.md`](../../agents/style.md) | Technical Copy Editor | Strips conversational filler, enforces factual, objective tone, calibrates defensive caveats (`DROP` / `CALIBRATE` / `RELOCATE` / `KEEP`), and ensures adherence to concise technical writing standards. |
 | [`agents/synthesizer.md`](../../agents/synthesizer.md) | Review Synthesizer | Spawns reviewers in parallel, deduplicates findings, formats file links, and writes consolidated report artifacts. |
 
 --------------------------------------------------------------------------------

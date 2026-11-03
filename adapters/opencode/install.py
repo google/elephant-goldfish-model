@@ -73,7 +73,8 @@ def install(destination: Path) -> Path:
                     "*": "allow", "*.env": "deny", "*.env.*": "deny",
                     "*.env.example": "allow", "mcp:*": "deny",
                 },
-                "glob": "allow", "grep": "allow",
+                # grep does not enforce read rules, so it could expose .env files.
+                "glob": "allow", "grep": "deny",
                 "external_directory": {"*": "deny", f"{bundle}/**": "allow"},
             },
             "prompt": context + f"Read {persona} before the target and supplied standards. "

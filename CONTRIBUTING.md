@@ -3,6 +3,20 @@
 We welcome contributions! We all benefit when new ideas, skills, and reviewer
 perspectives are shared across the open-source community.
 
+## Which track is my change?
+
+Pick a track before you open an issue or PR. The full rules for each track are
+in [Contribution Tracks & Workflow](#contribution-tracks--workflow); this
+section points to them.
+
+*   **Small fix within the Track 1 limits:** open a PR with the
+    [PR template](.github/PULL_REQUEST_TEMPLATE.md).
+*   **New feature, architectural change, or anything over the Track 1
+    limits:** open a
+    [feature proposal issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
+    and follow the Track 2 steps. Existing design docs are listed in
+    [docs/designs/README.md](docs/designs/README.md).
+
 ## Design Principles
 
 These general principles guide development of the EGM framework:

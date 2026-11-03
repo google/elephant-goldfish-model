@@ -27,8 +27,11 @@ emerging patterns and tried to make it easier to get started with fewer steps.
 The EGM skills and personas are packaged as a plugin for **Antigravity**, **Claude Code**, **Claude Cowork**, **OpenAI Codex**, and **ChatGPT Work** (see [Harnesses](harnesses.md) for installation instructions).
 
 1.  **Skills**: The skills in `skills/` can be installed via the plugin/extension
-    manifest or invoked via slash commands (e.g. `/egm-brainstorm`,
-    `/egm-draft`, `/egm-review`).
+    manifest. This guide shows their commands without a prefix (e.g.
+    `/egm-brainstorm`, `/egm-draft`, `/egm-review`); see
+    [Try your first design](../README.md#try-your-first-design) for how to
+    invoke them in Antigravity (agy CLI), Claude Code, and Codex, such as the
+    `/egm:` prefix.
 2.  **Personas**: The prompts in `agents/` define isolated system instructions
     for subagents.
 

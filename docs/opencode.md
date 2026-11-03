@@ -89,7 +89,9 @@ For review, write each completed stage report before starting the next stage.
 Before Step 8, verify `zoom_out_report.md` exists in the artifact directory.
 Pass its absolute path to the reviewer. Stop if the report is missing.
 
-Reviewers deny every tool except `read`, `glob`, and `grep`.
+Reviewers deny every tool except `read` and `glob`.
+`grep` is denied because its searches bypass the host's per-file `read` rules,
+including the `.env` exclusions. Use permitted file reads for review context.
 V1 maps MCP resource reads and resource lists to the `read` permission.
 The reviewer `read` rules allow local reads, then deny `mcp:*`.
 This denies `mcp:<server>:<uri>` reads and `mcp:<server>:*` resource or template lists.
@@ -141,7 +143,8 @@ Choose an output path that does not exist. A passing probe does not establish
 live model behavior, full workflows, or general reviewer isolation.
 
 On 2026-10-24, OpenCode `1.18.29` accepted the generated configuration through `debug config` and `debug agent egm-style`.
-The resolved reviewer toolset enabled only `read`, `glob`, and `grep`.
+The historical reviewer toolset enabled `read`, `glob`, and `grep`. The current
+candidate denies `grep` to preserve the `.env` read restriction.
 The `debug skill` command discovered all seven skills from the installed candidate paths.
 These commands made no model calls. This result does not prove task execution or runtime permission enforcement.
 Separate XDG directories did not prevent discovery of home-directory skills. A clean verification profile must account for those locations too.

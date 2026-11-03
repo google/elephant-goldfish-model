@@ -59,7 +59,7 @@ def test_install_preserves_resources_and_native_contract(tmp_path: Path) -> None
                 "*": "allow", "*.env": "deny", "*.env.*": "deny",
                 "*.env.example": "allow", "mcp:*": "deny",
             },
-            "glob": "allow", "grep": "allow",
+            "glob": "allow", "grep": "deny",
             "external_directory": {"*": "deny", f"{destination / 'bundle'}/**": "allow"},
         }
         # V1 maps resource reads and both list tools to read. Last match wins.
