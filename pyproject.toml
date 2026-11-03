@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+[dependency-groups]
+test = [
+    "pytest==8.3.5",
+    "pyyaml==6.0.2",
+]
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests/unit"]

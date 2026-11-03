@@ -113,5 +113,8 @@ sign a new one.
 
 ## Community Guidelines
 
+See our [accessibility statement](ACCESSIBILITY.md) for goals, current limits,
+and how to report accessibility barriers.
+
 This project follows
 [Google's Open Source Community Guidelines](https://opensource.google/conduct/).
