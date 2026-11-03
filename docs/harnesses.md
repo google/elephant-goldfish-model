@@ -116,24 +116,26 @@ assumptions that the Goldfish must challenge as explicit review criteria.
 
 ## Reviewer Tools
 
-Every reviewer persona tells the reviewer not to modify the workspace. Some
-hosts also limit the reviewer's tools. On the others, that instruction is the
-only limit.
+The seven Goldfish reviewer personas tell the reviewer not to modify the
+workspace. Some hosts also limit the reviewer's tools. On prompt-only hosts, no
+tool limit from EGM applies, so a reviewer can use whatever tools the session
+allows.
 
 | Harness | Reviewer read-only |
 | --- | --- |
-| Antigravity | Prompt only: the shared personas in `agents/` declare no tools |
+| Antigravity | Prompt only: the shared personas in `agents/` set no `tools` list |
 | Claude Code | Host-enforced: reviewer adapters allow only `Read`, `Grep`, and `Glob` (see [reviewer isolation](claude.md#reviewer-isolation)) |
 | Claude Cowork | Unverified: Cowork uses the same adapters, but their tool limits are not verified there (see [Claude Cowork](claude.md#claude-cowork)) |
 | Codex | Prompt only: a general-purpose subagent reads the persona |
 | ChatGPT | Prompt only: a general-purpose agent reads the persona |
-| omp | Not recorded: the personas register as native `task` agents, but whether omp applies the adapters' tool lists is not recorded |
+| omp | Unverified: the personas register as native `task` agents, but whether omp limits their tools the way the Claude adapters do is unverified ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) |
 | Muse | Prompt only: agent tool projections are unsupported (see the [Muse guide](https://github.com/google/elephant-goldfish-model/blob/main/docs/muse.md#fresh-context-reviewers)) |
 
-For these hosts, no test records a reviewer write being denied. Host-enforced
-means the host is configured to deny those tools, not that a run has shown it.
-The Cursor, GitHub Copilot, and OpenCode adapters set their own reviewer
-permissions; see the [Cursor](https://github.com/google/elephant-goldfish-model/blob/main/docs/cursor.md),
+For the hosts above, no test records a reviewer write being denied.
+Host-enforced means the adapters' tool lists leave out write and shell tools,
+not that a run has shown a write refused. The experimental Cursor, GitHub
+Copilot, and OpenCode adapters set their own reviewer permissions; see the
+[Cursor](https://github.com/google/elephant-goldfish-model/blob/main/docs/cursor.md),
 [Copilot](https://github.com/google/elephant-goldfish-model/blob/main/docs/copilot.md), and
 [OpenCode](https://github.com/google/elephant-goldfish-model/blob/main/docs/opencode.md) guides.
 
