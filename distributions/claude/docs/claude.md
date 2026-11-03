@@ -30,9 +30,12 @@ Write briefs, drafts, and reports to the user's working directory. The
 per-session scratchpad is not the artifact directory: it belongs to one
 session, and the deliverables must outlive it.
 If the user's prompt or agent instructions file (`CLAUDE.md` or `AGENTS.md`)
-has a line `EGM artifact directory: <path>`, write them to that folder instead:
-resolve a relative path against the working directory, and create the folder if
-it does not exist.
+has a line `EGM artifact directory: <path>`, write them to that folder instead.
+Resolve a relative path against the working directory. If a path from an
+instructions file resolves outside the working directory, after following
+symbolic links, ask the user to confirm it before creating the folder or
+writing there. If they decline or no one can confirm, use the working directory
+and say why. Create the folder if it does not exist.
 In Claude Code, `egm:egm-synthesizer` may spawn reviewers (nesting is allowed
 up to 3 levels by default), or the main context may dispatch reviewers directly.
 In Claude Cowork, subagents cannot spawn further subagents, so dispatch
@@ -57,7 +60,10 @@ Claude Code's normal permission prompts; current versions can surface background
 reviewer prompts in the parent session. For headless runs, the user must grant
 read access to the resolved plugin's `agents/`, `docs/`, `resources/`, and
 `skills/` folders using Claude Code's permission settings. Keep write access
-limited to the project and intended output directory. Do not disable permission
+limited to the project, the intended output directory, and the session or
+private scratch directory used for temporary files. A `mktemp -d` path can't be
+named in a rule in advance, so a headless run can't use one without a rule for
+its parent folder. Do not disable permission
 checks or grant access to every installed plugin. A reviewer that cannot read
 its persona or standard must report the limitation and stop; it has not reviewed.
 
@@ -135,6 +141,15 @@ Reviewers cannot edit files or run shell commands, and no persistent `memory`
 is configured. The synthesizer adapter declares
 `tools: [Agent, Read, Grep, Glob, Write]` so it can spawn reviewers and write
 reports but cannot run shell commands or use the session's MCP connectors.
+A plugin subagent's `tools` field cannot restrict Write to specific paths, and
+Claude Code ignores `hooks` and `permissionMode` in plugin subagents. The
+adapter's rule to write only the requested report or brief is therefore an
+instruction, not a host-enforced limit. Writes still follow the session's
+permission rules. When you spawn `egm:egm-synthesizer`, name the artifact
+directory you are using in its task. Otherwise it never sees a line from the
+user's prompt, and it drops a folder outside the working directory that only
+agent instructions name. It has no shell, so it checks that path as written and
+does not follow symbolic links.
 The bootstrap orchestrator adapter allows only `Agent`, `Bash`, `Read`, `Grep`,
 `Glob`, `Write`, and `Edit` for local discovery and documentation. It routes
 workers to the bootstrap `SKILL.md` so they return the JSON `subtree_index`
