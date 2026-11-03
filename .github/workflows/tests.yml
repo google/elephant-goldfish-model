@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Run the Tier 1 unit tests (frontmatter schema, relative link integrity,
-# scenario coverage, packaging, and harness checks) described in TESTING.md.
-# They are offline and need no API keys or model dependencies.
+# Run the offline unit tests described in TESTING.md, plus the site checks.
+# They need no API keys or model dependencies.
 name: Tests
 
 on:
