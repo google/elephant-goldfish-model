@@ -113,8 +113,8 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
     open URLs, so save the raw page of each URL in `GoldfishContext` as a new
     file in the working directory (or your harness's artifact directory) and
     pass its absolute path instead. If a page cannot be saved, ask the user for
-    a local copy and end your turn; if no one can answer, leave it out and tell
-    the user. Pass
+    a local copy and end your turn; if no one can answer, as in a headless run,
+    leave it out, tell the user, and keep going. Pass
     `GoldfishContext` to every stage except Stage 6, which reads the document
     alone; tell any synthesizer to give these files to each reviewer.
 
