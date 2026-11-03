@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
-    "puppeteer-core": "25.15.0",
+    "puppeteer-core": "25.16.0",
     "typescript": "^6.0.3"
   }
 }
