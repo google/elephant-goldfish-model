@@ -32,7 +32,7 @@ framework (`github.com/google/elephant-goldfish-model`).
 EGM separates high-context conversational drafting (**The Elephant**) from
 independent, zero-context critique (**Goldfish personas**). Existing Goldfish
 personas are predominantly **evaluative** (they audit designs to identify flaws,
-risks, cognitive friction, and unnecessary complexity.
+risks, cognitive friction, and unnecessary complexity).
 
 TRIZ introduces an **inventive and transformative** dimension. Rather than
 merely flagging trade-offs or accepting compromises (e.g., higher reliability
@@ -58,7 +58,7 @@ This integration delivers:
 
 Software system design is routinely constrained by perceived trade-offs (such as
 throughput versus memory, flexibility versus simplicity, or speed versus
-correctness. Engineers and AI agents frequently accept these compromises as
+correctness). Engineers and AI agents frequently accept these compromises as
 inevitable laws of architecture.
 
 Existing Goldfish personas audit designs against specific domain standards:
@@ -102,8 +102,8 @@ Control) spanning both single-process tools and distributed systems.
     architecture patterns directly into the persona prompt, eliminating external
     file I/O and cross-harness path resolution failures.
 *   **Harness-Agnostic Operation**: Ensure all agent definitions and workflows
-    operate across supported agent harnesses (Claude Code, Cursor, Codex, Gemini
-    CLI) using standard subagent tool conventions.
+    operate across the harnesses in [`docs/harnesses.md`](../harnesses.md)
+    using standard subagent tool conventions.
 
 ### Non-Goals
 
@@ -136,23 +136,8 @@ standalone Markdown file conforming to the standard Goldfish harness contract:
 ---
 name: egm-inventive-catalyst
 description: Inventive problem-solving Goldfish persona applying TRIZ principles to identify and eliminate system-level contradictions without compromise.
+license: Apache-2.0
 ---
-
-<!--
-Copyright 2026 Google LLC
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
--->
 
 # Core Mandates (Universal Goldfish Context)
 
@@ -265,16 +250,14 @@ For each finding, include:
     `skills/egm-brainstorm/SKILL.md`, update the subagent dispatch list for
     `Mode: BRAINSTORM`:
 
-    *   Update `Reviewers` to include `egm-inventive-catalyst` (7 lenses total).
-    *   Update heading to `## The 7 Goldfish Brainstorming Lenses`.
-    *   Update `concepts_brief.md` template to record `7 Goldfish Lenses
-        Applied`.
+    *   Update `Reviewers` to include `egm-inventive-catalyst`.
 
 3.  **Generic Multi-Lens Synthesis**: `egm-synthesizer` aggregates findings
-    across all 7 lenses symmetrically into Section 2 (`Multi-Lens Analysis &
-    Risk Matrix`) of `concepts_brief.md`. If `zoom_out` flags YAGNI while
-    `inventive_catalyst` suggests a pattern, both are reported side-by-side to
-    prompt human engineering judgment.
+    across all lenses symmetrically into the `## Analysis` section of
+    `concepts_brief.md`. Extend the failed-reviewer rule in
+    `agents/synthesizer.md` from `Mode: REVIEW` to `Mode: BRAINSTORM`: a lens
+    that times out or returns nothing is retried once, then reported as
+    `not run` in `concepts_brief.md`, never as a lens with no findings.
 
 #### B. Review Loop Integration (`/egm-review`)
 
@@ -327,9 +310,10 @@ For each finding, include:
 *   **Risk**: Adding a 7th subagent to the parallel shootdown swarm increases
     request concurrency, risking timeout failures in latency-sensitive
     environments.
-*   **Mitigation**: `egm-synthesizer` aggregates available findings with
-    partial-success fault tolerance, proceeding with synthesis if any individual
-    subagent times out.
+*   **Mitigation**: Item 3 extends the failed-reviewer rule in
+    `agents/synthesizer.md` from `Mode: REVIEW` to `Mode: BRAINSTORM`: a lens
+    that times out or returns nothing is retried once, then reported as
+    `not run` in `concepts_brief.md`, never as a lens with no findings.
 
 --------------------------------------------------------------------------------
 
@@ -355,8 +339,8 @@ For each finding, include:
     individual Goldfish personas on or off before each shootdown.
 *   **Pros**: Allows granular per-session customization.
 *   **Cons**: Violates `skills/egm-brainstorm/SKILL.md` Constraint 2 (no
-    structured question tools during ideation), relies on Google3-internal tools
-    unavailable in open-source harnesses, and adds user friction.
+    structured question tools during ideation), depends on a structured
+    question tool that only some harnesses have, and adds user friction.
 *   **Reason for Rejection**: The automated parallel swarm handles reviews
     cleanly without manual toggling.
 
@@ -415,12 +399,16 @@ checkpoints at each stage.
 *   **Proposed Changes**: Author the file following the exact schema specified
     in Section 1 of the Proposed Architecture.
 
-#### 2. `.claude-plugin/plugin.json` (Modify)
+#### 2. Host packages (Modify)
 
-*   **Type / Scope**: Plugin Manifest
-*   **Rationale**: Register the new agent persona in the plugin manifest.
-*   **Proposed Changes**: Add `"./agents/inventive_catalyst.md"` to the `agents`
-    array.
+*   **Type / Scope**: Plugin manifests and host adapters
+*   **Rationale**: Every host that ships the reviewers needs the new persona.
+*   **Proposed Changes**: Add `"./.claude-plugin/agents/inventive_catalyst.md"`
+    to the `agents` array in `.claude-plugin/plugin.json`. Add the persona to
+    `.claude-plugin/agents/`, `.cursor-plugin/agents/`,
+    `com.github.copilot/agents/egm-inventive-catalyst.agent.md`, the reviewer
+    list in `adapters/opencode/install.py`, and the persona list in
+    `scripts/pack_plugin.py`. Regenerate `distributions/claude/`.
 
 *Phase 1 Checkpoint*: Validate YAML frontmatter across all agent files using
 `pytest tests/unit/test_frontmatter.py`.
@@ -447,61 +435,50 @@ checkpoints at each stage.
 
 *   **Type / Scope**: Core Skill Workflow
 *   **Rationale**: Register `egm-inventive-catalyst` in the brainstorming
-    shootdown swarm and clean up duplicate content.
+    shootdown swarm.
 *   **Proposed Changes**:
-    *   Prune the accidental duplicate block (lines 216–414).
-    *   Update Execution Constraint 3 to reference "all 7 specialized Goldfish
-        perspective lenses".
-    *   Update heading from `## The 6 Goldfish Brainstorming Lenses` to `## The
-        7 Goldfish Brainstorming Lenses`.
     *   Add the 7th lens to the table: `| **7. Inventive Catalyst** |
         Contradiction elimination & inventive transforms | *What fundamental
         trade-off is this design accepting as inevitable? How can we resolve
         this conflict using proven software transforms to achieve the Ideal
         Final Result without compromise?* |`
-    *   Update Step 2.1 lead-in to reference the 7 specialized lenses and
-        include `egm-inventive-catalyst` in the `Reviewers` array parameter:
+    *   Update Step 2.1 lead-in to include `egm-inventive-catalyst` in the
+        `Reviewers` array parameter:
         `Reviewers: [egm-design, egm-codebase-details, egm-zoom-out,
         egm-comprehension, egm-implementation-readiness, egm-structural,
         egm-inventive-catalyst]`.
-    *   Update Step 2.2 heading and text to reference all 7 Goldfish lenses.
-    *   Update the embedded `concepts_brief.md` template:
-        *   Update header line: `* **Upstream Lens Review:** 7 Goldfish Lenses
-            Applied`.
-        *   Add bullet to Section 2: `* **Inventive Contradictions &
-            Opportunities:** [Technical contradictions identified, recommended
-            resolution patterns from the catalog, secondary operational
-            trade-offs, and Ideal Final Result (IFR)]`.
+    *   In the embedded `concepts_brief.md` template, extend the `## Analysis`
+        placeholder to cover inventive contradictions, the catalog pattern
+        suggested for each, its secondary trade-offs, and the Ideal Final
+        Result.
 
 #### 5. `skills/egm-review/SKILL.md` (Modify)
 
 *   **Type / Scope**: Review Orchestrator
 *   **Rationale**: Integrate `egm-inventive-catalyst` into Step 5 (Initial
-    Strategic Review) without colliding with Step 8 post-critic pruning.
+    Strategic Review) without colliding with Step 8 post-critic pruning, while
+    staying strictly under the 24,000-byte skill load limit enforced by
+    `tests/unit/test_skill_load_limits.py`.
+*   **Skill Size Budget**: The `egm-review` body is 23,743 bytes at `main`,
+    leaving 257 bytes of headroom. To accommodate Step 5 without exceeding the
+    limit:
+    1.  The detailed report schema for Inventive Opportunities is defined
+        strictly inside `agents/inventive_catalyst.md`'s `# Output Format`,
+        avoiding a duplicate multiline schema block in `SKILL.md`.
+    2.  `Subflow: Initial Strategic Review (Step 5)` and the Step 5 bullet in
+        `Subflow: Uninterrupted Full Flow` concisely add
+        `egm-inventive-catalyst` to `Reviewers`.
+    3.  Existing verbose commentary in the preset table or stage preambles is
+        tightened by ~500 bytes to create safe headroom below 24,000 bytes.
 *   **Proposed Changes**:
-
     *   In Step Selection, update the Step 5 label to: `Step 5: Initial
         Strategic Review (Zoom Out & Inventive Catalyst)`.
     *   Split the shared `Subflow: Zoom Out Review` into two dedicated subflows:
-
         1.  `Subflow: Initial Strategic Review (Step 5)`: Spawns both
             `egm-zoom-out` and `egm-inventive-catalyst` in parallel across `full
-            file`.
-
-            *   Dispatch contract for Catalyst:
-                *   Subagent: `egm-inventive-catalyst`
-                    (`agents/inventive_catalyst.md`)
-                *   `Prompt`: `Audit the file [TargetFile] at line range full
-                    file. Mode: REVIEW. Context documents: [GoldfishContext].`
-            *   Report Schema in `zoom_out_report.md`: Appends an explicit
-                section:
-
-                ```markdown
-                ## Inventive Opportunities & Trade-Off Resolutions
-                * **Technical Contradiction Identified**: [Description of accepted compromise]
-                * **Inventive Pattern Applied**: [Pattern name and transformation]
-                * **Proposed Resolution & Secondary Liabilities**: [Architectural guidance and operational costs]
-                ```
+            file`. The Step 5 bullet in `Subflow: Uninterrupted Full Flow`, which
+            the `Consolidated report` preset runs, gets the same `Reviewers` and
+            writes both into `zoom_out_report.md`.
         2.  `Subflow: Intermediate Zoom Out Review (Step 8)`: Spawns only
             `egm-zoom-out` to perform ruthless YAGNI pruning of changes
             introduced during Steps 6 and 7.
@@ -545,18 +522,14 @@ tests/unit/test_frontmatter.py`.
         selection" and reflect integration into `/egm-brainstorm` and Step 5 of
         `/egm-review`.
 
-#### 8. User-Facing Documentation & Marketing (Modify)
+#### 8. User-Facing Documentation (Modify)
 
-*   **Type / Scope**: Documentation & Public Site
-*   **Rationale**: Ensure public documentation reflects the 7-lens brainstorming
-    swarm.
+*   **Type / Scope**: Documentation
+*   **Rationale**: Ensure getting started documentation reflects multi-lens
+    brainstorming without hardcoding brittle lens counts.
 *   **Proposed Changes**:
-    *   `README.md`: Update the Tools table entry for `/egm-brainstorm` to
-        reference a "7-lens Goldfish shootdown swarm".
-    *   `docs/getting_started.md`: Update the brainstorming overview to
-        reference a 7-lens Goldfish swarm.
-    *   `site/src/components/Loop.astro` & `site/src/components/Skills.astro`:
-        Update six-lens descriptions to seven-lens (or "multi-lens").
+    *   `docs/getting_started.md`: Change the "6-lens Goldfish" wording in the
+        brainstorming overview to "multi-lens Goldfish".
 
 *Phase 3 Checkpoint*: Validate link integrity across all documentation files
 using `pytest tests/unit/test_link_integrity.py`.
@@ -583,12 +556,10 @@ using `pytest tests/unit/test_link_integrity.py`.
     *   `tests/unit/test_frontmatter.py`: Add validation asserting frontmatter
         conformance for all markdown files under `agents/`.
 
-*Phase 4 Checkpoint*: Execute all unit tests and automated scenario evaluation
-suites:
+*Phase 4 Checkpoint*: Run the unit suite. `test_skill_load_limits.py` and
+`test_scenario_coverage.py` cover the skill changes:
 
 ```bash
-pytest tests/unit
-pytest tests/unit
 pytest tests/unit
 ```
 
@@ -607,12 +578,5 @@ pytest tests/unit
     root:
 
     ```bash
-    pytest tests/unit
-    ```
-
-*   **Automated Evaluation Runner**: Verify scenario coverage and prompt compliance:
-
-    ```bash
-    pytest tests/unit
     pytest tests/unit
     ```
