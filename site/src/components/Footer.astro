@@ -43,6 +43,15 @@ const links = [
               </li>
             ))
           }
+          <li class="cookie-control-item">
+            <button
+              type="button"
+              class="cookie-control glue-cookie-notification-bar-control"
+              aria-hidden="true"
+            >
+              Cookies management controls
+            </button>
+          </li>
         </ul>
       </nav>
     </div>
@@ -92,17 +101,31 @@ const links = [
     gap: 4px 20px;
   }
 
-  li a {
+  li a,
+  .cookie-control {
     display: inline-flex;
     align-items: center;
     min-block-size: 24px;
     font: var(--md-sys-typescale-label-md);
     text-decoration: none;
     color: var(--md-sys-color-on-surface-variant);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
   }
 
-  li a:hover {
+  li a:hover,
+  .cookie-control:hover {
     color: var(--md-sys-color-on-surface);
     text-decoration: underline;
+  }
+
+  .cookie-control[aria-hidden='true'] {
+    display: none;
+  }
+
+  .cookie-control-item:has(.cookie-control[aria-hidden='true']) {
+    display: none;
   }
 </style>
