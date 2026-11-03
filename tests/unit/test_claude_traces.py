@@ -144,3 +144,174 @@ def test_denied_persona_requires_correlated_error(result: str) -> None:
   else:
     with pytest.raises(AssertionError):
       check(raw, persona, ["parent-only-marker"], deny_persona=True)
+
+
+PERSONA = Path("/plugin/agents/zoom_out.md")
+
+
+def assistant(*blocks: dict) -> dict:
+  return {"type": "assistant", "message": {"content": list(blocks)}}
+
+
+def tool_result(tool_use_id: str, is_error: bool = False) -> dict:
+  return {"type": "user", "message": {"content": [{
+      "type": "tool_result", "tool_use_id": tool_use_id, "is_error": is_error,
+      "content": "Permission denied" if is_error else "Accepted",
+  }]}}
+
+
+def text(value: str) -> dict:
+  return {"type": "text", "text": value}
+
+
+def read(tool_use_id: str = "persona") -> dict:
+  return {"type": "tool_use", "id": tool_use_id, "name": "Read",
+          "input": {"file_path": str(PERSONA)}}
+
+
+def handback(tool_input: object, tool_use_id: str = "handback") -> dict:
+  return {"type": "tool_use", "id": tool_use_id, "name": "SubagentHandback",
+          "input": tool_input}
+
+
+def check_child(events: list[dict], deny_persona: bool, markers=("parent-only",)) -> None:
+  check = runpy.run_path(str(ROOT / "tests/integration/test_claude.py"))[
+      "assert_child_probe"
+  ]
+  raw = "\n".join(json.dumps(event) for event in events)
+  check(raw, PERSONA, list(markers), deny_persona=deny_persona)
+
+
+def read_events(deny_persona: bool) -> list[dict]:
+  return [assistant(read()), tool_result("persona", is_error=deny_persona)]
+
+
+def sentinels(deny_persona: bool) -> tuple[str, str]:
+  """Returns the expected sentinel, followed by the other probe's sentinel."""
+  pair = ("RESOURCE_UNREADABLE", "UNKNOWN")
+  return pair if deny_persona else pair[::-1]
+
+
+@pytest.mark.parametrize("deny_persona", [False, True], ids=["scoped", "denied"])
+@pytest.mark.parametrize(
+    "shape", [
+        "issue", "acknowledged", "narrated", "explained", "agreeing", "extra_input",
+        "text_only",
+    ],
+)
+def test_child_probe_accepts_handback_and_legacy_text(
+    deny_persona: bool, shape: str,
+) -> None:
+  expected, _ = sentinels(deny_persona)
+  answer = {"message": expected}
+  events = read_events(deny_persona)
+  if shape == "narrated":
+    events.insert(0, assistant(text("Reading the persona first.")))
+  if shape == "explained":
+    answer = {"message": f"The probe finished.\n{expected}"}
+  if shape == "agreeing":
+    events.append(assistant(text(expected)))
+  if shape == "extra_input":
+    answer = {"message": expected, "note": "done"}
+  events.append(
+      assistant(text(expected)) if shape == "text_only"
+      else assistant(handback(answer))
+  )
+  if shape == "acknowledged":
+    events.append(tool_result("handback"))
+  check_child(events, deny_persona)
+
+
+@pytest.mark.parametrize("deny_persona", [False, True], ids=["scoped", "denied"])
+@pytest.mark.parametrize("case", [
+    "input_missing", "input_string", "input_list", "message_missing",
+    "message_none", "message_list", "message_dict", "message_bool",
+    "id_missing", "two_handbacks", "text_after", "read_after", "same_message_text_after",
+    "failed_ack", "duplicate_ack", "before_read_result", "same_message_as_read",
+    "competing_text", "both_sentinels",
+])
+def test_child_probe_rejects_malformed_or_ambiguous_handback(
+    deny_persona: bool, case: str,
+) -> None:
+  expected, other = sentinels(deny_persona)
+  good = handback({"message": expected})
+  no_id = {key: value for key, value in good.items() if key != "id"}
+  no_input = {key: value for key, value in good.items() if key != "input"}
+  prior = read_events(deny_persona)
+  events = {
+      "input_missing": [*prior, assistant(no_input)],
+      "input_string": [*prior, assistant(handback(expected))],
+      "input_list": [*prior, assistant(handback([expected]))],
+      "message_missing": [*prior, assistant(handback({"text": expected}))],
+      "message_none": [*prior, assistant(handback({"message": None}))],
+      "message_list": [*prior, assistant(handback({"message": [expected]}))],
+      "message_dict": [*prior, assistant(handback({"message": {"text": expected}}))],
+      "message_bool": [*prior, assistant(handback({"message": True}))],
+      "id_missing": [*prior, assistant(no_id)],
+      "two_handbacks": [
+          *prior, assistant(good), assistant(handback({"message": expected}, "second")),
+      ],
+      "text_after": [*prior, assistant(good), assistant(text(expected))],
+      "read_after": [*prior, assistant(good), assistant(read("again"))],
+      "same_message_text_after": [*prior, assistant(good, text(expected))],
+      "failed_ack": [*prior, assistant(good), tool_result("handback", is_error=True)],
+      "duplicate_ack": [
+          *prior, assistant(good), tool_result("handback"), tool_result("handback"),
+      ],
+      "before_read_result": [assistant(read()), assistant(good), prior[1]],
+      "same_message_as_read": [assistant(read(), good), prior[1]],
+      "competing_text": [*prior, assistant(text(other), good)],
+      "both_sentinels": [*prior, assistant(handback({"message": f"{other}\n{expected}"}))],
+  }[case]
+  with pytest.raises(AssertionError, match="SubagentHandback"):
+    check_child(events, deny_persona)
+
+
+@pytest.mark.parametrize("deny_persona", [False, True], ids=["scoped", "denied"])
+@pytest.mark.parametrize("case", [
+    "empty", "whitespace", "wrong_sentinel", "no_read", "other_tool",
+    "other_tool_after", "similar_name", "wrong_path", "wrong_read_status",
+    "second_read", "read_missing_result",
+])
+def test_child_probe_handback_keeps_read_and_tool_restrictions(
+    deny_persona: bool, case: str,
+) -> None:
+  expected, other = sentinels(deny_persona)
+  good = handback({"message": expected})
+  prior = read_events(deny_persona)
+  bash = {"type": "tool_use", "id": "bash", "name": "Bash", "input": {"command": "ls"}}
+  wrong_path = {**read(), "input": {"file_path": "/plugin/agents/other.md"}}
+  events = {
+      "empty": [*prior, assistant(handback({"message": ""}))],
+      "whitespace": [*prior, assistant(handback({"message": " \t\n"}))],
+      "wrong_sentinel": [*prior, assistant(handback({"message": other}))],
+      "no_read": [assistant(good)],
+      "other_tool": [assistant(bash), *prior, assistant(good)],
+      "other_tool_after": [*prior, assistant(bash), assistant(good)],
+      "similar_name": [*prior, assistant({**good, "name": "subagenthandback"})],
+      "wrong_path": [assistant(wrong_path), prior[1], assistant(good)],
+      "wrong_read_status": [
+          assistant(read()), tool_result("persona", is_error=not deny_persona),
+          assistant(good),
+      ],
+      "second_read": [*prior, assistant(read("again")), assistant(good)],
+      "read_missing_result": [assistant(read()), assistant(read("again")),
+                              tool_result("again", is_error=deny_persona),
+                              assistant(good)],
+  }[case]
+  with pytest.raises(AssertionError):
+    check_child(events, deny_persona)
+
+
+@pytest.mark.parametrize("deny_persona", [False, True], ids=["scoped", "denied"])
+@pytest.mark.parametrize("field", ["message", "note"])
+def test_child_probe_handback_rejects_marker_despite_valid_sentinel(
+    deny_persona: bool, field: str,
+) -> None:
+  expected, _ = sentinels(deny_persona)
+  answer = {"message": expected}
+  answer[field] = f"parent-only\n{expected}"
+  events = [*read_events(deny_persona), assistant(handback(answer))]
+  check_child(events, deny_persona, markers=())
+  with pytest.raises(AssertionError):
+    check_child(events, deny_persona)

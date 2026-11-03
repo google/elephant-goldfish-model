@@ -153,7 +153,14 @@ def test_claude_synthesizer_adapter_is_tool_restricted() -> None:
   assert set(config["tools"]) == {"Agent", "Read", "Grep", "Glob", "Write"}
   assert config["model"] == "inherit"
   assert "memory" not in config
-  assert "${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md" in adapter.read_text()
+  text = " ".join(adapter.read_text(encoding="utf-8").split())
+  assert "${CLAUDE_PLUGIN_ROOT}/agents/synthesizer.md" in text
+  assert "Write only the report or brief your task asks for" in text
+  assert "Do not create or change any other file" in text
+  assert ("use the working directory and say so in your completion message, "
+          "unless your task names that folder") in text
+  guide = " ".join((ROOT / "docs/claude.md").read_text(encoding="utf-8").split())
+  assert "name the artifact directory you are using in its task" in guide
   canonical = frontmatter(ROOT / "agents/synthesizer.md")
   assert canonical["name"] == config["name"]
   assert "tools" not in canonical
@@ -177,6 +184,22 @@ def test_claude_bootstrap_adapter_routes_to_skill() -> None:
   assert "./agents/bootstrap_orchestrator.md" not in manifest
 
 
+def test_scratch_files_use_private_directories() -> None:
+  for path in ("resources/execution_instructions.md",
+               "skills/egm-bootstrap/SKILL.md"):
+    text = " ".join((ROOT / path).read_text(encoding="utf-8").split())
+    assert "mktemp -d" in text, f"{path} does not name a private directory"
+  instructions = " ".join(
+      (ROOT / "resources/execution_instructions.md").read_text(
+          encoding="utf-8").split())
+  assert "keep the code in a markdown draft block" in instructions
+  assert "Do not use fixed, shared paths" in instructions
+  skill = " ".join((ROOT / "skills/egm-bootstrap/SKILL.md").read_text(
+      encoding="utf-8").split())
+  assert "never a fixed, shared path" in skill
+  assert "If neither exists, skip them." in skill
+
+
 def test_claude_permissions_remain_under_user_control() -> None:
   """Bundled resources must not carry an automatic permission override."""
   manifest = read_json(".claude-plugin/plugin.json")
@@ -195,6 +218,7 @@ def test_claude_manifest_agents_and_shared_personas_resolve() -> None:
 def test_bundled_prompt_dependencies_and_harness_guides() -> None:
   assert (ROOT / "docs/claude.md").is_file()
   assert (ROOT / "docs/codex.md").is_file()
+  assert (ROOT / "docs/muse.md").is_file()
   skills = list((ROOT / "skills").glob("*/SKILL.md"))
   for skill in skills:
     text = skill.read_text(encoding="utf-8")
@@ -218,6 +242,20 @@ def test_bundled_prompt_dependencies_and_harness_guides() -> None:
 def test_artifact_directory_override_is_documented_for_each_harness() -> None:
   # The models match this exact line in the user's prompt or instruction file.
   marker = "EGM artifact directory: "
-  for guide in ("docs/claude.md", "docs/codex.md", "docs/harnesses.md"):
+  for guide, fallback in (
+      ("docs/claude.md", "use the working directory and say why"),
+      ("docs/codex.md", "use the working directory and say why"),
+      ("docs/harnesses.md", "the files go to the working directory"),
+  ):
     text = " ".join((ROOT / guide).read_text(encoding="utf-8").split())
     assert marker in text, f"{guide} does not document `{marker}<path>`"
+    for phrase in (
+        "resolves outside the working directory",
+        "following symbolic links",
+        "confirm it before creating the folder or writing there",
+        "decline or no one can confirm",
+        fallback,
+    ):
+      assert phrase in text, (
+          f"{guide} does not ask before using a folder outside the working "
+          f"directory: missing `{phrase}`")

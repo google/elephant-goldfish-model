@@ -39,11 +39,19 @@ def extract_headers(content: str) -> Set[str]:
   slugs = set()
   for match in HEADER_PATTERN.finditer(content):
     title = match.group(2).strip().lower()
-    # Normalize slug: remove punctuation, replace spaces with hyphens
-    slug = re.sub(r"[^a-z0-9\s-]", "", title)
-    slug = re.sub(r"\s+", "-", slug)
+    # Turn each space into its own hyphen, as GitHub does, so removed
+    # punctuation leaves "--": "Tracks & Workflow" -> "tracks--workflow".
+    slug = re.sub(r"[^a-z0-9 -]", "", title)
+    slug = slug.replace(" ", "-")
     slugs.add(slug)
   return slugs
+
+
+def test_heading_slug_keeps_one_hyphen_per_space() -> None:
+  """Verifies removed punctuation leaves a double hyphen, as on GitHub."""
+  assert extract_headers(
+      "## Contribution Tracks & Workflow\n## Design Principles\n"
+  ) == {"contribution-tracks--workflow", "design-principles"}
 
 
 def test_relative_markdown_links_resolve_on_disk(
