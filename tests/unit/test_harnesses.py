@@ -17,6 +17,7 @@ NAME_RE = r"(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?"
 COMPATIBILITY_MANIFESTS = (
     ".claude-plugin/plugin.json",
     ".codex-plugin/plugin.json",
+    ".plugin/plugin.json",
 )
 MARKETPLACES = (
     ".agents/plugins/marketplace.json",
