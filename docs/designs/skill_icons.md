@@ -13,7 +13,7 @@ reviewer permissions, installation, or the Elephant-Goldfish logo.
 
 ## Source and geometry
 
-Each `skills/egm_*/assets/icon.svg` is the canonical asset. Keep the SVGs
+Each `skills/egm-*/assets/icon.svg` is the canonical asset. Keep the SVGs
 self-contained, with a title and a 24 by 24 viewBox. Visible ink stays inside
 the 20 px keyline. Optical size and positioning corrections are part of the
 artwork; do not normalize individual bounding boxes or stroke widths.
