@@ -65,6 +65,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
         assert data == (skill.parent / icon).read_bytes()
         assert ElementTree.fromstring(data).tag == "{http://www.w3.org/2000/svg}svg"
     assert "skills/egm-bootstrap/references/worker-return.schema.json" in names
+    assert "skills/egm-bootstrap/references/templates.md" in names
     assert "resources/document_standards/feature-spec-standard.md" in names
     assert "agents/design_critic.md" in names
     assert "docs/codex.md" in names
@@ -163,6 +164,62 @@ def test_rejects_escaping_or_missing_manifest_assets(
     build(source, "openai", tmp_path / "output")
 
 
+@pytest.mark.parametrize("agents", [
+    "./.claude-plugin/agents/style.md", ["./.claude-plugin/agents/style.md"],
+])
+def test_claude_agent_reference_forms(
+    source: Path, tmp_path: Path, agents: str | list[str],
+) -> None:
+  path = source / ".claude-plugin/plugin.json"
+  manifest = json.loads(path.read_text())
+  manifest["agents"] = agents
+  path.write_text(json.dumps(manifest))
+  folder, archive = build(source, "claude", tmp_path / "output")
+  reference = ".claude-plugin/agents/style.md"
+  assert (folder / reference).read_bytes() == (source / reference).read_bytes()
+  assert (folder / ".claude-plugin/plugin.json").read_bytes() == path.read_bytes()
+  with zipfile.ZipFile(archive) as bundle:
+    assert bundle.read(reference) == (source / reference).read_bytes()
+    assert bundle.read(".claude-plugin/plugin.json") == path.read_bytes()
+
+
+@pytest.mark.parametrize("target,directory", [
+    ("claude", ".claude-plugin"), ("openai", ".codex-plugin"),
+])
+@pytest.mark.parametrize("agents", [
+    None, 5, True, {}, {"./agents/style.md": None}, 1.5,
+])
+def test_rejects_invalid_manifest_agents(
+    source: Path, tmp_path: Path, target: str, directory: str, agents: object,
+) -> None:
+  path = source / directory / "plugin.json"
+  manifest = json.loads(path.read_text())
+  manifest["agents"] = agents
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError) as error:
+    build(source, target, output)
+  assert str(error.value) == f"Invalid manifest agents: {agents!r}"
+  assert not output.exists()
+
+
+@pytest.mark.parametrize("reference", [
+    "./.claude-plugin/agents/missing.md", "../escape.md", "/tmp/agent.md",
+])
+def test_rejects_escaping_or_missing_scalar_agent_references(
+    source: Path, tmp_path: Path, reference: str,
+) -> None:
+  path = source / ".claude-plugin/plugin.json"
+  manifest = json.loads(path.read_text())
+  manifest["agents"] = reference
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError) as error:
+    build(source, "claude", output)
+  assert str(error.value) == f"Unbundled manifest reference: {reference}"
+  assert not output.exists()
+
+
 @pytest.mark.parametrize("key", ["composerIcon", "logo"])
 def test_rejects_missing_openai_interface_icons(
     source: Path, tmp_path: Path, key: str,
@@ -220,6 +277,7 @@ def test_refuses_unbundled_services(source: Path, tmp_path: Path, field: str) ->
     "skills/egm-review/agents/openai.yaml",
     "skills/egm-review/assets/icon.svg",
     "skills/egm-bootstrap/references/worker-return.schema.json",
+    "skills/egm-bootstrap/references/templates.md",
     "skills/egm-draft/references/design_doc.md",
     "agents/design_critic.md",
     "resources/execution_instructions.md",
@@ -301,5 +359,8 @@ def test_published_claude_runtime_is_current(tmp_path: Path) -> None:
             for p in folder.rglob("*") if p.is_file()}
 
   assert contents(published) == contents(generated), (
-      "Regenerate distributions/claude with scripts/pack_plugin.py"
+      "Published Claude runtime differs from generated output. Regenerate "
+      "with `python3 scripts/pack_plugin.py --target claude --output "
+      "<output-dir>`; replace `distributions/claude` with the generated "
+      "`egm-claude` folder."
   )

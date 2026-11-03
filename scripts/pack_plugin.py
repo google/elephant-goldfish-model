@@ -34,6 +34,7 @@ REQUIRED_SHARED = (
     "docs/claude.md", "docs/codex.md", "docs/faq.md", "docs/privacy.md",
     "resources/README.md", "resources/execution_instructions.md",
     "skills/egm-bootstrap/references/worker-return.schema.json",
+    "skills/egm-bootstrap/references/templates.md",
     "skills/egm-draft/references/design_doc.md",
 ) + tuple(
     f"skills/{skill}/{name}"
@@ -84,7 +85,10 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
   for metadata in (manifest, portable, openai):
     if any(metadata.get(key) for key in ("mcpServers", "mcp", "apps")):
       raise ValueError("This runtime builder does not package MCP or app dependencies")
-  references = list(manifest.get("agents", []))
+  agents = manifest.get("agents", [])
+  if not isinstance(agents, (str, list)):
+    raise ValueError(f"Invalid manifest agents: {agents!r}")
+  references = [agents] if isinstance(agents, str) else list(agents)
   interface = openai.get("interface", {})
   if target == "openai":
     interface = interface or manifest.get("interface", {})

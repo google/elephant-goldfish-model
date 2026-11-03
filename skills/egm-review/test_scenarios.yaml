@@ -123,3 +123,32 @@ scenarios:
           - type: "required_pattern"
             pattern: "(?i)paraphrase"
             message: "The comprehension report must keep the paraphrase, also when there are no findings."
+
+  - scenario_id: "linked_files_outside_workspace_need_approval"
+    description: "Asserts that links outside the working directory are listed and need user approval, and that declined links are reported as excluded."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review/SKILL.md"
+    turns:
+      - user_input: "Run EGM Review on docs/design.md with Step: uninterrupted and no additional context. The doc links to ./api.md, /etc/hosts, ../../other-repo/notes.md, and https://example.com/spec."
+        assertions:
+          - type: "required_pattern"
+            pattern: "/etc/hosts"
+            message: "Review must list the absolute path outside the working directory."
+          - type: "required_pattern"
+            pattern: "other-repo/notes\\.md"
+            message: "Review must list the relative link that resolves outside the working directory."
+          - type: "required_pattern"
+            pattern: "example\\.com/spec"
+            message: "Review must list the URL."
+          - type: "required_pattern"
+            pattern: "(?i)(include|approve|add|pass|use|allow)[^\\n]*\\?"
+            message: "Review must ask the user which outside links to include."
+          - type: "forbidden_pattern"
+            pattern: "(?i)automatically read (every|all|any) (file|link)s? (the (design )?doc|it|that)"
+            message: "Review must not claim reviewers automatically read linked files."
+      - user_input: "Include none of those three links. Continue."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)((omitted|exclud\\w*|skipped|left out|not (be )?(includ|add|pass)\\w*)[^\\n]{0,80}(/etc/hosts|other-repo|example\\.com|links?\\b|them\\b)|(/etc/hosts|other-repo|example\\.com|links?\\b|those\\b|them\\b)[^\\n]{0,80}(omitted|exclud|skipped|left out|not (be )?(includ|add|pass))|leav\\w* (them|those|these|all)\\b[^\\n]{0,30}\\bout\\b|none of (those|these|the)\\b[^\\n]{0,60}(includ|add|pass))"
+            message: "Review must confirm the declined links are left out of the reviewers' context."
