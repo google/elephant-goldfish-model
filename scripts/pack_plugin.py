@@ -77,8 +77,8 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
   for name in REQUIRED_SHARED + (HOST[target][0],):
     if Path(name) not in files:
       raise ValueError(f"Missing required file: {name}")
-  manifest = json.loads((root / HOST[target][0]).read_text())
-  portable = json.loads((root / "plugin.json").read_text())
+  manifest = json.loads((root / HOST[target][0]).read_text(encoding="utf-8"))
+  portable = json.loads((root / "plugin.json").read_text(encoding="utf-8"))
   openai = portable.get("extensions", {}).get("com.openai", {})
   if manifest.get("hooks") or portable.get("hooks") or openai.get("hooks"):
     raise ValueError("Directory packages cannot contain hooks")
