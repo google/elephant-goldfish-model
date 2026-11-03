@@ -31,6 +31,20 @@ def test_ci_waits_for_all_validation_jobs() -> None:
   }
 
 
+def test_release_installs_shared_test_group_before_tag_checkout() -> None:
+  release = yaml.safe_load(
+      (ROOT / ".github/workflows/release.yml").read_text())
+  release_steps = release["jobs"]["build"]["steps"]
+  install = "python -m pip install --group test"
+  unit_steps = workflow()["jobs"]["unit"]["steps"]
+  assert install in [step.get("run") for step in unit_steps]
+  install_index = next(i for i, step in enumerate(release_steps)
+                       if step.get("run") == install)
+  tag_index = next(i for i, step in enumerate(release_steps)
+                   if step.get("id") == "source")
+  assert install_index < tag_index, "Older tags may not define the test group"
+
+
 @pytest.mark.parametrize("results,success", [
     ({"unit": "success"}, True),
     ({"unit": "failure"}, False),
