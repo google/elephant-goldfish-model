@@ -55,7 +55,12 @@ The caller or user provides exactly these parameters:
     paths).
 *   **`GoldfishContext`**: A reading list (source files, directories, or
     documentation URLs) fed to reviewers to establish their baseline. An empty
-    list from the caller counts as provided; do not ask for it again.
+    list from the caller counts as provided; do not ask for it again. Some
+    reviewers cannot open URLs, so before the first round save the raw page of
+    each URL as a new file in the working directory (or your harness's artifact
+    directory) and pass its absolute path instead. If a page cannot be saved,
+    ask the user for a local copy; if no one can answer, leave it out and tell
+    the user.
 
 ## Path & Standard Resolution Logic
 

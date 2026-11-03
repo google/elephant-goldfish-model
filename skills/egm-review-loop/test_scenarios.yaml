@@ -51,3 +51,33 @@ scenarios:
           - type: "required_pattern"
             pattern: "(?i)not run"
             message: "A requested reviewer with no status must count as not run, so the round is not clean."
+
+  - scenario_id: "goldfish_context_urls_saved_as_files"
+    description: "Verifies that a URL in GoldfishContext is saved as a file before the first round, because some reviewers cannot open URLs."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review-loop/SKILL.md"
+    turns:
+      - user_input: "Run the review loop on docs/design.md, full file, with reviewers design_critic and structural, both on feature-spec-standard, and GoldfishContext [src/cache.py, https://redis.io/docs/latest/develop/use/keyspace/]. I confirm this configuration; start round 1."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(\\b(sav(e|es|ed|ing)|download\\w*|fetch\\w*|stor(e|es|ed|ing)|writ(e|es|ing|ten)|wrote)\\b[^\\n]{0,80}\\b(pages?|urls?|links?)\\b|\\b(pages?|urls?|links?)\\b[^\\n]{0,80}\\b(sav(e|es|ed|ing)|download\\w*|fetch\\w*|stor(e|es|ed|ing)|writ(e|es|ing|ten)|wrote)\\b|(redis|keyspace)[\\w-]*\\.(md|html?|txt)\\b)"
+            message: "The reply must say the URL's page is saved as a file."
+          - type: "forbidden_pattern"
+            pattern: "(?i)\\b(won't|will not|don't|do not|no need to|not going to|skip\\w*)\\s+(\\w+\\s+){0,2}(sav|download|fetch)\\w*"
+            message: "The reply must not skip saving the page."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(?<!not )(?<!n't )(?<!never )(?<!of )\\b(pass\\w*|send\\w*|giv\\w*|hand\\w*)\\b[^\\n]{0,60}\\b(urls?|links?)\\b[^\\n]{0,40}\\b(directly|as-is|as is|straight|unchanged)\\b"
+            message: "The reply must not pass the URL to reviewers as is."
+
+  - scenario_id: "goldfish_context_unsaved_url_asks_for_local_copy"
+    description: "Verifies that the loop asks for a local copy when a GoldfishContext page cannot be saved."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review-loop/SKILL.md"
+    turns:
+      - user_input: "Run the review loop on docs/design.md, full file, with reviewers design_critic and structural, both on feature-spec-standard, and GoldfishContext [src/cache.py, https://redis.io/docs/latest/develop/use/keyspace/]. Network access is off in this session, so that page cannot be fetched. I confirm this configuration; start round 1."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(\\blocal\\s+(copy|file|version)\\b|\\b(copy|path)\\b[^\\n]{0,60}\\?)"
+            message: "The loop must ask the user for a local copy of the page it cannot save."
