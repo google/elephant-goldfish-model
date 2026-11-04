@@ -33,7 +33,7 @@ subagent and tell it to read that persona file first. Pass the prompt verbatim
 and wait for the report. If your harness cannot nest subagents,
 use direct dispatch instead of the synthesizer. See `docs/harnesses.md`.
 If your harness has no subagent tool, run the scout steps inline within a
-250 KB per-directory read budget.
+250 KB per-directory read budget; treat the rest as uncovered.
 
 ## Inputs
 
@@ -270,7 +270,7 @@ If your harness has no subagent tool, run the scout steps inline within a
             result backed by `files_read`, add `(Documentation incomplete:
             scout failed: <uncovered path:start-end>)` to each of `D`'s three
             sections, record `D` with the uncovered ranges and the reason, and
-            continue.
+            continue. On a later run, remove a marker once its range is covered.
 
     *   **Parent Context Propagation**: When processing a parent directory `P`,
         retrieve the compiled interface summaries of its immediate child
@@ -331,7 +331,9 @@ If your harness has no subagent tool, run the scout steps inline within a
 
 3.  **Worker Reporting**: Once the assigned subtree is fully traversed, compile
     the `subtree_index` array containing the `path`, `summary`, `interface`,
-    `invariants`, and `side_effects` for every processed directory.
+    `invariants`, and `side_effects` for every processed directory, plus an
+    `incomplete` array (`path`, `ranges`, `reason`) for directories recorded
+    as incomplete.
 
 4.  If `is_worker` is `true`, read the [Worker Return Interface Schema](references/worker-return.schema.json)
     relative to this skill directory, then return a matching JSON payload to
@@ -344,15 +346,13 @@ If your harness has no subagent tool, run the scout steps inline within a
 ### Step 5: Root Compilation & Termination (Root Orchestrator)
 
 1.  **Receive Worker Payloads**: Collect the JSON `subtree_index` payloads
-    returned by all parallel Sub-Orchestrators.
+    returned by all parallel Sub-Orchestrators, and merge their `incomplete`
+    arrays into the root's list for Step 5.6.
 
     *   **Root Fault Tolerance**: If a parallel worker fails or times out, log a
         warning, insert a placeholder warning link (`[Subtree Root]
         (Documentation failed / Subagent execution timeout)`) in the root
         Blueprint's subdirectory index, and complete the remaining compilation.
-        (Worker failures leaving partial files are handled as an incremental
-        progress feature; the Correction Policy allows resuming on subsequent
-        runs).
 
 2.  **Intermediate Directory Documentation**: Identify any intermediate
     directories sitting between the root `path` and the partitioned subtree
@@ -415,13 +415,11 @@ If your harness has no subagent tool, run the scout steps inline within a
         the modified contracts to verify both missing code coverage and
         doc-to-code hallucinations (verifying every documented method, route,
         enum, database table, and invariant against local source files and
-        recording discrepancies in the drift report for human triage). (Note:
-        While `egm-drift-report` is often used for design documents, it can be
-        applied to EGM-compliant contracts as a variant).
+        recording discrepancies in the drift report for human triage).
 
-6.  For each incomplete directory, print its path, the uncovered
-    `path:start-end` ranges, the reason, and the rerun command
-    `egm-bootstrap path=<D>` (plus `target_filename` if set); then stop.
+6.  For each incomplete directory, print its path relative to `path`, the
+    uncovered `path:start-end` ranges, the reason, and the rerun command
+    `egm-bootstrap path=<path>` (plus `target_filename` if set); then stop.
 
 ---
 

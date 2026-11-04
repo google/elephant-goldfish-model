@@ -171,20 +171,20 @@ graph TD
         concise, factual summary. Do not write or modify any files. Return a
         JSON object containing the directory's public symbols (interface),
         invariants, and side effects."
-    *   **Scout File Constraints**: The scout caps total data read per directory
-        at **50,000 bytes** to prevent context window bloat. Implementation
-        and schema files (e.g. `.cc`, `.py`, `.java`, `.go`, `.rs`, `.ts`) are
-        read up to a maximum of **300 lines** per file. If a directory's size
-        exceeds the 50KB limit, files are selected for reading based on the
-        following priority list:
+    *   **Scout File Constraints**: There is no byte cap; every non-test file
+        is read in full. The worker bounds each scout call to about 1,500
+        lines by cutting files at top-level definitions and spawning one scout
+        per chunk. Scouts cannot list directories, so the worker hands each
+        chunk explicit paths and line ranges, and each scout reports what it
+        read as `files_read`. Within a directory, files are read in the
+        following priority order:
         1.  Interface, schema, IDL, and header files (e.g. `.h`, `.hh`, `.hpp`,
             `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`, `.sql`
             schema/DDL definitions, interface classes) are read completely.
         2.  Module entry points (e.g., `main.*`, `index.*`, `lib.*`, `mod.*`,
-            `__init__.py`, or files matching the directory name) are read up
-            to 300 lines.
-        3.  Production source and configuration files sorted alphabetically are
-            read up to 300 lines until the byte cap is reached.
+            `__init__.py`, or files matching the directory name), then
+            production source files alphabetically, read in full.
+        3.  Templates and configuration files, up to 200 lines each.
         4.  Test files are completely ignored during context loading.
     *   **Output Schema**:
 
@@ -499,12 +499,16 @@ not the execution root).
             *   `enable_subagent_tools`: `false`
             *   `SystemPrompt`: As defined in Section 2.1.
         *   It then spawns the scout sequentially for the active directory.
-    *   **Child Fault Tolerance**: If a child subdirectory fails to document
-        (e.g., explorer timeout or tool error), the Sub-Orchestrator logs a
-        warning, inserts a placeholder link (e.g. `- [Subdirectory Name]: [Link
-        to child README.md] - (Details pending/documentation failed)`) in the
-        parent's directory index, and continues documentation instead of
-        aborting.
+    *   **Child Fault Tolerance**: A scout that fails, times out, or whose
+        `files_read` does not cover its assignment is re-run once. If it still
+        falls short, the Sub-Orchestrator keeps every result backed by
+        `files_read`, appends `(Documentation incomplete: scout failed:
+        <uncovered path:start-end>)` to the directory's Interface, Invariants,
+        and Side Effects sections, records the directory with its uncovered
+        ranges and the reason, and continues. Workers return these records in
+        the `incomplete` array of their payload; the root prints each one with
+        a rerun command from the original `path` before terminating. A later
+        run removes a marker once its range is covered.
     *   Generates or corrects `README.md` using the appropriate template
         depending on its classification (Component Peanut or Blueprint Hay;
         Blueprint Hay nodes use the "Intermediate Blueprint template" if they
