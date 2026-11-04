@@ -37,7 +37,7 @@ scenarios:
       - user_input: "Diagnose why my app sometimes seems wrong. I have no steps, failure trace, failing test, or example yet."
         assertions:
           - type: "required_pattern"
-            pattern: "(?i)(repro|trace|example|steps)"
+            pattern: "(?i)\\b(repro\\w*|trace|example|steps|failing test)\\b[^\\n]{0,80}\\?"
             message: "Request concrete evidence; verify no child launched."
 
   - scenario_id: "failed_persona_read"
@@ -85,7 +85,7 @@ scenarios:
       - user_input: "A concurrency failure happened twice in 20 recorded attempts. One new attempt passed. Does that falsify the race hypothesis? No code was changed."
         assertions:
           - type: "required_pattern"
-            pattern: "(?i)(single|one|repeat|attempts|insufficient)"
+            pattern: "(?i)\\b(not|doesn't|does not|cannot|can't|isn't|is not)\\b[^.\\n]{0,40}\\b(falsif\\w*|disprov\\w*|rule[sd]? out|enough|sufficient)"
             message: "Record attempts and actual failures; do not turn one pass into disproof."
 
   - scenario_id: "asymmetric_inconclusive_evidence"

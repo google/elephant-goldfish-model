@@ -71,7 +71,8 @@ registered `egm-bug-diagnosis` adapter under the installed plugin namespace
 with `fork_context: false` or `fork_turns: "none"`, as supported by the actual
 tool schema. Never resume an earlier agent or forward parent turns. On other
 hosts use the equivalent fresh-context, read-only dispatch, or stop and report
-that the host cannot perform this diagnosis.
+that the host cannot perform this diagnosis. Cursor, Copilot CLI and OpenCode
+don't register an `egm-bug-diagnosis` agent yet, so stop there.
 
 Give the Goldfish only the following task, replacing the paths:
 
