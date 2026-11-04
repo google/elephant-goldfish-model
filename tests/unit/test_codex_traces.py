@@ -108,3 +108,34 @@ def test_successful_reads_requires_native_trace_evidence(
     }]
 
     assert (guide.resolve() in successful_reads(trace)) is expected
+
+
+@pytest.mark.parametrize(
+    "directory", ["workspace", "workspace # \u00e9 %"], ids=("plain", "encoded"),
+)
+def test_relative_reads_resolve_file_uri_working_directory(
+    tmp_path: Path, directory: str,
+) -> None:
+    successful_reads = runpy.run_path(
+        str(ROOT / "tests/integration/test_codex.py")
+    )["successful_reads"]
+    workspace = tmp_path / directory
+    guide = workspace / "docs" / "codex.md"
+    guide.parent.mkdir(parents=True)
+    guide.write_text("# Installed guide\n", encoding="utf-8")
+    trace = [{
+        "type": "event_msg",
+        "payload": {
+            "type": "item_completed",
+            "item": {
+                "type": "CommandExecution",
+                "status": "completed",
+                "exit_code": 0,
+                "cwd": workspace.as_uri(),
+                "parsed_cmd": [{"type": "read", "path": "docs/codex.md"}],
+                "aggregated_output": "# Installed guide\n",
+            },
+        },
+    }]
+
+    assert successful_reads(trace) == {guide.resolve()}

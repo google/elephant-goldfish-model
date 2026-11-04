@@ -12,7 +12,8 @@ import subprocess
 import uuid
 import zipfile
 from collections.abc import Iterator
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 import pytest
 
@@ -150,7 +151,7 @@ def successful_reads(trace: list[dict]) -> set[pathlib.Path]:
         cwd_value = item.get("cwd")
         if not cwd_value:
             continue
-        cwd = pathlib.Path(unquote(urlparse(cwd_value).path))
+        cwd = pathlib.Path(url2pathname(urlparse(cwd_value).path))
         for command in item.get("parsed_cmd", []):
             if command.get("type") == "read" and command.get("path"):
                 if exit_code == 0:
