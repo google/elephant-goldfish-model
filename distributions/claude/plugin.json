@@ -14,10 +14,10 @@
       "interface": {
         "displayName": "Elephant-Goldfish Model",
         "shortDescription": "Draft and review documents",
-        "longDescription": "Develop ideas with context and review documents with fresh eyes.",
+        "longDescription": "Use AI to develop ideas, draft plans, and review documents. Independent reviewers check the work without the earlier conversation. Software tools also document codebases and check changes against specifications.",
         "developerName": "Google",
         "brandColor": "#1B6EF3",
-        "category": "Developer Tools",
+        "category": "Productivity",
         "capabilities": ["Develop ideas", "Review documents", "Check implementation drift"],
         "websiteURL": "https://egm.dev",
         "supportURL": "https://github.com/google/elephant-goldfish-model/issues",
