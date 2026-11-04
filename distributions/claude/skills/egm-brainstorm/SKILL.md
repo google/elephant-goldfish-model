@@ -97,6 +97,7 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
 | **Migration & Backward Compatibility** | Rollout safety & version skew | *How do existing clients/data migrate? Does this break serialized schemas, protos, or persistent storage? How is rollback handled mid-migration?* |
 | **Observability & SRE Debuggability** | Telemetry & operational visibility | *Are key operations traceable via distributed tracing? Are telemetry metrics actionable? How will oncall engineers triage a production incident at 3 AM?* |
 | **Long-Term Tech Debt & Maintenance** | Future maintainability | *Does this introduce tightly coupled dependencies or brittle state machines that will be painful to maintain in 2 years?* |
+| **7. Inventive Catalyst** | Contradiction elimination & inventive transforms | *What fundamental trade-off is this design accepting as inevitable? How can we resolve this conflict using proven software transforms to achieve the Ideal Final Result without compromise?* |
 
 ## Execution Workflow
 
@@ -159,17 +160,18 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
 ### Step 2: Goldfish Review & Synthesis
 
 1.  **Delegate to Synthesizer Subagent**: Spawn the intermediate
-    **`egm-synthesizer`** agent (or parallel Goldfish subagents across the 6
+    **`egm-synthesizer`** agent (or parallel Goldfish subagents across the 7
     specialized lenses if your harness cannot nest subagents):
     *   Subagent: `egm-synthesizer` (`agents/synthesizer.md`)
     *   `Prompt`: >- Conduct multi-lens brainstorm for feature concept:
         `[AnchoredFeatureHypothesis]`. Mode: `BRAINSTORM`. Reviewers:
         `[egm-design, egm-codebase-details, egm-zoom-out, egm-comprehension,
-        egm-implementation-readiness, egm-structural]`.
+        egm-implementation-readiness, egm-structural, egm-inventive-catalyst]`.
 2.  **Synthesizer Execution**: The `egm-synthesizer` subagent launches the
     parallel Goldfish reviewers across the specialized lenses (`egm-design`,
     `egm-codebase-details`, `egm-zoom-out`, `egm-comprehension`,
-    `egm-implementation-readiness`, `egm-structural`) with `Mode: BRAINSTORM`.
+    `egm-implementation-readiness`, `egm-structural`,
+    `egm-inventive-catalyst`) with `Mode: BRAINSTORM`.
 3.  **Deduplication**: Collect the raw findings from the Goldfish reviewers,
     deduplicate overlapping points, and format them into a cohesive analysis.
 4.  **Write/Update Artifact**: Format and write the synthesized brief to
@@ -190,7 +192,7 @@ The `concepts_brief.md` artifact follows this structure:
 
 ## Analysis
 
-[Cohesive analysis found by review lenses written in plain English.]
+[Cohesive analysis found by review lenses written in plain English, covering inventive contradictions, suggested catalog patterns, secondary trade-offs, and the Ideal Final Result.]
 
 ## Goals vs. Non-Goals
 

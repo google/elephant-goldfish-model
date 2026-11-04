@@ -86,3 +86,25 @@ def test_all_skills_have_valid_frontmatter(
       assert isinstance(frontmatter["disable-model-invocation"], bool), (
           f"'disable-model-invocation' must be a boolean in {skill_file}"
       )
+
+
+def test_all_agents_have_valid_frontmatter(repo_root: pathlib.Path) -> None:
+  """Verifies that every persona under agents/ contains valid frontmatter."""
+  agent_files = list((repo_root / "agents").glob("*.md"))
+  assert agent_files, "No agent files found under agents/"
+  for agent_file in agent_files:
+    frontmatter = extract_frontmatter(agent_file)
+    assert "name" in frontmatter, (
+        f"'name' key missing from frontmatter in {agent_file}"
+    )
+    assert "description" in frontmatter, (
+        f"'description' key missing from frontmatter in {agent_file}"
+    )
+    assert (
+        isinstance(frontmatter["name"], str) and frontmatter["name"].strip()
+    ), f"'name' must be a non-empty string in {agent_file}"
+    assert (
+        isinstance(frontmatter["description"], str)
+        and frontmatter["description"].strip()
+    ), f"'description' must be a non-empty string in {agent_file}"
+

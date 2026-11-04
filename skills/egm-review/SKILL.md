@@ -285,8 +285,8 @@ plain chat):
     harness's artifact directory, if it has one). Pass `GoldfishContext` to
     every step except Step 6.
     *   **Step 5 (Initial Zoom Out)**: Spawn `egm-synthesizer` (or direct
-        subagent) with `Reviewers: [egm-zoom-out]` on `full file` → write
-        `zoom_out_report.md`.
+        subagent) with `Reviewers: [egm-zoom-out, egm-inventive-catalyst]` on
+        `full file` → write `zoom_out_report.md`.
     *   **Step 6 (Comprehension Test)**: Spawn the `egm-comprehension`
         subagent directly (not the synthesizer) on `FeatureRange` &
         `DetailedRange` → write its complete result to
@@ -319,7 +319,9 @@ plain chat):
     applying `resources/document_standards/zoom-out-standard.md`. When running
     as Step 8 (Intermediate Zoom Out), include `zoom_out_report.md` path in
     context and focus on additions/mitigations from Comprehension and Critic
-    stages.
+    stages. Step 8 still runs only `egm-zoom-out`. When running as Step 5, also
+    spawn `egm-inventive-catalyst` in parallel and write both into
+    `zoom_out_report.md`.
     In both Stage 5 and Stage 8, pass `GoldfishContext`.
 2.  **Delivery**: Write findings to `zoom_out_report.md` (Stage 5) or
     `intermediate_zoom_out_report.md` (Stage 8) using your file-writing tool.
