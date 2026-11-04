@@ -51,7 +51,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
-    assert len([p for p in names if p.endswith("/SKILL.md")]) == 7
+    assert len([p for p in names if p.endswith("/SKILL.md")]) == 8
     for skill in source.glob("skills/*/SKILL.md"):
       prefix = skill.parent.relative_to(source)
       metadata = yaml.safe_load(bundle.read((prefix / "agents/openai.yaml").as_posix()))
@@ -301,6 +301,9 @@ def test_refuses_unbundled_services(source: Path, tmp_path: Path, field: str) ->
     "skills/egm-resolve/SKILL.md",
     "skills/egm-review/SKILL.md",
     "skills/egm-review-loop/SKILL.md",
+    "skills/egm-precommit-review/SKILL.md",
+    "skills/egm-precommit-review/references/evidence.md",
+    "agents/precommit_reviewer.md",
     "skills/egm-review/agents/openai.yaml",
     "skills/egm-review/assets/icon.svg",
     "skills/egm-bootstrap/references/worker-return.schema.json",

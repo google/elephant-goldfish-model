@@ -24,7 +24,7 @@ MARKETPLACES = (
 )
 EXPECTED_SKILLS = {
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop",
+    "egm-resolve", "egm-review", "egm-review-loop", "egm-precommit-review",
 }
 REVIEWERS = (
     "codebase_details", "comprehension", "design_critic",
@@ -131,7 +131,7 @@ def test_marketplace_resolves_shared_package(path: str) -> None:
     assert entry["category"] == "Productivity"
 
 
-@pytest.mark.parametrize("name", REVIEWERS)
+@pytest.mark.parametrize("name", (*REVIEWERS, "precommit_reviewer"))
 def test_claude_reviewers_are_read_only_with_fresh_context(name: str) -> None:
   adapter = ROOT / ".claude-plugin/agents" / f"{name}.md"
   config = frontmatter(adapter)
