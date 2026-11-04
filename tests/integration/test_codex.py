@@ -141,11 +141,9 @@ def successful_reads(trace: list[dict]) -> set[pathlib.Path]:
         item = event["payload"].get("item", {})
         if (item.get("type") != "CommandExecution"
                 or item.get("status") not in {"completed", "failed"}
-                or not item.get("aggregated_output")):
+                or not (item.get("aggregated_output") or "").strip()):
             continue
         output = item["aggregated_output"]
-        if not output.strip():
-            continue
         exit_code = item.get("exit_code")
         # A compound `cat` can return useful file contents and then fail on a
         # later missing operand. Count a file only when its own contents are
