@@ -62,7 +62,7 @@ Inspect the `Mode` parameter specified by the caller (`Mode: BRAINSTORM` vs `Mod
    * **Rationale & Recommendation**: [Concise, objective reason and guidance.]
    ```
 
-4. **Write Artifact**: Write findings to target artifact file (`goldfish_review_report.md` by default, or `zoom_out_report.md` when executing Step 5 in `Mode: REVIEW`) using your file-writing tool.
+4. **Write Artifact**: Write findings to the report file the caller names (`goldfish_review_report.md` if none) using your file-writing tool.
 5. **Notify Elephant**: Send a completion message to the Elephant with the status (`completed` or `not run`) of each requested reviewer, the severity breakdown, and the artifact link.
 
 ---

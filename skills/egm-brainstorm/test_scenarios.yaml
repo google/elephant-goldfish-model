@@ -151,8 +151,11 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
     turns:
-      - user_input: "Inventive Catalyst reviewed the architecture and found no genuine technical contradictions or false compromises. How should this finding be reported?"
+      - user_input: "Inventive Catalyst returned \"No false compromise detected\" for the event streaming concept. Format the ## Analysis section of concepts_brief.md."
         assertions:
           - type: "required_pattern"
-            pattern: "No false compromise detected"
-            message: "Must report No false compromise detected when no contradiction is present."
+            pattern: "(?i)no false compromise"
+            message: "The brief must carry the Catalyst's early exit through instead of dropping it."
+          - type: "forbidden_pattern"
+            pattern: "(?i)\\b(Segmentation|Preliminary Action|Beforehand Cushioning|Intermediary|Cheap Dispensables)\\b"
+            message: "The brief must not invent a catalog pattern when the Catalyst found no contradiction."

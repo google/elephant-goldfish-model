@@ -189,8 +189,11 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
     turns:
-      - user_input: "Run Inventive Catalyst in Step 5 on a design where foundational architecture is already balanced and has no false compromise."
+      - user_input: "In Step 5, Inventive Catalyst returned \"No false compromise detected\" and Zoom Out returned two findings. Write the Inventive Catalyst part of zoom_out_report.md."
         assertions:
           - type: "required_pattern"
-            pattern: "No false compromise detected"
-            message: "Inventive Catalyst must output No false compromise detected when no contradiction is found."
+            pattern: "(?i)no false compromise"
+            message: "The report must carry the Catalyst's early exit through instead of dropping it."
+          - type: "forbidden_pattern"
+            pattern: "(?i)\\b(Segmentation|Preliminary Action|Beforehand Cushioning|Intermediary|Cheap Dispensables)\\b"
+            message: "The report must not invent a catalog pattern when the Catalyst found no contradiction."
