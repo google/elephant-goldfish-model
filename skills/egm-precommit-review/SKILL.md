@@ -68,7 +68,9 @@ attestation. Any check that changes source requires new evidence before review.
 Resolve `agents/precommit_reviewer.md` in this installed bundle. In Claude,
 use its registered `egm-precommit-reviewer` adapter with the actual installed
 plugin namespace (normally `egm:egm-precommit-reviewer`). Do not substitute a
-general-purpose Claude agent when that adapter fails to load. Other hosts may
+general-purpose Claude agent when that adapter fails to load. Cursor, Copilot
+CLI and OpenCode do not register this reviewer yet: stop on those hosts and
+report that precommit review is unsupported, without using a fallback. Other hosts may
 use a fresh general-purpose agent reading the canonical persona first. In
 Codex set `fork_context: false` or `fork_turns: "none"`, as the actual schema
 requires. Do not resume an earlier child. If fresh dispatch is unavailable,
