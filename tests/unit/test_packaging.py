@@ -272,6 +272,20 @@ def test_rejects_non_string_icon_references(
 
 
 @pytest.mark.parametrize("key", ["composerIcon", "logo"])
+def test_rejects_non_string_codex_manifest_icons(
+    source: Path, tmp_path: Path, key: str,
+) -> None:
+  path = source / ".codex-plugin/plugin.json"
+  manifest = json.loads(path.read_text())
+  manifest["interface"][key] = 5
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError, match="^Invalid manifest reference: 5$"):
+    build(source, "openai", output)
+  assert not output.exists()
+
+
+@pytest.mark.parametrize("key", ["composerIcon", "logo"])
 def test_rejects_missing_openai_interface_icons(
     source: Path, tmp_path: Path, key: str,
 ) -> None:
