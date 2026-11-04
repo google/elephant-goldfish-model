@@ -116,7 +116,7 @@ assumptions that the Goldfish must challenge as explicit review criteria.
 
 ## Reviewer Tools
 
-The seven Goldfish reviewer personas tell the reviewer not to modify the
+The Goldfish reviewer personas tell the reviewer not to modify the
 workspace. Some hosts also limit the reviewer's tools. On prompt-only hosts, no
 tool limit from EGM applies, so a reviewer can use whatever tools the session
 allows.
