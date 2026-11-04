@@ -137,6 +137,24 @@ def test_swarm_scenario_requires_root_to_surface_worker_gap() -> None:
   )
 
 
+def test_rerun_scenario_removes_marker_and_keeps_human_notes() -> None:
+  """A later run must drop a covered marker and not lose human-written text."""
+  scenario = load_scenario("bootstrap_rerun_removes_marker_keeps_notes")
+  assertions = [a for turn in scenario["turns"] for a in turn["assertions"]]
+  prompt = " ".join(turn["user_input"] for turn in scenario["turns"])
+  assert "Documentation incomplete" in prompt, (
+      "scenario must start from a README that carries a marker")
+  assert "Maintainer note" in prompt, (
+      "scenario must start from a README that carries a human note")
+  forbidden = " ".join(
+      a["pattern"] for a in assertions if a["type"] == "forbidden_pattern")
+  required = " ".join(
+      a["pattern"] for a in assertions if a["type"] == "required_pattern")
+  assert "documentation incomplete" in forbidden, "marker must be forbidden after coverage"
+  for needle in ("uncovered_fn", "covered_fn", "maintainer note"):
+    assert needle in required, f"rerun scenario no longer requires {needle!r}"
+
+
 def test_design_doc_matches_skill_fault_tolerance() -> None:
   """docs/designs/bootstrap.md must not describe the rules this PR replaced."""
   text = " ".join(DESIGN.read_text(encoding="utf-8").split())
