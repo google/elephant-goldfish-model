@@ -2,13 +2,7 @@
 name: egm-review-loop
 license: Apache-2.0
 disable-model-invocation: true
-description: >-
-  Executes the Antagonistic-Review process from the Elephant-Goldfish
-  Model (EGM) via an automated multi-agent review loop to audit documents
-  against qualitative standards and structural templates, and automatically
-  apply approved fixes. Use when reviewing design docs, READMEs, feature
-  specifications, implementation plans, or verifying document completeness
-  and tone.
+description: Run a configured group of reviewers for a specific review task.
 ---
 
 # Goldfish Review: Loop (Orchestration Driver)

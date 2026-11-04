@@ -2,7 +2,7 @@
 name: egm-bootstrap
 license: Apache-2.0
 disable-model-invocation: true
-description: Bootstrap directory README.md files across a repository subtree.
+description: Create or update documentation for an existing codebase.
 ---
 
 # EGM Peanuts and Hay Bootstrap (`egm-bootstrap`)

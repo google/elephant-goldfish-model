@@ -13,11 +13,11 @@
 
 <br>
 
-Thousands of Google engineers use EGM, an open-source plugin, to draft specs with deep-context agents and stress-test them with zero-context subagents before writing code.
+Develop ideas with context and review documents with fresh eyes. EGM is an open-source plugin for AI assistants.
 
 **Elephant** holds your project context and drafts the specification. **Goldfish** reviewers examine the draft and referenced source material without the earlier conversation, helping expose unstated assumptions and blind spots. **You** make the architectural trade-offs and approve the specification before implementing.
 
-Use it when a feature needs design decisions before implementation. For a small, clear bug fix, use your normal coding workflow.
+The built-in draft and design-review workflow targets software specifications. For other documents, choose reviewers and standards with `/egm-review-loop`. Bootstrap and drift reporting apply to software codebases.
 
 ## Install
 

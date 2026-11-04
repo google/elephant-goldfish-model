@@ -2,7 +2,7 @@
   "name": "egm",
   "displayName": "Elephant-Goldfish Model",
   "version": "0.1.0",
-  "description": "Draft specs, review designs, and check implementation drift.",
+  "description": "Develop ideas with context and review documents with fresh eyes.",
   "author": {
     "name": "Google"
   },
@@ -13,8 +13,8 @@
   "icon": "./.claude-plugin/icon.png",
   "documentationUrl": "https://github.com/google/elephant-goldfish-model/blob/main/docs/claude.md",
   "supportUrl": "https://github.com/google/elephant-goldfish-model/issues",
-  "privacyPolicyUrl": "https://github.com/google/elephant-goldfish-model/blob/main/docs/privacy.md",
-  "termsOfServiceUrl": "https://github.com/google/elephant-goldfish-model/blob/main/LICENSE",
+  "privacyPolicyUrl": "https://policies.google.com/privacy",
+  "termsOfServiceUrl": "https://policies.google.com/terms",
   "agents": [
     "./.claude-plugin/agents/bootstrap_orchestrator.md",
     "./.claude-plugin/agents/codebase_details.md",
