@@ -122,8 +122,9 @@ All reviewer persona prompts reside under [`agents/`](../../agents/):
 | [`agents/inventive_catalyst.md`](../../agents/inventive_catalyst.md) | Inventive Catalyst | Applies TRIZ principles to identify technical contradictions, false compromises, and pattern-based resolutions. |
 | [`agents/synthesizer.md`](../../agents/synthesizer.md) | Review Synthesizer | Spawns reviewers in parallel, deduplicates findings, formats file links, and writes consolidated report artifacts. |
 
-The ninth file, [`agents/bootstrap_orchestrator.md`](../../agents/bootstrap_orchestrator.md),
-is used by `egm-bootstrap` and is not part of the review pipeline.
+[`agents/bootstrap_orchestrator.md`](../../agents/bootstrap_orchestrator.md)
+is also under `agents/`. `egm-bootstrap` uses it, and it is not part of the
+review pipeline.
 
 --------------------------------------------------------------------------------
 
@@ -195,10 +196,9 @@ drafting.
 | `skills/egm-resolve/SKILL.md` | Skill Definition | Elephant resolution engine managing `CONTEST` vs `PROPOSE FIX` triage and automated fixes. |
 | `skills/egm-resolve/TEST.md` | Unit Tests | Verification test scenarios validating the finding categorization and resolution loop. |
 | `skills/egm-resolve/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating model resolution and fix proposal accuracy. |
-| `agents/*.md` | Persona Prompts | System prompt instructions for the 7 Goldfish reviewers, the Synthesizer, and the bootstrap orchestrator. |
+| `agents/*.md` | Persona Prompts | System prompt instructions for the Goldfish reviewers, the Synthesizer, and the bootstrap orchestrator. |
 | `resources/document_standards/*.md` | Document Standards | Evaluation rubrics and standards for feature specs, implementation readiness, and simplicity. |
 
 ## References
 
 *   Dave Rensin, [Elephants, Goldfish, and the New Golden Age of Software Engineering](https://medium.com/@drensin/elephants-goldfish-and-the-new-golden-age-of-software-engineering-c33641a48874) (Medium, 2026).
-*   DARPA, [The Heilmeier Catechism](https://www.darpa.mil/about/heilmeier-catechism).
