@@ -107,4 +107,3 @@ def test_all_agents_have_valid_frontmatter(repo_root: pathlib.Path) -> None:
         isinstance(frontmatter["description"], str)
         and frontmatter["description"].strip()
     ), f"'description' must be a non-empty string in {agent_file}"
-

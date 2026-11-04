@@ -180,8 +180,8 @@ scenarios:
       - user_input: "Execute Step 5 (Initial Strategic Review) on docs/designs/storage.md, which states that high write throughput inevitably requires sacrificing durability."
         assertions:
           - type: "required_pattern"
-            pattern: "(?i)(false compromise|inventive|contradiction|pattern|zoom_out_report)"
-            message: "Step 5 must audit false compromises and record inventive opportunities in zoom_out_report.md."
+            pattern: "(?is)^(?=.*egm-zoom-out)(?=.*egm-inventive-catalyst)"
+            message: "Step 5 must dispatch both egm-zoom-out and egm-inventive-catalyst in parallel."
 
   - scenario_id: "step5_inventive_catalyst_no_false_compromise_early_exit"
     description: "Validates that Inventive Catalyst outputs No false compromise detected when foundational architecture has no false compromise in Step 5."

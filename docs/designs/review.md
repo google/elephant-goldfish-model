@@ -43,7 +43,7 @@ The full review pipeline executes five sequential evaluation phases:
 
 ```mermaid
 flowchart TD
-    Start([Target Design Doc]) --> Step5[Step 5: Initial Strategic Review (Zoom Out + Inventive Catalyst)]
+    Start([Target Design Doc]) --> Step5["Step 5: Initial Strategic Review (Zoom Out + Inventive Catalyst)"]
     Step5 --> Gate5{Pass / Abort?}
     Gate5 -- Abort --> FixArch[Refactor Architecture]
     Gate5 -- Pass --> Step6[Step 6: Comprehension Test]

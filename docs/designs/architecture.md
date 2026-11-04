@@ -157,7 +157,7 @@ sequenceDiagram
 *   **Execution**: Coding agents implement code strictly adhering to the
     approved design document. (No Skill.md is required here because the design 
     document is complete and detailed.)
-*   **Phase Write Boundaries**: Phases 1–4 (`/egm-brainstorm`, `/egm-draft`,
+*   **Phase Write Boundaries**: Phases 1-4 (`/egm-brainstorm`, `/egm-draft`,
     `/egm-review`, and `/egm-resolve`) should write only specification and
     review artifacts: `concepts_brief.md`, `design_draft.md`, the review
     reports, the design doc, and `SITEMAP.md` if it exists. They should not
