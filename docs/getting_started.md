@@ -86,6 +86,30 @@ The "core" workflow looks like:
     > testing strategies, etc. EGM is not opinionated here. Add your skills to
     > your implementation plan!
 
+## What to Run Next
+
+Each skill names the next step when it finishes. When you return to a project
+later, the files on disk show roughly where you stopped. The table lists which
+skill writes each file. Run **`/egm-ask`** to have the agent check your folder
+against this table and answer questions about EGM. It reads files and replies
+in chat; it never edits files or runs other skills.
+
+A file shows that a step started, not that it finished. Reports can be partial
+or left over from an earlier run, so confirm which design you mean.
+
+| Files found (written by) | Stage | Next step |
+| :----------------------- | :---- | :-------- |
+| None, and no `docs/designs/*.md` | Not started | `/egm-brainstorm` for a new idea, or `/egm-bootstrap` to document an existing codebase |
+| `concepts_brief.md` (`/egm-brainstorm`) | Ideation done | `/egm-draft`, which reads `concepts_brief.md` as its first input |
+| `design_draft.md` (`/egm-draft`), no matching `docs/designs/<feature>.md` | Draft in progress | Continue `/egm-draft` until it writes `docs/designs/<feature>.md` |
+| `docs/designs/<feature>.md`, no review reports | Ready for review | `/egm-review docs/designs/<feature>.md` |
+| `zoom_out_report.md`, `comprehension_report.md`, `critic_report.md`, `intermediate_zoom_out_report.md`, `implementation_readiness_report.md`, or `consolidated_review_report.md` (`/egm-review`) | Review started; completion unknown | If the review of this design finished, `/egm-resolve` on its findings. If not, continue the review |
+| `goldfish_review_report.md` (`/egm-resolve`) without `Status: resolved` | Resolution in progress | Answer the resolve step that is waiting, or run `/egm-resolve` again |
+| `goldfish_review_report.md` with `Status: resolved` | Findings resolved | Human review of the design (step 4 above). Implement after the design is approved |
+
+The rows are in workflow order. Commands are shown without a prefix; the
+[README](../README.md) explains the form your tool uses.
+
 ## Drift Detection
 
 To ensure that your design specifications and active codebase remain
