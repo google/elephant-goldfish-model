@@ -6,15 +6,21 @@
 import json
 import os
 import pathlib
+import runpy
 import shutil
 import shlex
 import subprocess
 import uuid
+import warnings
 import zipfile
 from collections.abc import Iterator
 from urllib.parse import unquote, urlparse
 
 import pytest
+
+assert_unbiased_input = runpy.run_path(str(
+    pathlib.Path(__file__).with_name("diagnosis_checks.py")
+))["assert_unbiased_input"]
 
 
 InstalledPlugin = tuple[str, str, pathlib.Path, pathlib.Path]
@@ -157,8 +163,13 @@ def successful_reads(trace: list[dict]) -> set[pathlib.Path]:
                     paths.add((cwd / command["path"]).resolve())
             elif command.get("type") == "unknown":
                 # Codex labels compound shell commands as unknown. Inspect
-                # only standalone cat segments with literal absolute paths.
+                # only standalone cat segments with literal paths. Relative
+                # operands require a command that cannot change its cwd.
                 raw = command.get("cmd", "")
+                # shlex treats newlines as whitespace, while a shell treats
+                # them as command boundaries. Do not infer a stable cwd here.
+                if "\n" in raw or "\r" in raw:
+                    continue
                 try:
                     lexer = shlex.shlex(raw, posix=True, punctuation_chars=";")
                     lexer.whitespace_split = True
@@ -171,14 +182,22 @@ def successful_reads(trace: list[dict]) -> set[pathlib.Path]:
                         segments.append([])
                     else:
                         segments[-1].append(token)
+                relative_safe = all(
+                    not segment or segment[0] == "cat"
+                    or segment[:2] == ["rg", "--files"]
+                    for segment in segments
+                ) and not any(char in token for token in tokens
+                              for char in "$`|&<>*?{}()")
                 for args in segments:
                     if (len(args) <= 1 or args[0] != "cat"
                             or any(char in arg for arg in args
                                    for char in "$`|&<>*?{}()")
-                            or not all(pathlib.Path(arg).is_absolute() for arg in args[1:])):
+                            or any(arg.startswith("-") for arg in args[1:])
+                            or (not relative_safe and not all(
+                                pathlib.Path(arg).is_absolute() for arg in args[1:]))):
                         continue
                     for arg in args[1:]:
-                        path = pathlib.Path(arg).resolve()
+                        path = (cwd / arg).resolve()
                         try:
                             contents = path.read_text(encoding="utf-8")
                         except (OSError, UnicodeError):
@@ -255,6 +274,94 @@ external services, or conversation history. Report the actual child response.
         and e["payload"].get("type") == "task_complete"
     ]
     assert answers[-1].strip() == "UNKNOWN", "Child failed the isolation probe"
+
+
+def test_independent_bug_diagnosis(
+    installed_plugin: InstalledPlugin, tmp_path: pathlib.Path,
+    repo_root: pathlib.Path,
+) -> None:
+    """Exercise the installed diagnosis skill with a misleading parent theory."""
+    root = installed_plugin[3]
+    skill = root / "skills/egm-diagnose/SKILL.md"
+    if not skill.exists():
+        pytest.skip("This release predates egm-diagnose")
+    source = tmp_path / "src"
+    source.mkdir()
+    fixture = source / "catalog.py"
+    shutil.copyfile(repo_root / "tests/fixtures/diagnosis/catalog.py", fixture)
+    original = fixture.read_bytes()
+    marker = "expiration-theory-" + uuid.uuid4().hex
+    hypothesis_text = "TTL expiration is broken"
+    prompt = f"""Run the installed egm-diagnose skill on this synthetic project.
+Read the installed skill, not a development checkout. SourceRoot: {source}
+EGM artifact directory: {tmp_path / 'reports'}
+Symptom: requesting guide for south returns North guide instead of South guide.
+Repro: create Catalog(); call lookup('north', 'guide', now=0), then
+lookup('south', 'guide', now=1). The reported results are North guide twice.
+Expected: North guide followed by South guide. No network or external services.
+
+Parent-only initial hypothesis: {hypothesis_text}. Label this hypothesis
+{marker} in elephant-hypothesis.md before dispatch, but do not pass the label,
+theory, or hypothesis file to the Goldfish. Record it as a hypothesis to check,
+not a fact. Preserve it even if source inspection suggests another explanation.
+Run one actual native fresh-context diagnosis Goldfish using the skill's task.
+Do not simulate its result or use memory. You may run existing local Python
+reproductions with bytecode disabled; do not edit source or create tests.
+Write the four diagnosis artifacts and a concise summary. Do not publish,
+commit, modify the plugin, or proceed to fixing the bug.
+"""
+    trace = run_codex(installed_plugin, tmp_path, prompt)
+    assert_isolated_spawns(trace)
+    children = child_traces(trace)
+    assert len(children) == 1, "Diagnosis must use one independent Goldfish"
+    child = next(iter(children.values()))
+    # Check visible records only. Some CLI versions encrypt delegated messages;
+    # absence here does not prove exclusion from every part of the child input.
+    assert marker not in json.dumps(child), "Parent hypothesis leaked into the child"
+    runs = list((tmp_path / "reports").glob("egm-diagnosis-*"))
+    assert len(runs) == 1
+    run = runs[0]
+    observations = run / "observations.md"
+    hypothesis = run / "elephant-hypothesis.md"
+    assert marker in hypothesis.read_text(encoding="utf-8")
+    assert_unbiased_input(observations.read_text(encoding="utf-8"), marker,
+                          hypothesis_text)
+    for event in trace:
+        payload = event.get("payload", {})
+        if (event.get("type") == "response_item"
+                and payload.get("type") == "function_call"
+                and payload.get("name", "").split("__")[-1] == "spawn_agent"):
+            args = json.loads(payload["arguments"])
+            message = args.get("message", args.get("prompt"))
+            assert isinstance(message, str), "Missing native dispatch message"
+            if message.startswith("gAAAA"):
+                warnings.warn("Delegated prompt is encrypted; input audit is partial")
+            else:
+                assert_unbiased_input(message, marker, hypothesis_text)
+    reads = successful_reads(child)
+    assert (root / "agents/bug_diagnosis.md").resolve() in reads
+    assert observations.resolve() in reads
+    assert fixture.resolve() in reads
+    assert hypothesis.resolve() not in reads
+    assert skill.resolve() in successful_reads(trace)
+    report = (run / "diagnosis_report.md").read_text(encoding="utf-8").lower()
+    preserved = (run / "goldfish-diagnosis.md").read_text(encoding="utf-8")
+    answers = [
+        e["payload"].get("last_agent_message", "") for e in child
+        if e["type"] == "event_msg"
+        and e["payload"].get("type") == "task_complete"
+    ]
+    assert answers and preserved.strip() == answers[-1].strip(), (
+        "The independent diagnosis was rewritten instead of preserved"
+    )
+    independent = preserved.lower()
+    assert "diverg" in report, "The misleading parent theory must be compared"
+    assert "tenant" in independent and "slug" in independent
+    assert "catalog.py:" in independent, "Candidate must cite source lines"
+    assert "falsif" in independent or "disprov" in independent
+    assert fixture.read_bytes() == original, "Diagnosis changed application source"
+    assert sorted(p.relative_to(source).as_posix() for p in source.rglob("*")
+                  if p.is_file()) == ["catalog.py"]
 
 
 def test_brainstorm_draft_review(
