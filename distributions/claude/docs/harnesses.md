@@ -70,7 +70,7 @@ while `agents/` contains reviewer personas. All hosts share the same `skills/`,
 | Codex | `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | `skills` path | Not shipped; general-purpose subagent reads the persona file |
 | ChatGPT | `plugin.json`, `.codex-plugin/plugin.json`; `.agents/plugins/marketplace.json` for workspace import | `skills` path | Detect native tools in the current session; general-purpose agent reads the persona |
 | omp | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` (Claude-compatible fallback) | `skills/` (default) | Personas from `agents/`/`.claude-plugin/agents/` register as native `task` agents |
-| Muse | `.claude-plugin/plugin.json` (Claude-compatible fallback) | `skills/` (default) | 9 adapters import as agents; tool projections unsupported |
+| Muse | `.claude-plugin/plugin.json` (Claude-compatible fallback) | `skills/` (default) | 10 adapters import as agents; tool projections unsupported |
 
 Persona prompts live in `agents/`, the directory Antigravity
 scans for subagents. Each persona has `name` and `description` frontmatter, so
