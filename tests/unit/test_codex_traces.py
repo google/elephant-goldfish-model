@@ -74,11 +74,30 @@ ROOT = Path(__file__).resolve().parents[2]
             "# Installed guide\n" + "guide content " * 20,
             True,
         ),
+        (
+            lambda path: {"type": "read", "path": str(path)},
+            0,
+            "",
+            False,
+        ),
+        (
+            lambda path: {"type": "read", "path": str(path)},
+            0,
+            " \t\r\n",
+            False,
+        ),
+        (
+            lambda path: {"type": "read", "path": str(path)},
+            0,
+            "\u00a0\u2003",
+            False,
+        ),
     ],
     ids=(
         "failed-cat-printed-file", "compound-cat-printed-file",
         "and-separated-cat-rejected", "piped-cat-rejected",
         "failed-cat-no-file-output", "failed-read", "successful-read",
+        "empty-read-output", "whitespace-read-output", "unicode-whitespace-read-output",
     ),
 )
 def test_successful_reads_requires_native_trace_evidence(

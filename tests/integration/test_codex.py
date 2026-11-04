@@ -144,6 +144,8 @@ def successful_reads(trace: list[dict]) -> set[pathlib.Path]:
                 or not item.get("aggregated_output")):
             continue
         output = item["aggregated_output"]
+        if not output.strip():
+            continue
         exit_code = item.get("exit_code")
         # A compound `cat` can return useful file contents and then fail on a
         # later missing operand. Count a file only when its own contents are
