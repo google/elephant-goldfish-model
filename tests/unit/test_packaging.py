@@ -58,6 +58,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
       metadata = yaml.safe_load(bundle.read((prefix / "agents/openai.yaml").as_posix()))
       interface = metadata["interface"]
       assert interface["display_name"]
+      assert f"${skill.parent.name}" in interface["default_prompt"]
       assert 25 <= len(interface["short_description"]) <= 64
       for field in ("icon_small", "icon_large"):
         icon = Path(interface[field])

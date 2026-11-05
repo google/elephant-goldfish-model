@@ -3,4 +3,5 @@ interface:
   short_description: "Repeat design reviews and resolve findings"
   icon_small: "./assets/icon.png"
   icon_large: "./assets/icon.png"
+  default_prompt: "Use $egm-review-loop to review this proposal. Help me choose reviewers and review criteria."
   brand_color: "#E86E00"

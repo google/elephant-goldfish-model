@@ -12,12 +12,17 @@
   "requires_local_executor": true,
   "interface": {
     "displayName": "Elephant-Goldfish Model",
-    "shortDescription": "Draft and review documents",
-    "longDescription": "Use AI to develop ideas, draft plans, and review documents. Independent reviewers check the work without the earlier conversation. Software tools also document codebases and check changes against specifications.",
+    "shortDescription": "Develop ideas and review plans",
+    "longDescription": "Develop an idea, improve a plan, or review a document with independent AI reviewers. Reviewers start without the earlier conversation to help spot missing context, unclear reasoning, and hidden assumptions. Use it to challenge proposals and project plans. For software work, draft design documents, document a codebase, and check whether code matches a design. You decide which changes to make. Reviews require a local executor and isolated subagents.",
     "developerName": "Google",
     "brandColor": "#1B6EF3",
     "category": "Productivity",
-    "capabilities": ["Develop ideas", "Review documents", "Check implementation drift"],
+    "capabilities": ["Develop ideas", "Review plans and documents", "Check software against designs"],
+    "defaultPrompt": [
+      "Help me turn this idea into a clear plan.",
+      "Review this proposal for gaps and unclear assumptions.",
+      "Review this software design before we build it."
+    ],
     "websiteURL": "https://egm.dev",
     "supportURL": "https://github.com/google/elephant-goldfish-model/issues",
     "privacyPolicyURL": "https://policies.google.com/privacy",
