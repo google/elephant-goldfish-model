@@ -74,13 +74,14 @@ Before each round, the parent saves a numbered round directory containing:
   hash, exit status and result.
 - `review.md`: the unedited completed child response.
 
-Use NUL-delimited Git inventories and quote paths safely; never evaluate
-filenames as shell code. Read full diff output or save it directly to files;
-truncated tool output is not complete evidence. Record SHA-256 of each patch
-and file copy, plus current HEAD/index/worktree evidence. Recollect and compare
-that evidence before dispatch and after the child returns. If source changes,
-retain the report as stale and stop without a clean outcome. This detects
-observed changes; it is not an atomic Git snapshot or a filesystem lock.
+Use NUL-delimited Git inventories that list untracked files individually.
+Quote paths safely and never evaluate filenames as shell code. Read full diff
+output or save it directly to files. Truncated tool output is incomplete
+evidence. Record SHA-256 of each patch and file copy, plus current
+HEAD/index/worktree evidence. Recollect and compare that evidence before
+dispatch and after the child returns. If source changes, retain the report as
+stale and stop without a clean outcome. This detects observed changes between
+checks. Git can still change during either check.
 
 The reviewer may read surrounding source and tests. Record any unavailable
 context as a limitation. Reviews and validation concern the recorded state;
@@ -167,9 +168,9 @@ Regenerate the Claude distribution and validate both runtime packages. Add the
 skill to the README and website with matching descriptions and order, and
 update current skill counts in the integration guides. Behavioral scenarios
 cover missing base, conflicts, unsupported files, stale evidence, rebuttals and
-the round cap. Scenario assertions must prohibit a
-clean outcome for unsupported changed entries. They are evaluation prompts,
-not proof those branches ran in a live model.
+the round cap. Scenario assertions must prohibit a clean outcome for
+unsupported changed entries. Separate live runs verify model behavior for the
+scenarios they exercise.
 
 ## Initial host scope
 
