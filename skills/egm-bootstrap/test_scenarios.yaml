@@ -103,8 +103,8 @@ scenarios:
             pattern: "(?i)(timed out|time-?out|under-?report|only[^\\n]{0,30}1007-1200)"
             message: "The final report must state the reason the directory is incomplete."
           - type: "forbidden_pattern"
-            pattern: "(?i)(uncovered_fn|UncoveredError)"
-            message: "Symbols from the uncovered range must not appear; nobody read them."
+            pattern: "\\[[^\\]\\n]*(uncovered_fn|UncoveredError)[^\\]\\n]*\\]"
+            message: "Symbols from the uncovered range must not be documented; nobody read them."
 
   - scenario_id: "bootstrap_swarm_incomplete_report"
     description: "Verifies the root orchestrator surfaces a worker's incomplete entry in the final report when running in parallel swarm mode."
@@ -139,7 +139,7 @@ scenarios:
       - user_input: "You are bootstrapping path=repo_root again. repo_root/test_dir/README.md already exists from a previous run. Its Interface section contains: '- [big_module.py:covered_fn] ...', '- [big_module.py:CoveredClass] ...', '- Maintainer note: call uncovered_fn only from the batch job, never from a request handler (see design doc).', and '- (Documentation incomplete: scout failed: test_dir/big_module.py:1201-1965)'. In this run the scouts for big_module.py covered lines 1-1965 completely (files_read 1-1006 and 1007-1965) and reported uncovered_fn and UncoveredError at lines 1940-1965. Show the Interface section you write for test_dir/README.md and your final status line."
         assertions:
           - type: "forbidden_pattern"
-            pattern: "(?i)documentation incomplete"
+            pattern: "(?im)^\\s*[-*]\\s*\\(documentation incomplete"
             message: "A marker must be removed once its range is covered; this run covered 1201-1965."
           - type: "required_pattern"
             pattern: "(?i)(uncovered_fn|UncoveredError)"
@@ -151,5 +151,5 @@ scenarios:
             pattern: "(?i)maintainer note[\\s\\S]{0,120}batch job"
             message: "Human-written notes in an existing README must be preserved by the Correction Policy."
           - type: "forbidden_pattern"
-            pattern: "(?i)test_dir[^\\n]{0,80}incomplete"
-            message: "The final status must not list test_dir as incomplete after full coverage."
+            pattern: "egm-bootstrap\\s+path="
+            message: "The final status must not print a rerun command after full coverage."

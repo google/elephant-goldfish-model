@@ -119,7 +119,7 @@ def test_scout_failure_scenario_keeps_good_chunks_and_marks_gap() -> None:
   for needle in ("covered_fn", "documentation incomplete", "test_dir", "1965",
                  "timed out", "egm-bootstrap", "repo_root"):
     assert needle in required, f"scenario no longer requires {needle!r}"
-  # The loose alternative n3wth flagged ('short' matches 'shortly') is gone.
+  # A bare 'short' alternative would also match 'shortly', so it must not return.
   assert "|short|" not in required
 
 
@@ -151,6 +151,7 @@ def test_rerun_scenario_removes_marker_and_keeps_human_notes() -> None:
   required = " ".join(
       a["pattern"] for a in assertions if a["type"] == "required_pattern")
   assert "documentation incomplete" in forbidden, "marker must be forbidden after coverage"
+  assert "egm-bootstrap" in forbidden, "a rerun command must be forbidden after coverage"
   for needle in ("uncovered_fn", "covered_fn", "maintainer note"):
     assert needle in required, f"rerun scenario no longer requires {needle!r}"
 
