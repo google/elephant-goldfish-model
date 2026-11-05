@@ -316,5 +316,5 @@ are unavailable. Keep the fixture small and reviews concise.
         assert len(report.read_text().strip()) > 100, f"Empty/trivial report: {name}"
     assert_isolated_spawns(trace)
     children = child_traces(trace)
-    assert len(children) >= 15, "Expected six brainstorm and nine stage reviewers"
+    assert len(children) >= 17, "Expected seven brainstorm and ten stage reviewers"
     assert not list(tmp_path.rglob("*.py")), "Design workflow wrote implementation code"
