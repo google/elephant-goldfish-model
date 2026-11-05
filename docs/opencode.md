@@ -30,7 +30,7 @@ npm install --prefix /absolute/opencode-v1 opencode-ai@1.18.29
 
 Inspect the generated `opencode.json` and `installation.json` before use.
 The latter records package identity and SHA-256 hashes of all bundled files.
-The native configuration contains seven commands, seven reviewers, and the `egm` primary agent.
+The native configuration contains eight commands, seven reviewers, and the `egm` primary agent.
 Native skill aliases use the canonical frontmatter names and link to the unchanged skill directories.
 
 Start OpenCode from the project directory with the candidate configuration:
@@ -69,7 +69,7 @@ Supply `description` and `prompt`. Omit `task_id` to create a fresh session.
 Use foreground tasks. Do not enable background dispatch or reuse a reviewer session.
 The primary agent performs synthesis and writes reports; no nested synthesizer adapter is installed.
 Bootstrap worker and scout delegation is outside this adapter's scope. Although
-all seven skills are discoverable, the task allowlist contains only the seven
+all eight skills are discoverable, the task allowlist contains only the seven
 reviewer types. Stop if bootstrap requires an orchestrator or scout; do not
 substitute a reviewer or simulate the missing worker.
 
