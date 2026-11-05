@@ -57,7 +57,7 @@ Use whichever skill serves your immediate bottleneck.
 The "core" workflow looks like:
 
 1.  **`/egm-brainstorm`**: Start an upstream ideation session. This command
-    prompts the developer to clarify the concept, then spawns a 6-lens Goldfish
+    prompts the developer to clarify the concept, then spawns a multi-lens Goldfish
     swarm to stress-test the concept and generate a structured `concepts_brief.md`
     artifact.
 

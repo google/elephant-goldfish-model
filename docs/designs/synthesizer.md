@@ -83,10 +83,10 @@ context:
 
 ### 2. `Mode: BRAINSTORM` (Concept Ideation)
 
-*   **6-Lens Swarm**: Spawns parallel brainstormers across six perspectives:
+*   **7-Lens Swarm**: Spawns parallel brainstormers across seven perspectives:
     `Skeptical Architect`, `Codebase Grounding Auditor`, `UX & Ergonomics`,
-    `Naive Comprehension`, `Implementation Feasibility`, and `Structural
-    Design`.
+    `Naive Comprehension`, `Implementation Feasibility`, `Structural Design`, and
+    `Inventive Catalyst (Contradiction Resolution)`.
 *   **Concept Synthesis**: Aggregates divergent ideas, highlights hidden risks,
     identifies existing infrastructure reuse opportunities, and compiles a
     unified `concepts_brief.md` artifact.

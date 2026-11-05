@@ -301,7 +301,7 @@ lookup('south', 'guide', now=1). The reported results are North guide twice.
 Expected: North guide followed by South guide. No network or external services.
 
 Parent-only initial hypothesis: {hypothesis_text}. Label this hypothesis
-{marker} in elephant-hypothesis.md before dispatch, but do not pass the label,
+{marker} in elephant_hypothesis.md before dispatch, but do not pass the label,
 theory, or hypothesis file to the Goldfish. Record it as a hypothesis to check,
 not a fact. Preserve it even if source inspection suggests another explanation.
 Run one actual native fresh-context diagnosis Goldfish using the skill's task.
@@ -322,7 +322,7 @@ commit, modify the plugin, or proceed to fixing the bug.
     assert len(runs) == 1
     run = runs[0]
     observations = run / "observations.md"
-    hypothesis = run / "elephant-hypothesis.md"
+    hypothesis = run / "elephant_hypothesis.md"
     assert marker in hypothesis.read_text(encoding="utf-8")
     assert_unbiased_input(observations.read_text(encoding="utf-8"), marker,
                           hypothesis_text)
@@ -345,7 +345,7 @@ commit, modify the plugin, or proceed to fixing the bug.
     assert hypothesis.resolve() not in reads
     assert skill.resolve() in successful_reads(trace)
     report = (run / "diagnosis_report.md").read_text(encoding="utf-8").lower()
-    preserved = (run / "goldfish-diagnosis.md").read_text(encoding="utf-8")
+    preserved = (run / "goldfish_diagnosis.md").read_text(encoding="utf-8")
     answers = [
         e["payload"].get("last_agent_message", "") for e in child
         if e["type"] == "event_msg"
@@ -423,5 +423,5 @@ are unavailable. Keep the fixture small and reviews concise.
         assert len(report.read_text().strip()) > 100, f"Empty/trivial report: {name}"
     assert_isolated_spawns(trace)
     children = child_traces(trace)
-    assert len(children) >= 15, "Expected six brainstorm and nine stage reviewers"
+    assert len(children) >= 17, "Expected seven brainstorm and ten stage reviewers"
     assert not list(tmp_path.rglob("*.py")), "Design workflow wrote implementation code"

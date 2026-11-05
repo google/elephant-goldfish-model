@@ -47,7 +47,7 @@ Inspect the relevant source and create two separate files:
    results, environment facts, and narrowly selected evidence excerpts. Mark
    each result as user-reported or observed in this run. Include source paths
    when they appear in observed traces, not just because they fit a theory.
-2. `elephant-hypothesis.md`: The Elephant's current candidate cause, supporting
+2. `elephant_hypothesis.md`: The Elephant's current candidate cause, supporting
    evidence, uncertainties, and a check that would disprove it. Use `unknown`
    when there is not enough evidence. Record this before reading the Goldfish
    result and keep it unchanged for the later comparison.
@@ -105,7 +105,7 @@ own reasoning and call it a Goldfish result. Do not retry silently.
 
 ## 3. Preserve and check the result
 
-Write the returned report unchanged to `goldfish-diagnosis.md`. It must contain:
+Write the returned report unchanged to `goldfish_diagnosis.md`. It must contain:
 
 - Completion status: `complete` or `incomplete`, with any access limitations.
 - The files actually read and whether the persona and observations were read.
@@ -122,7 +122,7 @@ verified isolation from a child's assurance alone.
 
 ## 4. Compare evidence and write the handoff
 
-Only now compare the Goldfish's candidates with `elephant-hypothesis.md`:
+Only now compare the Goldfish's candidates with `elephant_hypothesis.md`:
 
 - **Converged**: Both identify the same mechanism. Identify a diagnostic check
   that distinguishes it from the strongest alternative; agreement is not proof.

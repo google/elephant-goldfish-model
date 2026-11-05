@@ -58,7 +58,7 @@ Repro: create Catalog(); call lookup('north', 'guide', now=0), then
 lookup('south', 'guide', now=1). Reported results: North guide twice.
 Expected: North guide followed by South guide.
 Parent-only initial hypothesis: {hypothesis}. Record it unchanged with the
-label {parent_marker} in elephant-hypothesis.md before dispatch. Keep both
+label {parent_marker} in elephant_hypothesis.md before dispatch. Keep both
 the theory and label out of the observations and the child's task.
 Investigate using the installed diagnosis skill and its native adapter, using
 this candidate plugin's namespace {name}. Run one actual fresh Goldfish.
@@ -109,17 +109,17 @@ Write all four artifacts and preserve the original child report unchanged.
     observations = run / "observations.md"
     assert_unbiased_input(observations.read_text(encoding="utf-8"),
                           parent_marker, hypothesis)
-    assert parent_marker in (run / "elephant-hypothesis.md").read_text(encoding="utf-8")
+    assert parent_marker in (run / "elephant_hypothesis.md").read_text(encoding="utf-8")
     reads = claude_reads(raw_child)
     required = {plugin / "agents/bug_diagnosis.md", observations, fixture}
     assert {path.resolve() for path in required} <= reads.keys()
-    assert (run / "elephant-hypothesis.md").resolve() not in reads
+    assert (run / "elephant_hypothesis.md").resolve() not in reads
     assert "self.cache.get(slug)" in reads[fixture.resolve()]
     assert "self.records[(tenant, slug)]" in reads[fixture.resolve()]
     parent_reads = claude_reads(raw_parent)
     assert (plugin / "docs/claude.md").resolve() in parent_reads
     answer = claude_diagnosis_answer(raw_child)
-    preserved = (run / "goldfish-diagnosis.md").read_text(encoding="utf-8")
+    preserved = (run / "goldfish_diagnosis.md").read_text(encoding="utf-8")
     assert preserved.strip() == answer.strip(), "Child report was rewritten"
     assert "tenant" in answer.lower() and "slug" in answer.lower()
     assert "catalog.py:" in answer
