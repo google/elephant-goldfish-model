@@ -23,6 +23,10 @@ Use it when a feature needs design decisions before implementation. For a small,
 
 Choose your coding agent. Install the complete plugin so its skills can read the reviewer prompts and document standards.
 
+### ChatGPT and Codex desktop
+
+Open the [published EGM plugin](https://chatgpt.com/plugins/plugins_6aeb90f47ec88191a3c107e01d3eb357) in the desktop app and install it. This listing is desktop-only. For Codex CLI, use the commands below.
+
 ### Antigravity CLI
 
 ```sh
@@ -38,7 +42,7 @@ claude plugin marketplace add google/elephant-goldfish-model
 claude plugin install egm@egm
 ```
 
-### Codex
+### Codex CLI
 
 ```sh
 codex plugin marketplace add google/elephant-goldfish-model

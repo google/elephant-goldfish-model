@@ -15,4 +15,5 @@ When evaluating or exploring `egm-review` interactively in chat, verify:
     explicit `Step` argument to its corresponding preset or individual stage subflow.
 -   **Step 3 (Semantic Split):** Discovers the split line between Feature Spec
     and Detailed Implementation Plan.
--   **Subflows:** Properly delegates Zoom Out, Comprehension, Critic Review, and Readiness Test.
+-   **Step 5 (Initial Strategic Review):** Spawns `egm-zoom-out` and `egm-inventive-catalyst` in parallel to audit altitude and false architectural compromises.
+-   **Subflows:** Properly delegates Initial Strategic Review, Comprehension, Critic Review, Intermediate Zoom Out, and Readiness Test.

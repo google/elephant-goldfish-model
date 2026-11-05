@@ -14,7 +14,14 @@ complete evidence, report incomplete instead of improvising a clean verdict.
    Parse NUL records, including both paths of a rename, without whitespace
    splitting. Nonzero index stages mean conflicts: stop. Include deletions,
    renames, mode changes, intent-to-add entries, and every non-ignored untracked
-   file. Apply no hidden extension filter. Only exclude this run's artifacts.
+   file outside the following artifact exclusions. Inspect only direct child
+   directories named `egm-precommit-*` under the configured artifact directory.
+   Exclude untracked descendants of this run and prior runs identified by their
+   generated layout: a `round-N/scope.md` or both `precommit_report.md` and
+   `ledger.md`. Check path components and file types without following symlinks
+   or reading prior report contents. Apply exclusions at directory boundaries.
+   Keep all tracked changes and every other untracked file, including directories
+   that share the prefix but lack the generated layout. Apply no extension filter.
 3. Save three distinct diffs with `--binary --full-index --no-ext-diff
    --no-textconv --no-renames` and `--` before paths: branch (pinned merge base
    to HEAD, or empty), staged (`--cached` against HEAD), and unstaged. Do not
@@ -38,14 +45,16 @@ complete evidence, report incomplete instead of improvising a clean verdict.
    when text review succeeds. Do not copy secrets identified during collection
    into artifacts or prompts; record the omission as incomplete and tell the
    user. Ignored paths stay excluded; do not recursively scan .git or logs.
-6. scope.md records raw inventories (or lossless encoded equivalents), HEAD,
-   pinned base, change-layer mapping, artifact exclusions and coverage gaps.
+6. scope.md records the in-scope inventory records (or lossless encoded
+   equivalents), HEAD, pinned base, change-layer mapping, the excluded run
+   directory paths and coverage gaps. Omit excluded files from the records,
+   patches and snapshots given to the reviewer.
    Include hashes of patches, file copies and each changed working-copy entry's
    current bytes/type, including untracked files. Detect new/deleted paths with
    the inventory. Record index entries as mode/OID/stage, not index-file mtime.
    Recollect these values after capture, before dispatch, and after completion.
-   Exclude only generated files under this exact run directory. A mismatch
-   means stale, not clean. Do not repair or overwrite a stale round.
+   Apply the same artifact exclusion rule on each recollection. An in-scope
+   mismatch means stale, not clean. Do not repair or overwrite a stale round.
 7. Reviewers may need unchanged surrounding source. They must list extra paths
    actually read. Before declaring clean, verify those context reads still
    match the bytes reviewed, using captured native read output or before/after

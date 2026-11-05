@@ -32,12 +32,23 @@ def test_native_precommit(tmp_path: Path, repo_root: Path, mode: str) -> None:
     manifest["name"] = name
     manifest_file.write_text(json.dumps(manifest))
     workspace = tmp_path / "workspace"
-    before = make_project(workspace, mode)
+    before = make_project(workspace, mode, ignore_reports=mode != "review")
     marker = "parent-only-" + uuid.uuid4().hex
     project_marker = "project-only-" + uuid.uuid4().hex
     (workspace / "CLAUDE.md").write_text(f"Private project marker: {project_marker}\n")
     session = str(uuid.uuid4())
     reports = workspace / "reports"
+    if mode == "review":
+        prior_round = reports / "egm-precommit-previous" / "round-1"
+        prior_round.mkdir(parents=True)
+        (prior_round / "scope.md").write_text("# Previous review scope\n")
+        prior_marker = "prior-review-only-" + uuid.uuid4().hex
+        prior_review = prior_round / "review.md"
+        prior_review.write_text(prior_marker + "\n")
+        source_dir = reports / "egm-precommit-examples"
+        source_dir.mkdir()
+        source_marker = "UNTRACKED_EXAMPLE = 42"
+        (source_dir / "example.py").write_text(source_marker + "\n")
     settings = {"disableAllHooks": True, "permissions": {"allow": [
         *[f"Read(/{plugin}/{d}/**)" for d in ("skills", "docs", "agents", "resources")],
         f"Read(/{workspace}/**)", f"Edit(/{reports}/**)",
@@ -81,6 +92,8 @@ Complete the review and save the skill's reports. Use default BaseRef.
         assert not call["input"].get("resume")
         assert marker not in json.dumps(call["input"])
         assert project_marker not in json.dumps(call["input"])
+        if mode == "review":
+            assert prior_marker not in json.dumps(call["input"])
         assert call["id"] in results and not results[call["id"]].get("is_error")
     assert_validation(raw, mode)
     parent_reads = successful_reads(raw)
@@ -90,7 +103,8 @@ Complete the review and save the skill's reports. Use default BaseRef.
     for path in ("docs/claude.md",
                  "skills/egm-precommit-review/references/evidence.md"):
         assert (plugin / path).resolve() in parent_reads
-    runs = list(reports.glob("egm-precommit-*"))
+    runs = [path for path in reports.glob("egm-precommit-*")
+            if (path / "precommit_report.md").is_file()]
     assert len(runs) == 1
     run = runs[0]
     rounds = sorted(run.glob("round-*"))
@@ -101,6 +115,8 @@ Complete the review and save the skill's reports. Use default BaseRef.
     for child in children:
         child_raw = child.read_text()
         assert marker not in child_raw and project_marker not in child_raw
+        if mode == "review":
+            assert prior_marker not in child_raw
         reads = successful_reads(child_raw)
         assert (plugin / "agents/precommit_reviewer.md").resolve() in reads
         answer = child_answer(child_raw)
@@ -121,6 +137,9 @@ Complete the review and save the skill's reports. Use default BaseRef.
         answer, evidence = answers[0][1:]
         assert_seeded_findings(answer)
         assert "owner != user" in evidence and "return int(dollars)" in evidence
+        assert "egm-precommit-previous" in (rounds[0] / "scope.md").read_text()
+        assert source_marker in evidence, "Untracked source with a similar name was omitted"
+        assert prior_review.read_text() == prior_marker + "\n"
         assert "index" in answer.lower() or "staged" in answer.lower()
         assert "no findings" not in answer.lower()
         assert "not run" in final and "incomplete" in final

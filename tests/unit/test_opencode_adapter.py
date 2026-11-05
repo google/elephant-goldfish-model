@@ -48,7 +48,7 @@ def test_install_preserves_resources_and_native_contract(tmp_path: Path) -> None
         assert str(alias.resolve() / "SKILL.md") in command["template"]
         assert "$ARGUMENTS" in command["template"]
 
-    assert len(config["agent"]) == 8
+    assert len(config["agent"]) == 9
     for filename in ADAPTER["REVIEWERS"]:
         persona = destination / "bundle/agents" / f"{filename}.md"
         agent = config["agent"][ADAPTER["name"](persona)]

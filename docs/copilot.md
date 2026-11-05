@@ -89,6 +89,7 @@ Each reviewer permits only `read` and `search`. Reviewers cannot delegate or wri
 | `egm:egm-structural` | `agents/structural.md` |
 | `egm:egm-style` | `agents/style.md` |
 | `egm:egm-zoom-out` | `agents/zoom_out.md` |
+| `egm:egm-inventive-catalyst` | `agents/inventive_catalyst.md` |
 
 Start a new native child for every reviewer invocation, including repeat reviews.
 Use a task that contains only the requested mode, target, line ranges, persona,

@@ -12,12 +12,14 @@ def git(root: Path, *args: str) -> bytes:
     ).stdout
 
 
-def make_project(root: Path, mode: str) -> dict:
+def make_project(root: Path, mode: str, *, ignore_reports: bool = True) -> dict:
     root.mkdir()
     git(root, "init", "-b", "trunk")
     git(root, "config", "user.name", "Fixture")
     git(root, "config", "user.email", "fixture@example.invalid")
-    (root / ".gitignore").write_text("reports/\nCLAUDE.md\n__pycache__/\n")
+    (root / ".gitignore").write_text(
+        ("reports/\n" if ignore_reports else "") + "CLAUDE.md\n__pycache__/\n"
+    )
     (root / "README.md").write_text(
         "# Fixture\nRun local checks: `python3 -B -m unittest -v`.\n"
         "No dependencies, build, lint, typecheck or generation steps.\n"

@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 HOST_VERSION = "1.18.29"
 REVIEWERS = (
     "codebase_details", "comprehension", "design_critic",
-    "implementation_readiness", "structural", "style", "zoom_out",
+    "implementation_readiness", "inventive_catalyst", "structural", "style", "zoom_out",
 )
 
 
@@ -101,7 +101,7 @@ def install(destination: Path) -> Path:
         "Wait for foreground completion. Pass only the task, absolute resource paths, "
         "target, standards, and selected reading list, not conversation history. "
         "Stop if delegation or a required completion is missing. "
-        "When running brainstorm before draft, complete all six brainstorm "
+        "When running brainstorm before draft, complete all seven brainstorm "
         "reviewers and synthesize their findings into concepts_brief.md before drafting. "
         "In review, write each completed stage report before starting the next stage. "
         "Before Step 8, verify zoom_out_report.md exists in the artifact directory "

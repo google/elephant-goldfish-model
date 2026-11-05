@@ -20,6 +20,8 @@ EGM_CLAUDE_LIVE=1 python -m pytest tests/integration/test_claude.py -k precommit
 The full workflow builds a uniquely named candidate via `--plugin-dir` and uses
 disposable Git repositories. Review mode has an index defect whose working
 copy is corrected and a defective untracked file with a Unicode/space name.
+It also checks that the fresh reviewer never receives a prior review's marker
+and still reads untracked source in a directory with a similar name.
 Fix mode has an unstaged calculation defect and failing unittest. It must
 produce findings, preserve the child report, fix only source, run passing checks
 and obtain a second review from a fresh child. HEAD and index must not change.
