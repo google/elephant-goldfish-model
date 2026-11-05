@@ -1,4 +1,5 @@
 {
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "egm",
   "version": "0.1.1",
   "description": "Develop ideas with context and review documents with fresh eyes.",

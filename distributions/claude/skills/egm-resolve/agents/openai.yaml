@@ -1,5 +1,5 @@
 interface:
-  display_name: "Resolve"
+  display_name: "EGM Resolve"
   short_description: "Resolve review findings in a design"
   icon_small: "./assets/icon.png"
   icon_large: "./assets/icon.png"

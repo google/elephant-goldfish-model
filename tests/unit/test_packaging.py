@@ -52,6 +52,8 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
+    portable = json.loads(bundle.read("plugin.json"))
+    assert portable["$schema"] == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
     assert len([p for p in names if p.endswith("/SKILL.md")]) == 7
     for skill in source.glob("skills/*/SKILL.md"):
       prefix = skill.parent.relative_to(source)
@@ -115,7 +117,7 @@ def test_skill_icon_and_host_palette_match(skill: str, base: str, facet: str) ->
   root = ROOT / "skills" / f"egm-{skill.replace('_', '-')}"
   metadata = yaml.safe_load((root / "agents/openai.yaml").read_text())["interface"]
   assert metadata["brand_color"].lower() == base
-  assert metadata["display_name"] == skill.replace("_", " ").capitalize()
+  assert metadata["display_name"] == "EGM " + skill.replace("_", " ").capitalize()
   for field in ("icon_small", "icon_large"):
     assert metadata[field] == "./assets/icon.png"
     png = (root / metadata[field]).read_bytes()

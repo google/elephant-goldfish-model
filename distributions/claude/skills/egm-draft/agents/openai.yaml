@@ -1,5 +1,5 @@
 interface:
-  display_name: "Draft"
+  display_name: "EGM Draft"
   short_description: "Write a design document section by section"
   icon_small: "./assets/icon.png"
   icon_large: "./assets/icon.png"

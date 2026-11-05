@@ -1,5 +1,5 @@
 interface:
-  display_name: "Bootstrap"
+  display_name: "EGM Bootstrap"
   short_description: "Create directory guides for a codebase"
   icon_small: "./assets/icon.png"
   icon_large: "./assets/icon.png"

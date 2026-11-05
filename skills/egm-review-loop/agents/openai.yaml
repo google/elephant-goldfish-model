@@ -1,5 +1,5 @@
 interface:
-  display_name: "Review loop"
+  display_name: "EGM Review loop"
   short_description: "Repeat design reviews and resolve findings"
   icon_small: "./assets/icon.png"
   icon_large: "./assets/icon.png"

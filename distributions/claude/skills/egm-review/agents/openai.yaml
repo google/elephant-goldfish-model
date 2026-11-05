@@ -1,5 +1,5 @@
 interface:
-  display_name: "Review"
+  display_name: "EGM Review"
   short_description: "Stress-test a design with fresh reviewers"
   icon_small: "./assets/icon.png"
   icon_large: "./assets/icon.png"
