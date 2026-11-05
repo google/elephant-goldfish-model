@@ -3,4 +3,5 @@ interface:
   short_description: "Write a design document section by section"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
+  default_prompt: "Use $egm-draft to turn these notes into a software design document."
   brand_color: "#1B6EF3"

@@ -51,12 +51,15 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
+    portable = json.loads(bundle.read("plugin.json"))
+    assert portable["$schema"] == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
     assert len([p for p in names if p.endswith("/SKILL.md")]) == 7
     for skill in source.glob("skills/*/SKILL.md"):
       prefix = skill.parent.relative_to(source)
       metadata = yaml.safe_load(bundle.read((prefix / "agents/openai.yaml").as_posix()))
       interface = metadata["interface"]
       assert interface["display_name"]
+      assert f"${skill.parent.name}" in interface["default_prompt"]
       assert 25 <= len(interface["short_description"]) <= 64
       for field in ("icon_small", "icon_large"):
         icon = Path(interface[field])
@@ -112,6 +115,7 @@ def test_skill_icon_and_host_palette_match(skill: str, base: str, facet: str) ->
   root = ROOT / "skills" / f"egm-{skill.replace('_', '-')}"
   metadata = yaml.safe_load((root / "agents/openai.yaml").read_text())["interface"]
   assert metadata["brand_color"].lower() == base
+  assert metadata["display_name"] == "EGM " + skill.replace("_", " ").capitalize()
   for field in ("icon_small", "icon_large"):
     svg = ElementTree.parse(root / metadata[field]).getroot()
     assert svg.get("viewBox") == "0 0 24 24"

@@ -318,3 +318,86 @@ are unavailable. Keep the fixture small and reviews concise.
     children = child_traces(trace)
     assert len(children) >= 15, "Expected six brainstorm and nine stage reviewers"
     assert not list(tmp_path.rglob("*.py")), "Design workflow wrote implementation code"
+
+
+@pytest.mark.parametrize("user_request", [
+    "Help me turn this idea into a clear plan.",
+    "Review this proposal for gaps and unclear assumptions.",
+    "Review this software design before we build it.",
+])
+def test_starter_prompt_missing_input(
+    installed_plugin: InstalledPlugin, tmp_path: pathlib.Path, user_request: str,
+) -> None:
+    """Starter prompts must not invent inputs or bypass readiness gates."""
+    trace = run_codex(installed_plugin, tmp_path, user_request)
+    answers = [e["payload"].get("last_agent_message", "") for e in trace
+               if e["type"] == "event_msg"
+               and e["payload"].get("type") == "task_complete"]
+    answer = answers[-1].lower()
+    assert any(word in answer for word in ("idea", "proposal", "design", "document")), (
+        "Did not identify the missing input"
+    )
+    assert "?" in answer or any(
+        word in answer for word in ("share", "provide", "paste", "send", "describe", "tell")
+    ), "Did not ask the user for missing input"
+    assert not any(
+        e.get("payload", {}).get("item", {}).get("type") == "SubAgentActivity"
+        for e in trace
+    ), "Review started before the user supplied inputs and approval"
+    assert not list(tmp_path.rglob("*.md")), "Invented a document before intake"
+
+
+def test_unrelated_prompt_does_not_start_review(
+    installed_plugin: InstalledPlugin, tmp_path: pathlib.Path,
+) -> None:
+    trace = run_codex(installed_plugin, tmp_path, "What is 12 times 8? Return only the number.")
+    answers = [e["payload"].get("last_agent_message", "") for e in trace
+               if e["type"] == "event_msg"
+               and e["payload"].get("type") == "task_complete"]
+    assert answers[-1].strip() == "96"
+    assert not any(e.get("payload", {}).get("item", {}).get("type") == "SubAgentActivity"
+                   for e in trace), "Unrelated request started a review"
+    assert not list(tmp_path.rglob("*.md"))
+
+
+def test_nonsoftware_proposal_review(
+    installed_plugin: InstalledPlugin, tmp_path: pathlib.Path,
+) -> None:
+    """Review a project proposal using user-supplied nonsoftware criteria."""
+    proposal = tmp_path / "proposal.md"
+    proposal.write_text(
+        "# Community workshop\n\nWe propose a free weekend workshop for 20 adults.\n"
+        "The library meeting room is available on Saturday.\n"
+        "Volunteers will run the session and bring materials.\n"
+        "Afterwards we will decide whether to repeat it.\n", encoding="utf-8",
+    )
+    original = proposal.read_bytes()
+    criteria = tmp_path / "criteria.md"
+    criteria.write_text(
+        "# Proposal review criteria\n\nA usable plan names an accountable owner, "
+        "a spending limit and funding source, a dated schedule, and a measurable "
+        "success criterion. Flag missing information without inventing it. "
+        "Do not require software architecture, code, APIs, or a repository.\n",
+        encoding="utf-8",
+    )
+    trace = run_codex(installed_plugin, tmp_path, """Review this proposal for gaps
+and unclear assumptions using the installed EGM configurable review loop.
+TargetFile: proposal.md. SemanticTarget: full file.
+Reviewers: structural and style. Standards: criteria.md for both.
+GoldfishContext: [] (intentionally empty).
+This noninteractive fixture approves that configuration and one review round.
+Use direct dispatch with two real fresh-context native reviewers. Wait for both.
+Save goldfish_review_report.md; leave the proposal unchanged and stop before
+resolving findings. No implementation, commits, external services, or memory.
+""")
+    root = installed_plugin[3]
+    assert root / "skills/egm-review-loop/SKILL.md" in successful_reads(trace)
+    assert_isolated_spawns(trace)
+    children = child_traces(trace)
+    assert len(children) == 2, "Expected the two configured reviewers"
+    for child in children.values():
+        assert {proposal.resolve(), criteria.resolve()} <= successful_reads(child)
+    report = (tmp_path / "goldfish_review_report.md").read_text(encoding="utf-8")
+    assert "owner" in report.lower(), "Missed the absent accountable owner"
+    assert any(word in report.lower() for word in ("budget", "spending", "funding"))
+    assert proposal.read_bytes() == original, "Review changed the user's proposal"
