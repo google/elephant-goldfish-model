@@ -2,9 +2,8 @@
 
 **Author:** [Vlad Shvedov](https://github.com/vshvedov)
 
-**Status:** Draft proposal. Maintainer scope alignment and design approval are
-pending. Scope inquiry: [#294](https://github.com/google/elephant-goldfish-model/issues/294).
-The implementation remains in draft [#292](https://github.com/google/elephant-goldfish-model/pull/292).
+**Status:** Draft. Maintainer scope alignment and design approval are pending.
+Scope inquiry: #294. Proposed implementation: #292.
 
 ## Problem
 
@@ -30,9 +29,8 @@ supporting and falsifying evidence. The Elephant compares the result with its
 own hypothesis before writing a failing test and implementing the fix.
 
 The contribution to EGM is this diagnostic information boundary and comparison
-step. EGM already provides the underlying Elephant/Goldfish model and isolated
-reviewers. This is not a claim to have originated those ideas or a measured
-claim that independent diagnosis improves bug-fix success rates.
+step. EGM already provides the Elephant/Goldfish model and isolated reviewers.
+No measurement yet shows that independent diagnosis improves bug-fix outcomes.
 
 The proposed EGM implementation uses separate artifacts, a read-only persona,
 Claude's native tool restrictions, explicit incomplete outcomes, and behavioral
@@ -56,7 +54,8 @@ the developer's existing fix and review workflow.
 - Add a general agent orchestration engine, automatic routing, or resume state.
 - Promise filesystem isolation, exclusion of host instructions on every harness,
   or a correct diagnosis merely because two agents agree.
-- Add native adapters for every experimental harness in the first implementation.
+- Add Cursor, Copilot CLI, or OpenCode adapters for the diagnosis persona in
+  the first implementation. The skill stops on those hosts.
 
 ## Interface and workflow
 
@@ -118,8 +117,8 @@ as proof of isolation. Native launch and read records are preferred evidence.
 Each invocation creates a new `egm-diagnosis-<unique-id>/` directory containing:
 
 - `observations.md`: Facts supplied to the Goldfish, with their provenance.
-- `elephant-hypothesis.md`: Initial hypothesis, preserved after dispatch.
-- `goldfish-diagnosis.md`: Original returned report, unchanged when available.
+- `elephant_hypothesis.md`: Initial hypothesis, preserved after dispatch.
+- `goldfish_diagnosis.md`: Original returned report, unchanged when available.
 - `diagnosis_report.md`: Execution status, candidate comparison, verification
   evidence, limitations, and the next discriminating check or test specification.
 
@@ -157,7 +156,10 @@ Start with one and measure disagreements and useful falsifications.
 2. Add `agents/bug_diagnosis.md` and a native read-only Claude adapter. Register
    the adapter and require the skill/persona in both runtime packages.
 3. Add the skill to the README and website with matching descriptions and order.
-   Update current skill counts in the integration guides while retaining their
+   Add it to the skill lists in `scripts/pack_plugin.py` and the unit tests.
+   Update the instructional counts in `docs/opencode.md` and step 5 of
+   `docs/cursor.md`. Leave the dated verification notes in `docs/copilot.md`,
+   `docs/muse.md`, and `docs/harnesses.md` unchanged. Retain the guides'
    resource resolution, permissions, and fresh-context dispatch instructions.
 4. Add co-located evaluation scenarios and a test guide covering convergence,
    divergence, missing evidence, failure, contamination, and repeat runs.
@@ -180,10 +182,8 @@ fixture. Retain actual launch/read evidence, candidate reports, and limitations.
 Other behavioral scenarios require separate native runs; a passing fixture does
 not establish general diagnostic quality or support on every harness.
 
-Follow the feature contribution track: scope inquiry, approved design PR, then
-implementation PR. The local prototype permits review before publication; its
-existence is not maintainer approval. Measure the rate of distinct supported
-causes and useful falsifying checks before claiming an improvement in outcomes.
+Measure the rate of distinct supported causes and useful falsifying checks
+before claiming an improvement in outcomes.
 
 ## Initial host scope
 
