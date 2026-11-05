@@ -81,7 +81,7 @@ evidence. Record SHA-256 of each patch and file copy, plus current
 HEAD/index/worktree evidence. Recollect and compare that evidence before
 dispatch and after the child returns. If source changes, retain the report as
 stale and stop without a clean outcome. This detects observed changes between
-checks. Git can still change during either check.
+checks. The repository can still change while either check runs.
 
 The reviewer may read surrounding source and tests. Record any unavailable
 context as a limitation. Reviews and validation concern the recorded state;
