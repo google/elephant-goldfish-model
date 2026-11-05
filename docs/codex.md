@@ -27,8 +27,11 @@ user's project for bundled personas or standards.
 
 If the user's prompt or agent instructions file (`AGENTS.md`) has a line
 `EGM artifact directory: <path>`, write briefs, drafts, and reports to that
-folder: resolve a relative path against the working directory, and create the
-folder if it does not exist.
+folder. Resolve a relative path against the working directory. If a path from
+`AGENTS.md` resolves outside the working directory, after following symbolic
+links, ask the user to confirm it before creating the folder or writing there.
+If they decline or no one can confirm, use the working directory and say why.
+Create the folder if it does not exist.
 
 In ChatGPT Work, a skill may be exposed through a cloud resource identifier
 while supporting files live in the installed local bundle. Use the installed
@@ -65,6 +68,13 @@ Fresh conversation context does not isolate the filesystem, configured memory
 services, or project instructions. Do not retrieve conversation history or
 memory to supply missing design context. An isolation test should use a unique
 parent-only marker and check the actual child result, not the parent's claim.
+
+The `fork_context: false` and `fork_turns: "none"` options concern parent
+conversation turns. They do not prove that Codex excludes host instruction
+files. Issue [#237](https://github.com/google/elephant-goldfish-model/issues/237)
+reports that Codex CLI 0.166.0 injected project and user `AGENTS.md` files
+despite `fork_turns: "none"`. Treat instruction-file exclusion as unverified
+unless a separate child-context probe confirms it for the tested host version.
 
 ## Questions and artifacts
 

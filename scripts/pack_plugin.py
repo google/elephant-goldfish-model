@@ -77,8 +77,8 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
   for name in REQUIRED_SHARED + (HOST[target][0],):
     if Path(name) not in files:
       raise ValueError(f"Missing required file: {name}")
-  manifest = json.loads((root / HOST[target][0]).read_text())
-  portable = json.loads((root / "plugin.json").read_text())
+  manifest = json.loads((root / HOST[target][0]).read_text(encoding="utf-8"))
+  portable = json.loads((root / "plugin.json").read_text(encoding="utf-8"))
   openai = portable.get("extensions", {}).get("com.openai", {})
   if manifest.get("hooks") or portable.get("hooks") or openai.get("hooks"):
     raise ValueError("Directory packages cannot contain hooks")
@@ -89,13 +89,16 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
   if not isinstance(agents, (str, list)):
     raise ValueError(f"Invalid manifest agents: {agents!r}")
   references = [agents] if isinstance(agents, str) else list(agents)
-  interface = openai.get("interface", {})
   if target == "openai":
-    interface = interface or manifest.get("interface", {})
-    for key in ("composerIcon", "logo"):
-      if not interface.get(key):
-        raise ValueError(f"Missing OpenAI interface reference: {key}")
-      references.append(interface[key])
+    # Codex reads the host manifest, so check it as well as the portable copy.
+    interfaces = [manifest.get("interface", {})]
+    if "interface" in openai:
+      interfaces.append(openai["interface"])
+    for interface in interfaces:
+      for key in ("composerIcon", "logo"):
+        if not interface.get(key):
+          raise ValueError(f"Missing OpenAI interface reference: {key}")
+        references.append(interface[key])
   else:
     references.append(manifest.get("icon", "./.claude-plugin/icon.png"))
   for reference in references:

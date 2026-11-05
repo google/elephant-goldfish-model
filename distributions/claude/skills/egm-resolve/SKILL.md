@@ -95,7 +95,7 @@ using your file-writing tool. Use this layout:
 ## Prioritized Findings & AI Suggestions
 
 {{range findings, ordered by Severity}}
-### [Issue 1] [`[ReviewerPersona]`] - Severity: [High | Medium | Low]
+### [Issue 1] [`[ReviewerPersona]`] - Severity: [Blocker | Major | Nit]
 *   **Affected Scope:** [Lines Start-End]([RelativePath]#L[Start]-L[End]) ([Sub-header])
 *   **Discrepancy Description:** [copied from FindingsList]
 *   **Rationale:** [copied from FindingsList]

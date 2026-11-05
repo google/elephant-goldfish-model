@@ -727,9 +727,11 @@ All changes will be housed within the open-source repository structure:
     perform all status tracking, check-pointing, and log writing in independent,
     worker-specific directories using their unique `conversationId` under the
     application data directory (e.g.
-    `<appDataDir>/brain/<conversation_id>/scratch/`). They must not write any
+    `<appDataDir>/brain/<conversation_id>/scratch/`), or in private
+    `mktemp -d` directories on other hosts. They must not write any
     temporary files inside the source repository workspace, leaving the
-    source tree unmodified.
+    source tree unmodified, and never use a fixed, shared path. If neither
+    directory is available, they skip these files.
 *   **Antigravity Framework**: Antigravity is the agent SDK ecosystem and
     runtime framework for autonomous coding assistants.
 *   **Token Optimization**: Goldfish scouts are read-only, ephemeral, and only
@@ -753,8 +755,9 @@ All changes will be housed within the open-source repository structure:
     executing any VCS tracking/commit commands (`jj`/`g4`), deferring operations
     to EGM session completion.
 *   **State Collision on Shared Workspace**: Mitigated by storing execution
-    checkpoints in worker-specific scratchpad directories under `<appDataDir>`,
-    avoiding modifications to the workspace.
+    checkpoints in worker-specific scratchpad directories under `<appDataDir>`
+    (or private `mktemp -d` directories on other hosts), avoiding modifications
+    to the workspace. If neither is available, workers skip these files.
 *   **Worker failures leaving partial files**: Handled as an incremental
     progress feature. The Correction & Modification Policy preserves partial
     progress and corrects existing files on subsequent runs, allowing developers

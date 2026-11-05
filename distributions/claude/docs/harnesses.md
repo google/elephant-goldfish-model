@@ -17,6 +17,7 @@ text.
 | Codex | `codex plugin marketplace add google/elephant-goldfish-model && codex plugin add egm@egm` |
 | ChatGPT | Personal testing: Plugins > Add > Upload plugin archive; see [packaging](codex.md#chatgpt). Workspace import: Admin > Plugins > Add > Import marketplace, repo URL `https://github.com/google/elephant-goldfish-model`, path `.agents/plugins` |
 | omp | `omp plugin marketplace add google/elephant-goldfish-model && omp plugin install egm@egm` |
+| Muse | `git clone https://github.com/google/elephant-goldfish-model.git && muse plugins install ./elephant-goldfish-model --scope user && muse plugins approve egm` |
 
 Install the whole plugin. Skill-only installers that copy `skills/` alone
 break EGM, because the skills read `agents/` and
@@ -42,8 +43,9 @@ cp -R plugin.json README.md LICENSE skills agents resources docs assets ~/.gemin
 ```
 
 Reload the window (or restart the Antigravity App), then confirm that `egm`
-appears in the plugin list and that its skills (`/egm-brainstorm`, `/egm-draft`,
-`/egm-review`) are available.
+appears in the plugin list and that its skills (`egm-brainstorm`, `egm-draft`,
+`egm-review`) are available. The command form for these skills in the
+Antigravity App and Antigravity for IDEs has not been verified.
 
 ## Manifests
 
@@ -68,6 +70,7 @@ while `agents/` contains reviewer personas. All hosts share the same `skills/`,
 | Codex | `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | `skills` path | Not shipped; general-purpose subagent reads the persona file |
 | ChatGPT | `plugin.json`, `.codex-plugin/plugin.json`; `.agents/plugins/marketplace.json` for workspace import | `skills` path | Detect native tools in the current session; general-purpose agent reads the persona |
 | omp | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` (Claude-compatible fallback) | `skills/` (default) | Personas from `agents/`/`.claude-plugin/agents/` register as native `task` agents |
+| Muse | `.claude-plugin/plugin.json` (Claude-compatible fallback) | `skills/` (default) | 9 adapters import as agents; tool projections unsupported |
 
 Persona prompts live in `agents/`, the directory Antigravity
 scans for subagents. Each persona has `name` and `description` frontmatter, so
@@ -93,6 +96,7 @@ phrase to its own tool:
 | Codex | Native spawn/wait tools; inspect the available schema | No | Detect at runtime; direct dispatch fallback |
 | ChatGPT | Native spawn/wait tools when exposed by the current Work session | No | Detect at runtime; direct dispatch fallback |
 | omp | `task` tool | Yes | Yes |
+| Muse | Native subagents; inspect the available schema | Named spawn rejected in 1.4.14; general-purpose fallback verified | Detect at runtime; direct dispatch fallback |
 
 Where a harness has no named persona, the skill spawns a general-purpose
 subagent and tells it to read `agents/<file>.md` first. If a harness cannot
@@ -103,6 +107,12 @@ the review skills stop instead of running in the same context. Check actual
 tool availability rather than inferring it from the product name. This applies
 to standalone Antigravity IDE and to ChatGPT modes that do not expose native
 fresh-context delegation.
+
+Fresh conversation context does not mean that the host omits its instruction
+files. Codex's `fork_context: false` and `fork_turns: "none"` isolate parent
+turns; they do not establish that project or user instructions are excluded.
+Keep stable workspace conventions in instruction files. State review
+assumptions that the Goldfish must challenge as explicit review criteria.
 
 ## Artifact Directory
 
@@ -116,18 +126,37 @@ or to an agent instructions file that your harness loads (`CLAUDE.md` or
 EGM artifact directory: .dev/docs
 ```
 
-A relative path is relative to the working directory. Design docs and other
+A relative path is relative to the working directory. If a path set in an
+instructions file resolves outside the working directory, after following
+symbolic links, EGM asks you to confirm it before creating the folder or
+writing there. If you decline or no one can confirm, as in a headless run, the
+files go to the working directory. The answer isn't saved, so a new session
+asks again. A path in your prompt needs no confirmation. Design docs and other
 project files do not move. Claude Code reads a project `AGENTS.md` only when
 the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
 `.gitignore`.
 
 ## Support Status & Contributing Other Harnesses
 
-**Antigravity**, **Claude Code**, and **Codex** pass automated installation, reviewer isolation, and end-to-end workflow fixtures.
+**Antigravity CLI**, **Claude Code**, and **Codex** pass automated installation
+and end-to-end workflow fixtures. Reviewer isolation evidence is narrower:
+parent-turn isolation and host-instruction exclusion are separate results.
 
-**Claude Cowork** ([#105](https://github.com/google/elephant-goldfish-model/issues/105)) and **ChatGPT Work** ([#106](https://github.com/google/elephant-goldfish-model/issues/106)) have working installation paths with open cloud trace verification gaps.
+Claude reviewer adapters set `omitClaudeMd: true`; see the
+[Claude integration](claude.md#reviewer-isolation). For Codex, issue [#237](https://github.com/google/elephant-goldfish-model/issues/237)
+reports that Codex CLI 0.166.0 supplied project and user `AGENTS.md` files
+despite `fork_turns: "none"`. For Antigravity CLI, the same issue reports
+project `AGENTS.md` and `GEMINI.md` in reviewer context. These are reported
+host-instruction leaks, not evidence that parent conversation turns leaked.
+The Codex test and recorded Antigravity run check parent-turn isolation only;
+neither verifies instruction-file exclusion. No host-specific exclusion
+control is verified here for Codex or Antigravity.
+
+**Claude Cowork** ([#105](https://github.com/google/elephant-goldfish-model/issues/105)) and **ChatGPT Work** ([#106](https://github.com/google/elephant-goldfish-model/issues/106)) have working installation paths with open cloud trace verification gaps. The README's prefix guidance covers only Antigravity (agy CLI), Claude Code, and Codex. For ChatGPT workspace imports, the skills are reached through `@egm` (see [ChatGPT](codex.md#chatgpt)); the command form in Claude Cowork is not recorded yet.
 
 **omp** ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) has a working installation path. Skills are invoked as `/skill:egm-<command>` (omp registers one command per skill; it has no `/egm-*` namespace). Community-verified on omp v18.12.6: all seven skills discover and resolve, and all nine reviewer personas register as subagents. End-to-end workflow fixtures are not yet automated for omp.
+
+**Muse** (1.4.14) has a working installation path. `muse plugins validate` reports the plugin valid with all seven skills and all nine agent adapters supported; every agent tool projection is unsupported, so Claude tool allowlists do not restrict Muse reviewers. Install from a local path; `marketplace add` on this repository discovers zero plugins because Muse reads the Codex catalog first. End-to-end workflow fixtures passed on 2026-10-30 (brainstorm, draft, and uninterrupted review with 15 fresh-context reviewers); named `egm/egm-*` agents cannot be spawned in this runtime, so reviewers used the general-purpose fallback reading the installed persona first. See the [Muse guide](https://github.com/google/elephant-goldfish-model/blob/main/docs/muse.md). No skill routes a Muse session to that guide yet ([#252](https://github.com/google/elephant-goldfish-model/issues/252)), so point the session at it.
 
 See the [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record) for tested surfaces and limits.
 

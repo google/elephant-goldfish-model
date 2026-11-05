@@ -1,0 +1,12 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "egm",
+  "version": "0.1.0",
+  "description": "Draft specs, review designs, and check implementation drift.",
+  "author": {
+    "name": "Google"
+  },
+  "homepage": "https://egm.dev",
+  "repository": "https://github.com/google/elephant-goldfish-model",
+  "license": "Apache-2.0"
+}

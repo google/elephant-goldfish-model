@@ -7,6 +7,9 @@ Frontmatter and link checks run in `pytest tests/unit` (see [TESTING.md](../../T
 When evaluating or exploring `egm-review` interactively in chat, verify:
 
 -   **Step 1 (Intake):** Gathers `TargetFile` and optional `GoldfishContext`.
+    Before the first stage that takes `GoldfishContext`, adds linked files
+    inside the working directory, asks before adding links that resolve
+    outside it or URLs, and saves each URL in `GoldfishContext` as a file.
 -   **Step 2 (Preset Selection):** Offers the four review presets (interactive,
     consolidated, feature spec only, implementation plan only), or maps an
     explicit `Step` argument to its corresponding preset or individual stage subflow.
