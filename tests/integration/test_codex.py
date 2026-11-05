@@ -329,11 +329,17 @@ def test_starter_prompt_missing_input(
     installed_plugin: InstalledPlugin, tmp_path: pathlib.Path, user_request: str,
 ) -> None:
     """Starter prompts must not invent inputs or bypass readiness gates."""
-    trace = run_codex(installed_plugin, tmp_path, f"""Respond to this user request
-using the installed EGM skills when appropriate: {user_request}
-No idea, proposal, or design document has been supplied. No review or writing
-has been approved. Do not use external services or memory. Keep the response brief.
-""")
+    trace = run_codex(installed_plugin, tmp_path, user_request)
+    answers = [e["payload"].get("last_agent_message", "") for e in trace
+               if e["type"] == "event_msg"
+               and e["payload"].get("type") == "task_complete"]
+    answer = answers[-1].lower()
+    assert any(word in answer for word in ("idea", "proposal", "design", "document")), (
+        "Did not identify the missing input"
+    )
+    assert "?" in answer or any(
+        word in answer for word in ("share", "provide", "paste", "send", "describe", "tell")
+    ), "Did not ask the user for missing input"
     assert not any(
         e.get("payload", {}).get("item", {}).get("type") == "SubAgentActivity"
         for e in trace
