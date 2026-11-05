@@ -2,9 +2,8 @@
 
 **Author:** [Vlad Shvedov](https://github.com/vshvedov)
 
-**Status:** Draft proposal. Maintainer scope alignment and design approval are
-pending. Scope inquiry: [#295](https://github.com/google/elephant-goldfish-model/issues/295).
-The implementation remains in draft [#293](https://github.com/google/elephant-goldfish-model/pull/293).
+**Status:** Draft. Maintainer scope alignment and design approval are pending.
+Scope inquiry: #295. Proposed implementation: #293.
 
 ## Problem and prior implementation
 
@@ -51,8 +50,13 @@ empty changes. Support detached HEAD. Git is local; do not fetch.
 ## Evidence and artifacts
 
 Use the host guide's artifact directory and a new `egm-precommit-<unique-id>/`
-run directory. Never overwrite an earlier run. Exclude only that directory's
-generated artifacts from the review inventory, not arbitrary untracked files.
+run directory. Never overwrite an earlier run. Exclude untracked artifacts from
+the current run and prior EGM precommit run directories directly under that
+artifact directory. Identify prior runs by their `egm-precommit-*/` directory
+name and generated layout, such as `round-N/scope.md` or the final report and
+ledger. Check paths and file types without reading report contents or following
+symlinks. List the excluded directories in `scope.md`. Keep tracked changes
+and all other untracked files in scope, including lookalike source directories.
 Reject a run path overlapping an existing source path or traversing symlinks.
 
 Before each round, the parent saves a numbered round directory containing:
@@ -91,9 +95,11 @@ remaining limits. Retain all artifacts, including failures.
 ## Dispatch and loop
 
 Use one fresh `agents/precommit_reviewer.md` per round. In Claude, register
-`egm-precommit-reviewer` with Read/Grep/Glob, omitClaudeMd, no memory or shell.
-Use the actual candidate plugin namespace. In Codex, disable parent turn
-forking per the installed guide. If fresh dispatch is unavailable, stop.
+`egm-precommit-reviewer` with Read/Grep/Glob, `omitClaudeMd`, no memory or shell,
+and spawn it under the installed plugin namespace, normally
+`egm:egm-precommit-reviewer`. In Codex, set `fork_context: false` or
+`fork_turns: "none"`, whichever the schema exposes. If fresh dispatch is
+unavailable, stop.
 
 The child reads its persona, all scope/patch/check artifacts, and required file
 copies before returning a structured completion status and numbered substantive
@@ -118,12 +124,13 @@ accepted risk as a clean review. No automatic same-line churn detection; require
 the same substantive issue to recur after an attempted fix.
 
 Checks must name their tested layer. Normal local checks validate the working
-copy only. If staged changes exist and the proposed index tree differs from the working copy, report
-`validation incomplete` unless its applicable checks also ran in an isolated
-materialization of that tree. Do not infer index or intermediate branch-commit
-test success from working-copy success. Intermediate commits get code review,
-not an individual test attestation. If index materialization needs unavailable
-dependencies or unsafe setup, leave it untested and report the limitation.
+copy only. If staged changes exist and the proposed index tree differs from the
+working copy, report `validation incomplete` unless its applicable checks also
+ran in an isolated materialization of that tree. Do not infer index or
+intermediate branch-commit test success from working-copy success.
+Intermediate commits get code review, not an individual test attestation. If
+index materialization needs unavailable dependencies or unsafe setup, leave it
+untested and report the limitation.
 
 Stop on a complete clean round with passing applicable checks for the working
 copy and any distinct staged candidate, and every earlier
@@ -148,19 +155,26 @@ whose working copy is fixed, plus an untracked defect; (2) an unstaged defect
 fixed by the parent and re-reviewed by a distinct child. Verify actual reads,
 child completion, no parent marker leakage in visible records, unchanged index
 and HEAD, appropriate findings, and incomplete validation of an untested index.
+In the first fixture, verify that prior review artifacts are excluded while
+an untracked source directory with a similar name remains in scope.
 Run active isolation and denied-read probes.
-Run a focused Codex workflow where available and state encrypted-input limits.
+Run a focused Codex workflow where available. Codex native dispatch payloads
+can be encrypted, so the probe cannot audit those child inputs. State that
+limit in the results.
 
 The repository uses pytest for offline checks and opt-in native harness tests.
 Regenerate the Claude distribution and validate both runtime packages. Add the
-skill to the README and website with matching descriptions and order, and update
-current skill counts in the integration guides. Behavioral scenarios cover missing base, conflicts,
-unsupported files, stale evidence, rebuttals and round cap. Scenario assertions
-must prohibit a clean outcome for unsupported changed entries. They
-are evaluation prompts, not proof those branches ran in a live model.
+skill to the README and website with matching descriptions and order, and
+update current skill counts in the integration guides. Behavioral scenarios
+cover missing base, conflicts, unsupported files, stale evidence, rebuttals and
+the round cap. Scenario assertions must prohibit a
+clean outcome for unsupported changed entries. They are evaluation prompts,
+not proof those branches ran in a live model.
 
 ## Initial host scope
 
 Claude and Codex are the initial native targets. Cursor, Copilot CLI and
 OpenCode do not register the precommit reviewer, so the skill stops on those
-hosts instead of attempting a general-purpose fallback.
+hosts. Other hosts with a fresh-context subagent tool can spawn a general-purpose
+agent that reads `agents/precommit_reviewer.md` first, as described in
+[the harness guide](../harnesses.md). A host without that capability stops.
