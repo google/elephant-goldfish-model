@@ -4,7 +4,7 @@
 
 **Status:** Draft proposal. Maintainer scope alignment and design approval are
 pending. Scope inquiry: [#294](https://github.com/google/elephant-goldfish-model/issues/294).
-The implementation remains a separate draft PR.
+The implementation remains in draft [#292](https://github.com/google/elephant-goldfish-model/pull/292).
 
 ## Problem
 
@@ -23,6 +23,7 @@ The Elephant then compares the two results and records unresolved disagreement.
 
 This proposal adapts the independent diagnosis step from Vlad Shvedov's
 [ClaudeFlows `cf-bug` workflow](https://github.com/OmniPragmatic/claudeflows/blob/60d180dc6f89d7ffa1166e19ed4a6054a994aff2/plugins/claudeflows/skills/cf-bug/SKILL.md#step-2-goldfish-diagnosis-check-parallel-to-your-hypothesis).
+It follows the earlier [elephant-goldfish implementation](https://github.com/vshvedov/elephant-goldfish).
 In that workflow, the Goldfish receives the symptom and reproduction but not
 the Elephant's hypothesized root cause. It ranks candidate causes and identifies
 supporting and falsifying evidence. The Elephant compares the result with its
@@ -155,8 +156,9 @@ Start with one and measure disagreements and useful falsifications.
 1. Add `skills/egm-diagnose/SKILL.md`, host UI metadata, and a skill icon.
 2. Add `agents/bug_diagnosis.md` and a native read-only Claude adapter. Register
    the adapter and require the skill/persona in both runtime packages.
-3. Add the skill to the README and retain the existing integration guides for
-   resource resolution, permissions, and fresh-context dispatch.
+3. Add the skill to the README and website with matching descriptions and order.
+   Update current skill counts in the integration guides while retaining their
+   resource resolution, permissions, and fresh-context dispatch instructions.
 4. Add co-located evaluation scenarios and a test guide covering convergence,
    divergence, missing evidence, failure, contamination, and repeat runs.
 5. Add a small deterministic fixture with a misleading expiration hypothesis
