@@ -1,7 +1,7 @@
 interface:
   display_name: "EGM Review"
   short_description: "Stress-test a design with fresh reviewers"
-  icon_small: "./assets/icon.svg"
-  icon_large: "./assets/icon.svg"
+  icon_small: "./assets/icon.png"
+  icon_large: "./assets/icon.png"
   default_prompt: "Use $egm-review to find gaps and hidden assumptions in this software design."
   brand_color: "#E86E00"

@@ -1,7 +1,7 @@
 interface:
   display_name: "EGM Drift report"
   short_description: "Find differences between designs and code"
-  icon_small: "./assets/icon.svg"
-  icon_large: "./assets/icon.svg"
+  icon_small: "./assets/icon.png"
+  icon_large: "./assets/icon.png"
   default_prompt: "Use $egm-drift-report to check whether this code matches its documented design."
   brand_color: "#E86E00"

@@ -39,7 +39,7 @@ REQUIRED_SHARED = (
 ) + tuple(
     f"skills/{skill}/{name}"
     for skill in SKILLS
-    for name in ("SKILL.md", "agents/openai.yaml", "assets/icon.svg")
+    for name in ("SKILL.md", "agents/openai.yaml", "assets/icon.svg", "assets/icon.png")
 ) + tuple(
     f"agents/{name}.md" for name in (
         "bootstrap_orchestrator", "codebase_details", "comprehension",
