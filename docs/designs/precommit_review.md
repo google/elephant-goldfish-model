@@ -4,7 +4,7 @@
 
 **Status:** Draft proposal. Maintainer scope alignment and design approval are
 pending. Scope inquiry: [#295](https://github.com/google/elephant-goldfish-model/issues/295).
-The implementation remains a separate draft PR.
+The implementation remains in draft [#293](https://github.com/google/elephant-goldfish-model/pull/293).
 
 ## Problem and prior implementation
 
@@ -152,8 +152,9 @@ Run active isolation and denied-read probes.
 Run a focused Codex workflow where available and state encrypted-input limits.
 
 The repository uses pytest for offline checks and opt-in native harness tests.
-Regenerate the Claude distribution and validate both runtime packages. No UI
-changes are involved. Behavioral scenarios cover missing base, conflicts,
+Regenerate the Claude distribution and validate both runtime packages. Add the
+skill to the README and website with matching descriptions and order, and update
+current skill counts in the integration guides. Behavioral scenarios cover missing base, conflicts,
 unsupported files, stale evidence, rebuttals and round cap. Scenario assertions
 must prohibit a clean outcome for unsupported changed entries. They
 are evaluation prompts, not proof those branches ran in a live model.
