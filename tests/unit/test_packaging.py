@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import runpy
 import shutil
+import struct
 from xml.etree import ElementTree
 import zipfile
 
@@ -63,7 +64,8 @@ def test_runtime_bundle_is_complete_and_reproducible(
         assert not icon.is_absolute() and ".." not in icon.parts
         data = bundle.read((prefix / icon).as_posix())
         assert data == (skill.parent / icon).read_bytes()
-        assert ElementTree.fromstring(data).tag == "{http://www.w3.org/2000/svg}svg"
+        assert data[:8] == b"\x89PNG\r\n\x1a\n"
+        assert struct.unpack(">II", data[16:24]) == (256, 256)
     assert "skills/egm-bootstrap/references/worker-return.schema.json" in names
     assert "skills/egm-bootstrap/references/templates.md" in names
     assert "resources/document_standards/feature-spec-standard.md" in names
@@ -112,8 +114,13 @@ def test_skill_icon_and_host_palette_match(skill: str, base: str, facet: str) ->
   root = ROOT / "skills" / f"egm-{skill.replace('_', '-')}"
   metadata = yaml.safe_load((root / "agents/openai.yaml").read_text())["interface"]
   assert metadata["brand_color"].lower() == base
+  assert metadata["display_name"] == skill.replace("_", " ").capitalize()
   for field in ("icon_small", "icon_large"):
-    svg = ElementTree.parse(root / metadata[field]).getroot()
+    assert metadata[field] == "./assets/icon.png"
+    png = (root / metadata[field]).read_bytes()
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    assert struct.unpack(">II", png[16:24]) == (256, 256)
+    svg = ElementTree.parse(root / "assets/icon.svg").getroot()
     assert svg.get("viewBox") == "0 0 24 24"
     assert svg.findtext("{http://www.w3.org/2000/svg}title")
     colors = {
