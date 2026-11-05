@@ -105,7 +105,7 @@ or left over from an earlier run, so confirm which design you mean.
 | `docs/designs/<feature>.md`, no review reports | Ready for review | `/egm-review docs/designs/<feature>.md` |
 | `zoom_out_report.md`, `comprehension_report.md`, `critic_report.md`, `intermediate_zoom_out_report.md`, `implementation_readiness_report.md`, or `consolidated_review_report.md` (`/egm-review`) | Review started; completion unknown | If the review of this design finished, `/egm-resolve` on its findings. If not, continue the review |
 | `goldfish_review_report.md` (`/egm-resolve`) without `Status: resolved` | Resolution in progress | Answer the resolve step that is waiting, or run `/egm-resolve` again |
-| `goldfish_review_report.md` with `Status: resolved` | Findings resolved | Human review of the design (step 4 above). Implement after the design is approved |
+| `goldfish_review_report.md` with `Status: resolved` | Findings resolved | If `/egm-review` reports are also present, confirm the review finished first: `/egm-review` resolves Stage 7 findings before the later stages run. Then human review of the design (step 4 above). Implement after the design is approved |
 
 The rows are in workflow order. Commands are shown without a prefix; the
 [README](../README.md) explains the form your tool uses.

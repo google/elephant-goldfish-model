@@ -24,8 +24,10 @@ It is advisory only.
 ## Execution Constraints (CRITICAL)
 
 1.  **Read-Only**: You **MUST NOT** create, edit, move, or delete any file, run
-    shell commands (including `git status`), spawn subagents, or run or load
-    another skill. Use only file-listing and file-reading tools.
+    shell commands other than `ls` and `cat` (not even `git status`), spawn
+    subagents, or run or load another skill. Use file-listing and file-reading
+    tools, or `ls` and `cat` where the host reads only through the shell, as
+    Codex does.
 2.  **Pending Steps Belong to the User**: Another skill may be waiting for an
     answer, for example at egm-resolve's resolution gate, which accepts free
     text. You **MUST NOT** answer, resume, or act on that pending step, and you

@@ -7,7 +7,8 @@ Frontmatter and link checks run in `pytest tests/unit` (see [TESTING.md](../../T
 When evaluating `egm-ask` interactively in chat, verify:
 
 -   **Read-only:** The skill creates, edits, and deletes no file, runs no shell
-    command, spawns no subagent, and runs no other skill.
+    command other than `ls` and `cat`, spawns no subagent, and runs no other
+    skill.
 -   **Step 1 (Classify):** Each question is sorted into Next step, Skill
     choice, Troubleshooting, or Out of scope, and only that row's files are
     read. An empty question is treated as Next step.
