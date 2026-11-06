@@ -26,10 +26,6 @@ Stage 1: use Refs #<issue> with design-ready. Add the design and update its inde
 Stage 2: use Closes #<issue> with pr-ready and link the merged design.
 -->
 
-## Human Accountability Affirmation
-
-- [ ] I am a human contributor. I have personally reviewed, understood, and can explain every line of this change in review (using AI tools to write code is welcome, but human understanding of the submitted change is required).
-
 ## Verification
 
 <!-- List relevant checks, commands or evidence links, and results.
@@ -38,3 +34,7 @@ For Stage 1, record egm-review, egm-resolve, and any remaining findings.
 For harness support, record host/version, installation, and evidence for
 egm-brainstorm, egm-draft, and egm-review.
 -->
+
+## Human Accountability Affirmation
+
+- [ ] I am a human contributor. I have personally reviewed, understood, and can explain every line of this change in review (using AI tools to write code is welcome, but human understanding of the submitted change is required).
