@@ -104,18 +104,21 @@ the first matching outcome below, retaining findings and validation limits.
 
 ## Detailed Implementation Plan
 
-1. **Capture evidence in the parent.** Implement the workflow as skill
-   instructions and local Git/file calls, with the exact procedure in
+1. **Initialize the round and capture evidence.** Use skill instructions
+   and local Git/file calls, with the exact procedure in
    `skills/egm-precommit-review/references/evidence.md`. Pin HEAD and the
-   optional unique merge base. Use NUL-delimited
+   optional unique merge base. In a fresh `egm-precommit-<id>/round-N/` under
+   the host artifact directory, create `scope.md` with a capture-in-progress
+   note before saving any patch, file copy or raw capture. If the write fails,
+   report incomplete and stop before saving evidence. Use NUL-delimited
    `git status --porcelain=v1 -z --untracked-files=all`,
    `git ls-files --stage -z` and
    `git ls-files --others --exclude-standard -z`. Save separate branch,
    staged and unstaged diffs with external drivers and text conversion off.
    Read exact index blobs and separate working-copy bytes. Preserve full
    untracked file evidence.
-2. **Store round evidence.** Use a fresh `egm-precommit-<id>/round-N/` under
-   the host artifact directory. `scope.md` records the complete in-scope
+2. **Finalize round evidence.** Complete `scope.md` after saving the evidence
+   and before checks or reviewer dispatch. It records the complete in-scope
    inventory as readable text, with losslessly escaped paths, layers,
    exclusions, versions and SHA-256 hashes of patches and mapped file copies.
    Keep any saved raw NUL-delimited captures in the run directory, outside
@@ -124,8 +127,10 @@ the first matching outcome below, retaining findings and validation limits.
    command, source, exit status and result. Compare the actual evidence on
    recollection. Exclude untracked files under the current run or a prior
    direct child with an `egm-precommit-*` name and generated layout
-   (`round-N/scope.md` or both the final report and ledger). Inspect file
-   types without following links. Keep tracked entries and lookalike source.
+   (`round-N/scope.md` or both the final report and ledger). The initial
+   `scope.md` identifies an interrupted run even if capture never finished.
+   Inspect file types without following links. Keep tracked entries and
+   lookalike source.
 3. **Dispatch the reviewer and validate the return.** Use
    `agents/precommit_reviewer.md` and pass the current scope, checks, three
    patches and mapped file copies. The child returns status, coverage, added
@@ -198,7 +203,8 @@ the first matching outcome below, retaining findings and validation limits.
 - `EGM_CLAUDE_LIVE=1 pytest tests/integration/test_claude_precommit.py` covers
   review and fix mode. Review mode must find a staged permission bug hidden
   by the working copy and a separate untracked bug. Its trace must include
-  similarly named untracked source and exclude an old review marker. Fix mode
+  similarly named untracked source and exclude a source copy from an
+  interrupted run identified by its unfinished `scope.md`. Fix mode
   must run checks and verify the correction with a new child. Both preserve
   the real HEAD and index.
 - `EGM_CODEX_LIVE=1 pytest tests/integration/test_codex_precommit.py` checks the
