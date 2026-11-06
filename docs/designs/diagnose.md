@@ -112,7 +112,7 @@ an intermittent failure.
    working and artifact directories for earlier `egm-diagnosis-*/` runs,
    including nested, hidden and ignored paths. Leave earlier runs untouched.
    If the host cannot enforce exclusion for reachable earlier runs, stop and
-   list the full paths of the run directories that block the retry. The
+   list the full paths of the run directories that block the repeat run. The
    developer moves each whole directory, including its reports and hypotheses,
    to a location the child cannot read and removes any links that still make
    it reachable from the source, working or artifact directory. With the
