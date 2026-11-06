@@ -282,7 +282,8 @@ selected, we enforce the following rules during directory discovery:
         `.jsx`, `.mjs`, `.cjs`, `.swift`, `.m`, `.dart`, `.sql`, `.proto`,
         `.graphql`, `.gql`, `.thrift`, `.prisma`, `.tf`, `.hcl`, `.cue`).
         Excludes build manifests, lockfiles, test fixtures, documentation, and
-        generic data dumps.
+        generic data dumps. Code with other extensions is reported by the
+        Unsupported Source Check (Phase A) before discovery.
 *   **Test Directory Exclusion**: Any directory containing exclusively test code
     (e.g., folders named `tests`, `testing`, `testdata`, or containing only
     files matching `*_test.*` or `*Test.*`) is excluded from documentation
@@ -387,6 +388,16 @@ not the execution root).
 ### 2.5 Execution Pipeline
 
 #### Phase A: Incremental Directory Scoping & Plan Definition
+
+Before discovery, the Root Orchestrator runs the **Unsupported Source Check**
+([reference](../../skills/egm-bootstrap/references/unsupported-source-check.md)).
+One shell command counts the files under the target path by extension,
+honoring `.gitignore`, skipping hidden and system directories, and including
+test directories. The orchestrator collects the extensions that look like
+source code but are missing from the *Source Code Files* list, lists them with
+counts and an example path (naming extensions only, not languages), warns that
+EGM has not been tuned for them, and asks whether to proceed or abort. Without
+this check, such code would be dropped from the generated contracts silently.
 
 1.  **Incremental BFS Discovery**: The Root Orchestrator maps the target tree
     level-by-level (BFS) using a directory queue and native `list_dir` tool

@@ -14,3 +14,7 @@ Frontmatter and link checks run in `pytest tests/unit` (see [TESTING.md](../../T
 3. **Subagent Halting Gate**:
    - Run in an environment without task delegation tools.
    - Verify that the prominent halting banner is displayed and execution stops immediately.
+4. **Unsupported Source Check**:
+   - Target a tree containing source files, inside and outside a test directory, whose extension is not in the *Source Code Files* list.
+   - Verify that, before discovery starts, the agent runs the shell command in `references/unsupported-source-check.md`, lists that extension with a file count and an example path, warns that EGM has not been tuned for it, and asks whether to proceed. Verify that choosing abort stops execution.
+   - Target a tree whose only other files are documentation, data, and manifests (`.md`, `.json`, `.yaml`, `.csv`, `.toml`). Verify that no such question appears.
