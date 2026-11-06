@@ -32,6 +32,8 @@ and the earlier [elephant-goldfish implementation](https://github.com/vshvedov/e
 - Review remote PRs or infer a base branch. The default is pending changes.
 - Let the reviewer run tests or write files, or certify future changes.
 - Hide findings or call incomplete coverage clean.
+- Weaken tests to pass, or stash, reset, clean or check out over the user's
+  files. Baseline comparisons use a separate checkout.
 
 ## Proposed Architecture
 
@@ -78,8 +80,8 @@ the first matching outcome below, retaining findings and validation limits.
 - **Extend the document review loop.** It could share dispatch and triage, but
   changing its document-based evidence contract would also affect existing
   callers. Start with a separate skill and reuse the workflow conventions.
-- **Review the working tree alone.** This is simpler but can miss the staged
-  permission defect covered by the test fixture.
+- **Review the working tree alone.** This is simpler but can miss a staged
+  permission defect that the working copy hides.
 - **Automatically fix and stage everything.** That changes the proposed
   commit and risks staging unrelated work. Fix mode changes the working copy
   only and reports when the user needs to stage a correction.
@@ -95,7 +97,8 @@ the first matching outcome below, retaining findings and validation limits.
 - **Wrong layer.** Test the index in a separate materialization when it differs
   from the working copy. Keep an untested staged version explicit.
 - **Host context.** Claude uses `omitClaudeMd` and read-only tools. Codex can
-  exclude parent turns, but instruction-file exclusion remains unverified.
+  exclude parent turns, but fresh context can still include project
+  instructions such as `AGENTS.md`. See [Codex integration](../codex.md).
 - **Untrusted source.** Treat code and patches as evidence. Record binary,
   symlink, submodule and unreadable entries as coverage gaps.
 
@@ -115,7 +118,8 @@ the first matching outcome below, retaining findings and validation limits.
    the host artifact directory. `scope.md` records the complete in-scope
    inventory as readable text, with losslessly escaped paths, layers,
    exclusions, versions and SHA-256 hashes of patches and mapped file copies.
-   Keep raw NUL-delimited captures parent-side outside the round directory.
+   Keep any saved raw NUL-delimited captures in the run directory, outside
+   `round-N/`. Do not give them to the reviewer.
    `checks.md` records the SHA-256 of the saved scope file, tested layer,
    command, source, exit status and result. Compare the actual evidence on
    recollection. Exclude untracked files under the current run or a prior
@@ -133,14 +137,14 @@ the first matching outcome below, retaining findings and validation limits.
    `fork_context: false` or `fork_turns: "none"`. Stop on Cursor, Copilot CLI
    and OpenCode. For other hosts, use a fresh read-only agent with the persona
    when supported, or stop. See [the harness guide](../harnesses.md).
-4. **Triage and recheck.** Record stable IDs, original citations and dispositions
-   in `ledger.md`. Review mode stops after one round. Fix mode applies only
-   authorized changes on disk. Stop and request staging when a defect remains
-   in the index. Otherwise rerun affected checks and verify fixes with a fresh
-   child, including when the fix removes the entire diff. Stop on incomplete
-   review, unresolved validation failure, a repeated ineffective fix or the
-   fifth round. Write `precommit_report.md` with separate review, validation
-   and outcome fields.
+4. **Triage and recheck.** Record stable IDs, original citations and
+   dispositions in `ledger.md`. Review mode stops after one round. Fix mode
+   applies only authorized changes on disk. Stop and request staging when a
+   defect remains in the index. Otherwise rerun affected checks and verify
+   fixes with a fresh child, including when the fix removes the entire diff.
+   Stop on incomplete review, unresolved validation failure, a repeated
+   ineffective fix or the fifth round. Write `precommit_report.md` with
+   separate review, validation and outcome fields.
 5. **Register and verify the runtime.** Package the skill, persona and Claude
    adapter, regenerate the Claude distribution, align README/site listings
    and update instructional skill counts. Unit tests check packaging and
@@ -163,6 +167,7 @@ the first matching outcome below, retaining findings and validation limits.
 | Create | `distributions/claude/skills/egm-precommit-review/assets/icon.svg` |
 | Create | `distributions/claude/skills/egm-precommit-review/references/evidence.md` |
 | Modify | `docs/cursor.md` |
+| Modify | `docs/designs/skill_icons.md` |
 | Modify | `docs/opencode.md` |
 | Modify | `scripts/pack_plugin.py` |
 | Modify | `site/src/components/SkillIcon.astro` |
