@@ -5,7 +5,7 @@ Author: @n3wth. Date: 2026-10-25.
 
 ## Purpose and scope
 
-Use the same seven skill marks in plugin pickers and the README, with egm.dev
+Use the same eight skill marks in plugin pickers and the README, with egm.dev
 integration in a separate follow-up PR.
 The approved artwork uses familiar silhouettes with two color facets. This
 change replaces the existing skill artwork; it does not change skill behavior,
@@ -27,6 +27,7 @@ artwork; do not normalize individual bounding boxes or stroke widths.
 | Drift report | Touching, offset halves: document and code diverge | `#e86e00` / `#ff8d41` |
 | Review | Magnifier: inspect the document | `#e86e00` / `#ff8d41` |
 | Review loop | Circular arrow: repeat review | `#e86e00` / `#ff8d41` |
+| Diagnose | Magnifier with an exclamation point: investigate a failure | `#e86e00` / `#ff8d41` |
 
 ## Consumers
 
@@ -47,7 +48,7 @@ artwork; do not normalize individual bounding boxes or stroke widths.
 
 Check metadata colors and SVG structure, runtime byte equality, and README
 image inclusion. Website integration receives its own build and visual checks.
-All seven marks must remain legible beside their labels.
+All eight marks must remain legible beside their labels.
 
 This proposal builds on runtime-packaging PR #136. Its draft status does not
 claim an approved issue, a merged design, or a completed native-host workflow
