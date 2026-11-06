@@ -85,6 +85,7 @@ Pass only this task with resolved values, the supplied Focus, and (after round
 Independent code review, round <N>. Read <absolute persona path> first.
 Repository: <absolute RepoRoot>. Evidence directory: <absolute round directory>.
 Read scope.md, checks.md, all three patches and every mapped file copy.
+Use scope.md for inventory records. Raw Git captures belong to the parent.
 Review each changed layer, including index contents that differ from disk.
 Use source and tests for needed context; do not read excluded run directories,
 unrelated artifacts, conversation history, memory or implementation plans.
@@ -163,10 +164,23 @@ staged candidate. Checks may be not applicable with a reason. Any unavailable
 required check, unsupported changed file or missing evidence prevents clean.
 Known baseline failures still yield Validation failed, not a green outcome.
 
-If only upheld rebuttals remain and checks/coverage are complete, use
-`completed with rebuttals`, never clean. An incomplete report cannot uphold a
-rebuttal. No changes on initial intake needs no reviewer and is not a code-review
-attestation. A fix that removes the diff still needs its verification round.
+Choose the first matching outcome below. Always retain the separate Review
+and Validation fields, all findings, and any untested layers.
+
+| Condition | Outcome |
+| :-- | :-- |
+| Evidence changed during the round | `stale` |
+| A required read, coverage item, or completed reviewer report is missing | `incomplete` |
+| Initial inventory is empty and no earlier fixes need verification | `no changes` |
+| Fix mode reached its round cap with an open finding or unresolved validation | `stopped at limit` |
+| A finding remains open, including a staged defect corrected only on disk | `findings remain` |
+| Required validation failed or is incomplete | `incomplete` |
+| The review and validation are complete and only upheld rebuttals remain | `completed with rebuttals` |
+| Full coverage, valid checks, zero new findings and all earlier findings verified fixed | `clean` |
+
+An incomplete report cannot uphold a rebuttal. A `no changes` result requires
+no reviewer and carries no code-review attestation. A fix that removes the diff
+still needs its verification round.
 
 Fix mode stops after at most five completed rounds, a recurring substantive
 issue after an ineffective fix, an unresolved check failure, or an incomplete

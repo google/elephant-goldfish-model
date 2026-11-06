@@ -45,10 +45,12 @@ complete evidence, report incomplete instead of improvising a clean verdict.
    when text review succeeds. Do not copy secrets identified during collection
    into artifacts or prompts; record the omission as incomplete and tell the
    user. Ignored paths stay excluded; do not recursively scan .git or logs.
-6. scope.md records the in-scope inventory records (or lossless encoded
-   equivalents), HEAD, pinned base, change-layer mapping, the excluded run
-   directory paths and coverage gaps. Omit excluded files from the records,
-   patches and snapshots given to the reviewer.
+6. scope.md records all in-scope inventory records as readable text, with
+   paths escaped losslessly (for example as JSON strings). Include HEAD,
+   pinned base, change-layer mapping, excluded run directories and coverage
+   gaps. Keep raw NUL-delimited captures parent-side outside the round
+   directory. The reviewer uses scope.md for inventory coverage. Omit excluded
+   files from the records, patches and snapshots given to the reviewer.
    Include hashes of patches, file copies and each changed working-copy entry's
    current bytes/type, including untracked files. Detect new/deleted paths with
    the inventory. Record index entries as mode/OID/stage, not index-file mtime.
@@ -62,10 +64,14 @@ complete evidence, report incomplete instead of improvising a clean verdict.
    unverified and the review incomplete. Do not claim atomicity: a file can
    change and change back between observations.
 
-Validation evidence uses the same state identity. checks.md names each command,
-source, exit status, tested layer and the matching evidence hashes. If the
-workspace changes after checks, rerun affected checks on the new state. To test
+Validation evidence uses the same state identity. After saving scope.md, hash
+its exact bytes with SHA-256. That file records the HEAD, base, inventory and
+the patch and snapshot hashes. Record this digest and the tested layer in
+checks.md alongside each command, source, exit status and result. Keep scope.md
+fixed for that round. Compare the captured repository evidence itself when
+checking for drift. If it changes after checks, rerun affected checks against
+fresh evidence. To test
 a distinct staged candidate, materialize its index tree outside the working
 copy with ordinary permissions; never modify the real index or hide user files.
-If that cannot be done safely, mark staged validation not run. Changes made
-while testing or review invalidates certification until new evidence and checks.
+If that cannot be done safely, mark staged validation not run. Changes during
+testing or review invalidate certification until new evidence and checks exist.

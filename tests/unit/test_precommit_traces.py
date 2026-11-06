@@ -14,6 +14,22 @@ def event(role, **block):
     return json.dumps({"type": role, "message": {"content": [block]}})
 
 
+def test_summary_field_ignores_per_round_status():
+    report = """# Precommit review report
+
+- Review: complete (2 rounds)
+- Validation: passed (working copy)
+- Outcome: clean
+
+## Round 1
+- Review: complete with findings.
+- Validation: failed.
+"""
+    assert checks["summary_field"](report, "Review") == "complete"
+    assert checks["summary_field"](report, "Validation") == "passed"
+    assert checks["summary_field"](report, "Outcome") == "clean"
+
+
 @pytest.mark.parametrize("case", ["ok", "missing", "unrelated", "error", "empty"])
 def test_read_requires_correlated_nonempty_success(case, tmp_path):
     path = tmp_path / "source.py"

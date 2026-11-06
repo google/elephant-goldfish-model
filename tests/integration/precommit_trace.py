@@ -87,6 +87,16 @@ def field(text: str, name: str) -> str:
     return matches[0].strip().lower().split(" (", 1)[0].removesuffix(".")
 
 
+def summary_field(report: str, name: str) -> str:
+    """Read the outcome summary independently of per-round status fields."""
+    plain = report.replace("**", "").replace("`", "")
+    sections = re.split(r"(?m)^#{1,6} [^\n]*\n", plain)
+    summaries = [section for section in sections
+                 if re.search(r"(?mi)^[ \t]*(?:-[ \t]*)?Outcome:", section)]
+    assert len(summaries) == 1, "Missing or ambiguous outcome summary"
+    return field(summaries[0], name)
+
+
 def unittest_runs(raw: str) -> list[tuple[int, bool]]:
     """Require a direct unittest command and its native result, in event order."""
     calls, _ = calls_and_results(raw)

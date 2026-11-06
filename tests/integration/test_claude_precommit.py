@@ -13,7 +13,7 @@ import pytest
 from .precommit_fixture import make_project, assert_preserved
 from .precommit_trace import (
     calls_and_results, successful_reads, child_answer, field, assert_validation,
-    assert_seeded_findings,
+    assert_seeded_findings, summary_field,
 )
 from .test_claude import trace_directory
 
@@ -143,12 +143,12 @@ Complete the review and save the skill's reports. Use default BaseRef.
         assert "index" in answer.lower() or "staged" in answer.lower()
         assert "no findings" not in answer.lower()
         assert "not run" in final and "incomplete" in final
-        assert field(final, "Outcome") == "findings remain"
+        assert summary_field(final, "Outcome") == "findings remain"
     else:
         assert "total.py" in answers[0][1] and "no findings" not in answers[0][1].lower()
         assert answers[1][1].strip().endswith("no findings")
         assert "verified fixed" in ledger
-        assert field(final, "Review") == "complete"
-        assert field(final, "Validation") == "passed"
-        assert field(final, "Outcome") == "clean"
+        assert summary_field(final, "Review") == "complete"
+        assert summary_field(final, "Validation") == "passed"
+        assert summary_field(final, "Outcome") == "clean"
     assert_preserved(workspace, before, mode)

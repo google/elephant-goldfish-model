@@ -9,7 +9,7 @@ import warnings
 import pytest
 
 from .precommit_fixture import make_project, assert_preserved
-from .precommit_trace import codex_full_reads, field, assert_seeded_findings
+from .precommit_trace import codex_full_reads, field, assert_seeded_findings, summary_field
 from .test_codex import (
     installed_plugin, run_codex, child_traces, assert_isolated_spawns,
 )
@@ -65,7 +65,7 @@ read instruction to the child. Preserve its actual report and complete the workf
     assert copies and all(p.resolve() in reads for p in copies)
     final = (runs[0] / "precommit_report.md").read_text().lower()
     assert "not run" in final and "incomplete" in final
-    assert field(final, "Outcome") == "findings remain"
+    assert summary_field(final, "Outcome") == "findings remain"
     # Native dispatch payloads may be encrypted. Never call their absence proof.
     if "gAAAA" in json.dumps(trace):
         warnings.warn("Encrypted dispatch input cannot be fully audited", stacklevel=1)
