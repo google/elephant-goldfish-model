@@ -14,6 +14,8 @@ interface Props {
   target?: '_blank' | '_self';
   class?: string;
   label?: string;
+  popovertarget?: string;
+  'aria-haspopup'?: 'menu';
   [key: `data-${string}`]: string | undefined;
 }
 
