@@ -67,7 +67,7 @@ the first matching outcome below, retaining findings and validation limits.
 | Condition | Outcome |
 | :--- | :--- |
 | Evidence changed during review | `stale` |
-| Required coverage, reads or reviewer completion are missing | `incomplete` |
+| Evidence capture or writes fail, or required coverage, reads or reviewer completion are missing | `incomplete` |
 | Initial scope is empty and no fixes need verification | `no changes` |
 | Fix mode reached five rounds with open findings or unresolved validation | `stopped at limit` |
 | A finding remains open, including a staged defect fixed only on disk | `findings remain` |
@@ -127,8 +127,8 @@ the first matching outcome below, retaining findings and validation limits.
    command, source, exit status and result. Compare the actual evidence on
    recollection. Exclude untracked files under the current run or a prior
    direct child with an `egm-precommit-*` name and generated layout
-   (`round-N/scope.md` or both the final report and ledger). The initial
-   `scope.md` identifies an interrupted run even if capture never finished.
+   (`round-N/scope.md` or both the final report and ledger). The
+   capture-in-progress note identifies an interrupted run.
    Inspect file types without following links. Keep tracked entries and
    lookalike source.
 3. **Dispatch the reviewer and validate the return.** Use
@@ -204,7 +204,7 @@ the first matching outcome below, retaining findings and validation limits.
   review and fix mode. Review mode must find a staged permission bug hidden
   by the working copy and a separate untracked bug. Its trace must include
   similarly named untracked source and exclude a source copy from an
-  interrupted run identified by its unfinished `scope.md`. Fix mode
+  interrupted run identified by its capture-in-progress note. Fix mode
   must run checks and verify the correction with a new child. Both preserve
   the real HEAD and index.
 - `EGM_CODEX_LIVE=1 pytest tests/integration/test_codex_precommit.py` checks the
