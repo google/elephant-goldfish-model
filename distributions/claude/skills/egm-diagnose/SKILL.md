@@ -41,6 +41,23 @@ evidence and stop before dispatch. Do not invent a reproduction. An intermittent
 failure trace is usable evidence, but mark its repeatability as unknown unless
 measured. Diagnosis can remain inconclusive.
 
+Before creating the run directory, inspect path metadata in SourceRoot, the
+working directory, and the configured artifact directory for earlier
+`egm-diagnosis-*/` runs. Include nested, hidden, and ignored paths. Use a
+metadata-only walk (for example, `find` without following symlinks). Do not
+open old artifacts. Check link targets by path and treat links to prior
+artifacts as exposure too. A verified absent artifact directory is empty
+for this check. If you cannot inspect the roots, report that the boundary
+could not be checked and stop before creating a run directory.
+
+If earlier run artifacts are present, dispatch only if the host can enforce
+their exclusion from the child's file reads and searches, including through
+aliases. A read-only tool list or an instruction to skip a path does not
+enforce that exclusion. Otherwise report an incomplete diagnosis in chat.
+Do not create a new run directory or dispatch a child. Tell the user which
+artifact locations need to be outside the child's readable workspace.
+Leave the old runs untouched.
+
 Inspect the relevant source and fix the Elephant's initial hypothesis in the
 parent conversation before dispatch. Include the candidate cause, source
 evidence, uncertainty, and a check that would disprove it. Use `unknown` if
@@ -76,21 +93,28 @@ hosts use the equivalent fresh-context, read-only dispatch, or stop and report
 that the host cannot perform this diagnosis. Cursor, Copilot CLI and OpenCode
 don't register an `egm-bug-diagnosis` agent yet, so stop there.
 
+Recheck for earlier run artifacts immediately before dispatch. Do not
+dispatch if another run is active in the same readable workspace and its
+artifacts cannot be excluded. The new run's observations are the only
+diagnostic artifact the child should receive.
+
 Give the Goldfish only the following task, replacing the paths:
 
 ```text
 Read <absolute plugin path>/agents/bug_diagnosis.md and follow it.
 SourceRoot: <absolute source root>
 Observations: <absolute run directory>/observations.md
-ExcludedArtifacts: <absolute run directory> except observations.md
+ExcludedArtifacts: all egm-diagnosis-*/ directories, except the supplied observations.md
 
 Investigate the observed failure independently. Read only the supplied persona,
 observations, and relevant source, tests, manifests, and architecture docs under
-SourceRoot. Do not read diagnostic reports, issue discussions, conversation
-logs, memory, or hypothesis files, including those from earlier runs. Do not
-invoke another skill, spawn agents, run application code or tests, or modify
-files. If there is no native read tool, use shell only for read-only file
-inspection. Return your diagnosis to the parent; the parent writes the report.
+SourceRoot. Apply the artifact exclusion to reads, globs, and grep. If you
+cannot exclude those directories from a search, narrow its scope or skip it.
+Do not read diagnostic reports, issue discussions, conversation logs, memory,
+or hypothesis files. Do not invoke another skill, spawn agents, run application
+code or tests, or modify files. If there is no native read tool, use shell only
+for read-only file inspection. Return your diagnosis to the parent; the parent
+writes the report.
 ```
 
 Do not add the suspected module, root cause, proposed patch, or a request to
@@ -130,6 +154,9 @@ falsifying check is not a supported candidate. Check the cited source yourself.
 Use native tool records to verify reads and completion where available; label
 read claims as self-reported when those records are unavailable. Do not claim
 verified isolation from a child's assurance alone.
+If the child received earlier run contents, or a new accessible run appeared
+while it was active and exclusion cannot be verified, record incomplete
+execution and skip the comparison.
 
 ## 4. Compare evidence and write the handoff
 

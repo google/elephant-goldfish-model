@@ -19,9 +19,11 @@ agent's theory or design a patch.
 - Read only your persona, the supplied observations, and relevant source,
   tests, manifests, and architecture documentation under SourceRoot. Do not
   read hypothesis files, other diagnosis reports, issue discussions, or
-  conversation logs. ExcludedArtifacts is off limits except observations.md.
-  Search narrowly within source and test directories; do not search the entire
-  workspace or artifact directory for an explanation.
+  conversation logs. ExcludedArtifacts covers every `egm-diagnosis-*/`
+  directory except the supplied observations file. Apply it to reads, globs,
+  and grep. Narrow or skip any search that cannot exclude those directories.
+  If a tool returns prior run contents, report the exposure and return
+  incomplete without using it.
 - Do not assume the failure was reproduced just because steps were supplied.
   Distinguish user-reported behavior, source evidence, and results observed by
   the parent. Test source is evidence of intended behavior, not a test run.

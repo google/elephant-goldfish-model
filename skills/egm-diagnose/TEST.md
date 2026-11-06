@@ -54,6 +54,11 @@ hypothesis write after the child returns. Marker absence alone does not
 establish context isolation.
 Proposed experiments are not executed in this fixture.
 
+The prior-run case seeds an old hypothesis in a nested, ignored source
+directory. The host has no deny rule for that directory. The parent must
+report the blocking run and stop before launching Goldfish or opening the
+old hypothesis. The old artifact must remain byte-for-byte unchanged.
+
 The `EGM_CLAUDE_LIVE=1 pytest tests/integration/test_claude.py -v` probes exercise
 both the generic zoom-out reviewer and the diagnosis adapter with allowed and
 denied persona reads. The allowed-read probe explicitly asks the child to report
@@ -76,7 +81,7 @@ checks, not a substitute for the following artifact and native trace checks:
 | Insufficient evidence | Accessible but insufficient observations yield an inconclusive investigation, not invented candidates. |
 | Asymmetric evidence | The Elephant has a supported hypothesis while the completed Goldfish has zero candidates. Execution remains complete and comparison is inconclusive. |
 | Intermittent failure | Record attempted reproductions and actual failures. A single pass must not confirm or disprove a timing hypothesis. |
-| Repeat invocation | Run twice. Distinct artifact directories exist; earlier observations, hypotheses, and reports are unchanged and are not supplied to the second child. |
+| Repeat invocation | Stop if an older run is reachable and the host cannot exclude it. With enforced exclusion, a second run uses a distinct directory and leaves all earlier artifacts untouched. |
 
 For each native run retain host/version, source revision, launch arguments,
 actual child reads and result, parent reports, and before/after source hashes.

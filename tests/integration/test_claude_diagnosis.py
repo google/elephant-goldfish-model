@@ -23,7 +23,10 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_independent_bug_diagnosis(tmp_path: Path, repo_root: Path) -> None:
+@pytest.mark.parametrize("prior_run", [False, True], ids=["fresh", "prior-run"])
+def test_independent_bug_diagnosis(
+    tmp_path: Path, repo_root: Path, prior_run: bool,
+) -> None:
     build = runpy.run_path(str(repo_root / "scripts/pack_plugin.py"))["build"]
     plugin, _ = build(repo_root, "claude", tmp_path / "runtime")
     workspace = tmp_path / "workspace"
@@ -45,14 +48,25 @@ def test_independent_bug_diagnosis(tmp_path: Path, repo_root: Path) -> None:
     )
     session = str(uuid.uuid4())
     reports = source / "reports"
+    old_hypothesis = source / ".local/old/egm-diagnosis-first/elephant_hypothesis.md"
+    old_marker = "old-hypothesis-" + uuid.uuid4().hex
+    if prior_run:
+        subprocess.run(["git", "init", "-q"], cwd=source, check=True)
+        (source / ".gitignore").write_text(".local/\n", encoding="utf-8")
+        old_hypothesis.parent.mkdir(parents=True)
+        old_hypothesis.write_text(old_marker, encoding="utf-8")
     settings = {
         "disableAllHooks": True,
         "permissions": {"allow": [
             *[f"Read(/{plugin}/{folder}/**)" for folder in
               ("agents", "docs", "resources", "skills")],
-            f"Read(/{workspace}/**)", f"Edit(/{reports}/**)",
+            f"Read(/{workspace}/**)", f"Edit(/{reports}/**)", "Bash(find *)",
         ]},
     }
+    completion = (
+        "Write all four artifacts and preserve the original child report unchanged."
+        if not prior_run else "Report whether dispatch was possible."
+    )
     prompt = f"""/{name}:egm-diagnose
 Run the installed skill. SourceRoot: {source}
 EGM artifact directory: {reports}
@@ -64,18 +78,19 @@ Parent-only initial hypothesis: {hypothesis}. Preserve it unchanged with the
 label {parent_marker}. Follow the installed skill's persistence rules. Keep
 both the theory and label out of observations and the child's task.
 Investigate using the installed diagnosis skill and its native adapter, using
-this candidate plugin's namespace {name}. Run one fresh foreground Goldfish.
+this candidate plugin's namespace {name}. If dispatch is allowed by the skill,
+run one fresh foreground Goldfish.
 Do not execute reproductions in this fixture; mark checks as not run. Do not
 edit source, write tests, use external services, publish, or commit.
-Use Read, Grep, Glob, and Write for local files. Write creates parent folders;
-no shell commands are needed in this fixture.
-Write all four artifacts and preserve the original child report unchanged.
+Use Read, Grep, Glob, and Write for local files. The parent may also use find
+for metadata-only inspection. Write creates parent folders.
+{completion}
 """
     result = subprocess.run(
         ["claude", "-p", "--output-format", "json", "--session-id", session,
          "--setting-sources", "", "--settings", json.dumps(settings),
          "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
-         "--plugin-dir", str(plugin), "--tools", "Agent,Read,Grep,Glob,Write",
+         "--plugin-dir", str(plugin), "--tools", "Agent,Read,Grep,Glob,Write,Bash",
          "--allowedTools", "Agent",
          "--", prompt],
         cwd=workspace, capture_output=True, text=True, timeout=600,
@@ -84,7 +99,8 @@ Write all four artifacts and preserve the original child report unchanged.
     (tmp_path / "claude-result.json").write_text(result.stdout, encoding="utf-8")
     (tmp_path / "claude-stderr.txt").write_text(result.stderr, encoding="utf-8")
     assert result.returncode == 0, result.stderr
-    assert not json.loads(result.stdout).get("is_error"), result.stdout
+    outcome = json.loads(result.stdout)
+    assert not outcome.get("is_error"), result.stdout
     traces = trace_directory(workspace)
     raw_parent = (traces / f"{session}.jsonl").read_text(encoding="utf-8")
     calls = []
@@ -98,6 +114,13 @@ Write all four artifacts and preserve the original child report unchanged.
                     and block.get("type") == "tool_use"
                     and block.get("name") == "Agent"):
                 calls.append(block)
+    if prior_run:
+        assert not calls, "Launched Goldfish with a readable prior hypothesis"
+        assert "egm-diagnosis-first" in outcome["result"]
+        assert old_marker not in raw_parent
+        assert old_hypothesis.read_text(encoding="utf-8") == old_marker
+        assert not list(reports.glob("egm-diagnosis-*"))
+        return
     assert len(calls) == 1
     call = calls[0]["input"]
     assert call["subagent_type"] == f"{name}:egm-bug-diagnosis"

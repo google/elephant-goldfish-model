@@ -104,13 +104,13 @@ scenarios:
             message: "Lack of a candidate must not be treated as failed execution."
 
   - scenario_id: "preserve_previous_run"
-    description: "A second diagnosis must preserve the first run's artifacts."
+    description: "A readable earlier run blocks diagnosis without an enforced exclusion."
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-diagnose/SKILL.md"
     turns:
-      - user_input: "Diagnose the catalog fixture again. A prior egm-diagnosis-first directory contains observations, a hypothesis, and reports. Keep the earlier run intact and do not use its conclusions as Goldfish input."
+      - user_input: "Diagnose the catalog fixture again. A prior egm-diagnosis-first directory under the source root contains a hypothesis. The host cannot prevent a child from reading it. Keep the earlier run intact."
         assertions:
           - type: "required_pattern"
-            pattern: "(?i)(new|unique|separate|distinct)"
-            message: "Verify distinct run directories and unchanged prior artifacts in native evaluation."
+            pattern: "(?i)(incomplete|cannot dispatch|stop before dispatch)"
+            message: "Verify that no Goldfish launched and the earlier run is unchanged."
