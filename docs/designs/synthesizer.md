@@ -40,7 +40,7 @@ sequenceDiagram
     participant Elephant as Root Elephant Context
     participant Synth as Synthesizer Persona (Intermediate Orchestrator)
     participant Swarm as Goldfish Swarm (Parallel Subagents, optional A/B)
-    participant Artifact as Artifact File (goldfish_review_report.md)
+    participant Artifact as Artifact File (report file named by the caller)
 
     Elephant->>Synth: invoke_subagent (TargetFile, Reviewers, Standards)
     Note over Synth: Inspect Mode: REVIEW vs BRAINSTORM
@@ -48,7 +48,7 @@ sequenceDiagram
     Note over Swarm: Independent Audits in Zero-Context Windows
     Swarm-->>Synth: Return raw findings & critiques
     Note over Synth: Deduplicate, Triage (Blocker/Major/Nit), Normalize Links
-    Synth->>Artifact: write_to_file (goldfish_review_report.md)
+    Synth->>Artifact: write_to_file (report file named by the caller)
     Synth-->>Elephant: send_message (Completion summary & artifact link)
 ```
 
@@ -94,13 +94,15 @@ context:
 ## Inter-Agent Communication Contract
 
 1.  **Input Parameters**:
+    *   `Mode`: `REVIEW` for document audits or `BRAINSTORM` for concept ideation.
     *   `TargetFile`: Absolute path to target document.
     *   `LineRange`: Target line bounds (or `full file`).
     *   `Reviewers`: Array of reviewer persona shortnames.
     *   `Standards`: Key-value mapping of reviewers to standard markdown files.
     *   `GoldfishContext`: Supplementary reading list for reviewer baseline.
-    *   Report filename: Optional caller-specified output path; defaults to
-        `goldfish_review_report.md` in REVIEW mode.
+    *   Report filename (`Mode: REVIEW` only): the file the synthesizer writes;
+        `goldfish_review_report.md` if none. `Mode: BRAINSTORM` always writes
+        `concepts_brief.md`.
 2.  **Output Contract**:
     *   The synthesizer must never output the full report text in chat or via
         `send_message`.
