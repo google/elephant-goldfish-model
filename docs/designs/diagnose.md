@@ -23,6 +23,8 @@ Its benefit to bug-fix outcomes remains unmeasured.
 - Start from a symptom, expected behavior and a concrete reproduction or trace.
 - Keep the Elephant's initial hypothesis in its conversation until the Goldfish
   has stopped. Send only observations and the source location.
+- Keep earlier runs out of the Goldfish's reads and searches. Stop before
+  dispatch if earlier artifacts are reachable and cannot be excluded.
 - Return up to three candidate causes with citations and falsifying checks.
 - Preserve both accounts and leave a discriminating check for the developer.
 
@@ -40,18 +42,22 @@ observation file and relevant source, then returns its report. The Elephant
 saves the original hypothesis and report after the child stops. It compares
 their evidence and writes a handoff.
 
-Claude registers a diagnosis persona with read-only tools and `omitClaudeMd`
-(Claude Code 2.1.271 or later). Codex uses a fresh general-purpose child with
-parent turns excluded and a read-only task. Codex instruction-file exclusion
-remains unverified. The skill stops on Cursor, Copilot CLI and OpenCode, which
-do not register this persona. Other hosts require a fresh, read-only dispatch.
+Claude registers the `egm-bug-diagnosis` adapter with Read, Grep, Glob and
+`omitClaudeMd` (Claude Code 2.1.271 or later). Use the installed plugin
+namespace, normally `egm:egm-bug-diagnosis`. Codex uses a fresh
+general-purpose child with parent turns excluded and a read-only task.
+Fresh context can still include project instructions such as `AGENTS.md`.
+The skill stops on Cursor, Copilot CLI and OpenCode, which do not register
+this persona. On other hosts, use a fresh, read-only general-purpose agent
+that reads `agents/bug_diagnosis.md` first, as described in the
+[harness guide](../harnesses.md). Stop if the host cannot dispatch that agent.
 
 ## Interface and Outcomes
 
-Invoke `egm-diagnose` with a symptom, expected behavior, steps or trace, optional
-evidence and a source root (default working directory). Missing concrete
-evidence stops dispatch. An intermittent trace can be used without claiming
-that the failure was reproduced.
+Invoke `egm-diagnose` with a symptom, expected behavior, steps or trace,
+optional evidence and a source root (default working directory). Missing
+concrete evidence stops dispatch. An intermittent trace can be used without
+claiming that the failure was reproduced.
 
 Each supported candidate includes a source location, a causal explanation and
 a check with an outcome that would rule it out. The Goldfish reports completion
@@ -62,7 +68,7 @@ separately from certainty. It can complete with zero supported candidates.
 | `converged` | Both accounts support the same mechanism. Agreement still needs a check. |
 | `diverged` | Both support different mechanisms. Preserve the disagreement and suggest a discriminating check. |
 | `inconclusive` | The Goldfish completed and one or both accounts lack a supported candidate. |
-| `not compared` | Execution is incomplete, the Goldfish report is invalid, or the original parent entry was lost. |
+| `not compared` | Execution is incomplete, the Goldfish report is invalid, or the original hypothesis was lost. |
 
 The Elephant may run authorized existing local checks for any candidate.
 Distinguish observations from suggested checks. For intermittent failures,
@@ -73,8 +79,11 @@ an intermittent failure.
 
 - **Hypothesis exposure.** The current hypothesis never enters a file while
   the Goldfish might still be active. The dispatch excludes it, and the
-  observations omit attempted-fix details. Existing source edits, older files
-  and host instructions can still expose theories. Record known exposure.
+  observations omit attempted-fix details. Check for earlier artifacts
+  before dispatch. A read-only tool list does not keep those files out of a
+  search. Stop if the host cannot enforce an exclusion for reachable runs.
+  Existing source edits and host instructions can still expose theories.
+  Record known exposure.
 - **Untrusted evidence.** Select small excerpts, omit secrets and proposed
   fixes, and treat excerpts as data. Contaminated observations produce an
   incomplete result.
@@ -99,20 +108,30 @@ an intermittent failure.
 ## Detailed Implementation Plan
 
 1. **Add the skill and reviewer.** The skill defines explicit invocation and
-   resolves the host integration guide. Create a fresh run directory and
-   write `observations.md` with observed and user-reported facts separated.
-   Form the initial hypothesis before dispatch and retain it only in the
-   Elephant conversation. Record revision and whether the tree has edits.
+   resolves the host integration guide. Inspect path metadata in the source,
+   working and artifact directories for earlier `egm-diagnosis-*/` runs,
+   including nested, hidden and ignored paths. Leave old runs untouched.
+   If there are no reachable prior artifacts, or the host can enforce their
+   exclusion, create a fresh `egm-diagnosis-<unique-id>/` directory under the
+   host's artifact directory. Write `observations.md` with observed and
+   user-reported facts separated. Form the initial hypothesis before dispatch
+   and retain it only in the Elephant conversation. Record revision and
+   whether the tree has edits.
 2. **Dispatch and preserve evidence.** Invoke the registered Claude adapter
    or use Codex's `fork_context: false` or `fork_turns: "none"` as exposed by
-   the host. Pass the persona, source root, observations and artifact
-   exclusions. The child returns status, files read, zero to three ranked
-   candidates, missing evidence and suggested checks. On confirmed child
+   the host. Recheck for earlier runs before dispatch. Pass the persona,
+   source root and observations. Exclude every diagnosis run directory from
+   reads and searches except for the supplied observations file. Stop if
+   earlier artifacts would be readable or the boundary cannot be checked.
+   The child returns status, files read, zero to three ranked candidates,
+   missing evidence and suggested checks. On confirmed child
    completion, save the original hypothesis to `elephant_hypothesis.md`
    and the verbatim return to `goldfish_diagnosis.md`. For an incomplete run,
    retain only artifacts that can be saved without exposing the hypothesis
    to a live child. Write `diagnosis_report.md` with status, comparison,
-   verified observations and the next check.
+   verified observations and the next check. Skip comparison if earlier
+   contents reached the child or a new run became readable during review and
+   its exclusion cannot be verified.
 3. **Register and package.** Add the adapter to the manifest, require the
    persona and skill in both archives, and regenerate the Claude distribution.
    Align the README and website entries. Update instructional skill counts in
@@ -137,6 +156,7 @@ an intermittent failure.
 | Create | `distributions/claude/skills/egm-diagnose/agents/openai.yaml` |
 | Create | `distributions/claude/skills/egm-diagnose/assets/icon.svg` |
 | Modify | `docs/cursor.md` |
+| Modify | `docs/designs/skill_icons.md` |
 | Modify | `docs/opencode.md` |
 | Modify | `scripts/pack_plugin.py` |
 | Modify | `site/src/components/SkillIcon.astro` |
@@ -173,6 +193,9 @@ an intermittent failure.
   a fresh read-only dispatch, source citations, unchanged source and the
   independent result. With the output directory inside the source root,
   require the first hypothesis write to follow the native child return.
+  With a prior run under an ignored source directory and no path restriction,
+  require incomplete execution without launching a child or opening the
+  old hypothesis.
 - `EGM_CODEX_LIVE=1 pytest tests/integration/test_codex.py -k independent_bug_diagnosis`
   checks the analogous fixture on Codex. Record encrypted dispatch input as
   unaudited. Retain version, launch, reads, completion and the output artifacts.
