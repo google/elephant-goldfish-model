@@ -286,9 +286,10 @@ finished for the explainer:
 1.  the writer's draft;
 2.  both reviews, and every fix the coordinator accepts from them;
 3.  the mechanical checks: links, Mermaid types and, for shareable runs, the
-    pattern scan. The Mermaid check confirms the diagram type only and does not
-    prove the diagram renders.
-
+3.  the mechanical checks: links and Mermaid types. The Mermaid check confirms
+    the diagram type only and does not prove the diagram renders. On shareable
+    runs the pattern scan also runs here, but a hit only goes in the report and
+    does not block finalization.
 Mechanical checks and any repair run inside each level, before the next level
 reads the file, so a repair never changes an input a parent has already read. A
 failed check gets one repair attempt. If it still fails, that explainer and its
