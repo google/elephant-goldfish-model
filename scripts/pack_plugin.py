@@ -25,8 +25,8 @@ HOST = {
     "openai": (".codex-plugin/plugin.json",),
 }
 SKILLS = (
-    "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop",
+    "egm-ask", "egm-bootstrap", "egm-brainstorm", "egm-draft",
+    "egm-drift-report", "egm-resolve", "egm-review", "egm-review-loop",
 )
 REQUIRED_SHARED = (
     "plugin.json", "LICENSE", "README.md", "assets/icon.svg",
