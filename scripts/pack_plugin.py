@@ -43,8 +43,8 @@ REQUIRED_SHARED = (
 ) + tuple(
     f"agents/{name}.md" for name in (
         "bootstrap_orchestrator", "codebase_details", "comprehension",
-        "design_critic", "implementation_readiness", "structural", "style",
-        "synthesizer", "zoom_out",
+        "design_critic", "implementation_readiness", "inventive_catalyst",
+        "structural", "style", "synthesizer", "zoom_out",
     )
 ) + tuple(
     f"resources/document_standards/{name}-standard.md" for name in (
@@ -89,13 +89,16 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
   if not isinstance(agents, (str, list)):
     raise ValueError(f"Invalid manifest agents: {agents!r}")
   references = [agents] if isinstance(agents, str) else list(agents)
-  interface = openai.get("interface", {})
   if target == "openai":
-    interface = interface or manifest.get("interface", {})
-    for key in ("composerIcon", "logo"):
-      if not interface.get(key):
-        raise ValueError(f"Missing OpenAI interface reference: {key}")
-      references.append(interface[key])
+    # Codex reads the host manifest, so check it as well as the portable copy.
+    interfaces = [manifest.get("interface", {})]
+    if "interface" in openai:
+      interfaces.append(openai["interface"])
+    for interface in interfaces:
+      for key in ("composerIcon", "logo"):
+        if not interface.get(key):
+          raise ValueError(f"Missing OpenAI interface reference: {key}")
+        references.append(interface[key])
   else:
     references.append(manifest.get("icon", "./.claude-plugin/icon.png"))
   for reference in references:

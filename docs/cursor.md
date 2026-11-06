@@ -27,7 +27,7 @@ Each reviewer declares `readonly: true`, `permissionMode: readonly`,
 `model: inherit`, and `is_background: false`.
 The selected CLI's plugin loader reads `permissionMode`, not `readonly`.
 The documented `readonly` field remains for the local Agent interface.
-The native loader probe confirms all seven reviewers register as read-only.
+The native loader probe confirms all eight reviewers register as read-only.
 This does not prove runtime enforcement or foreground behavior.
 Select a model explicitly for a future live run and
 record its actual identifier from the task records.
@@ -58,7 +58,7 @@ Do not disable an organization policy or overwrite an existing package.
 
 3. Stop if a command fails. Inspect any partial copy before retrying.
 4. Reload Cursor and inspect the plugin in Customize.
-5. Confirm seven skills, seven EGM reviewers, and the EGM runtime rule.
+5. Confirm seven skills, eight EGM reviewers, and the EGM runtime rule.
 6. Record the absolute package path and installed file checksums.
 
 The copy retains all shared runtime directories and their relative layout.

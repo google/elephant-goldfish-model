@@ -110,8 +110,11 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
     regular text, ask which to include, and end your turn; if no one can
     answer, as in a headless run, leave them all out and keep going. Add only
     approved ones and tell the user which were left out. Some reviewers cannot
-    open URLs, so save each approved page as a file in the working directory
-    (or your harness's artifact directory) and pass its path. Pass
+    open URLs, so save the raw page of each URL in `GoldfishContext` as a new
+    file in the working directory (or your harness's artifact directory) and
+    pass its absolute path instead. If a page cannot be saved, ask the user for
+    a local copy and end your turn; if no one can answer, as in a headless run,
+    leave it out, tell the user, and keep going. Pass
     `GoldfishContext` to every stage except Stage 6, which reads the document
     alone; tell any synthesizer to give these files to each reviewer.
 
@@ -201,7 +204,7 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
         high-level feature specification:
         *   Notify the user in chat that no implementation plan was detected.
         *   Assign `FeatureRange = 1..End` and `DetailedRange = N/A`.
-        *   Offer to execute Stages 5–8 (Feature Spec gates) and proceed.
+        *   Offer to execute Stages 5-8 (Feature Spec gates) and proceed.
 
 ### Step 4: Staging Strategy
 
@@ -282,8 +285,8 @@ plain chat):
     harness's artifact directory, if it has one). Pass `GoldfishContext` to
     every step except Step 6.
     *   **Step 5 (Initial Zoom Out)**: Spawn `egm-synthesizer` (or direct
-        subagent) with `Reviewers: [egm-zoom-out]` on `full file` → write
-        `zoom_out_report.md`.
+        subagent) with `Reviewers: [egm-zoom-out, egm-inventive-catalyst]` on
+        `full file` → write `zoom_out_report.md`.
     *   **Step 6 (Comprehension Test)**: Spawn the `egm-comprehension`
         subagent directly (not the synthesizer) on `FeatureRange` &
         `DetailedRange` → write its complete result to
@@ -316,7 +319,9 @@ plain chat):
     applying `resources/document_standards/zoom-out-standard.md`. When running
     as Step 8 (Intermediate Zoom Out), include `zoom_out_report.md` path in
     context and focus on additions/mitigations from Comprehension and Critic
-    stages.
+    stages. When running as Step 5, also
+    spawn `egm-inventive-catalyst` in parallel and write both into
+    `zoom_out_report.md`.
     In both Stage 5 and Stage 8, pass `GoldfishContext`.
 2.  **Delivery**: Write findings to `zoom_out_report.md` (Stage 5) or
     `intermediate_zoom_out_report.md` (Stage 8) using your file-writing tool.

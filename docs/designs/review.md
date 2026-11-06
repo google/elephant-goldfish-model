@@ -43,7 +43,7 @@ The full review pipeline executes five sequential evaluation phases:
 
 ```mermaid
 flowchart TD
-    Start([Target Design Doc]) --> Step5[Step 5: Zoom Out Review]
+    Start([Target Design Doc]) --> Step5["Step 5: Initial Strategic Review (Zoom Out + Inventive Catalyst)"]
     Step5 --> Gate5{Pass / Abort?}
     Gate5 -- Abort --> FixArch[Refactor Architecture]
     Gate5 -- Pass --> Step6[Step 6: Comprehension Test]
@@ -63,12 +63,13 @@ flowchart TD
 
 ### Stage Breakdown
 
-1.  **Step 5: Zoom Out Review (Altitude Check)**:
+1.  **Step 5: Initial Strategic Review (Altitude & Contradiction Check)**:
     *   *Target*: Full Document.
-    *   *Persona*: [`zoom_out`](../../agents/zoom_out.md) (Skeptical Architect).
-    *   *Standard*: `zoom-out-standard.md`.
+    *   *Personas*: [`zoom_out`](../../agents/zoom_out.md) (Skeptical Architect), [`inventive_catalyst`](../../agents/inventive_catalyst.md) (Inventive Catalyst).
+    *   *Standards*: `zoom-out-standard.md` (for `zoom_out`), Inlined Pattern Catalog (for `inventive_catalyst`).
     *   *Focus*: Validates problem framing, rejects speculative features
-        (YAGNI), and verifies reuse of existing infrastructure before investing in
+        (YAGNI), identifies technical contradictions, suggests pattern resolutions,
+        and verifies reuse of existing infrastructure before investing in
         detailed review passes.
 2.  **Step 6: Comprehension Test (Self-Containment Check)**:
     *   *Target*: `FeatureRange` vs `DetailedRange`.
@@ -118,6 +119,7 @@ All reviewer persona prompts reside under [`agents/`](../../agents/):
 | [`agents/codebase_details.md`](../../agents/codebase_details.md) | Codebase Auditor | Cross-references referenced paths, classes, and function signatures against live source code to prevent drift and hallucinated APIs. |
 | [`agents/structural.md`](../../agents/structural.md) | Layout Validator | Enforces standard heading hierarchy, table formatting, and document template conformance. |
 | [`agents/style.md`](../../agents/style.md) | Technical Copy Editor | Strips conversational filler, enforces factual, objective tone, calibrates defensive caveats (`DROP` / `CALIBRATE` / `RELOCATE` / `KEEP`), and ensures adherence to concise technical writing standards. |
+| [`agents/inventive_catalyst.md`](../../agents/inventive_catalyst.md) | Inventive Catalyst | Applies TRIZ principles to identify technical contradictions, false compromises, and pattern-based resolutions. |
 | [`agents/synthesizer.md`](../../agents/synthesizer.md) | Review Synthesizer | Spawns reviewers in parallel, deduplicates findings, formats file links, and writes consolidated report artifacts. |
 
 [`agents/bootstrap_orchestrator.md`](../../agents/bootstrap_orchestrator.md)
