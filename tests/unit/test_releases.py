@@ -29,13 +29,18 @@ def test_release_version_matches_source(release: dict) -> None:
     assert release["version_for_tag"](ROOT, f"v{version}") == version
 
 
-def test_reject_host_version_drift(release: dict, tmp_path: Path) -> None:
-    for name in ("plugin.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json"):
+HOST_MANIFESTS = (".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
+                  ".cursor-plugin/plugin.json", ".plugin/plugin.json")
+
+
+@pytest.mark.parametrize("drifted", HOST_MANIFESTS)
+def test_reject_host_version_drift(release: dict, tmp_path: Path, drifted: str) -> None:
+    for name in ("plugin.json", *HOST_MANIFESTS):
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"version": "0.1.0"}))
-    (tmp_path / ".codex-plugin/plugin.json").write_text('{"version":"0.2.0"}')
-    with pytest.raises(ValueError, match="codex-plugin"):
+    (tmp_path / drifted).write_text('{"version":"0.2.0"}')
+    with pytest.raises(ValueError, match=f"^{drifted}: version must match"):
         release["version_for_tag"](tmp_path, "v0.1.0")
 
 
