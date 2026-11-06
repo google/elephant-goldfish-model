@@ -71,6 +71,10 @@ When resolving names in `Reviewers` and `Standards`:
     `codebase_details`, `comprehension`, `zoom_out`) to `agents/{name}.md`.
     The persona file defines the reviewer's core mandates, audit vectors, and
     output format.
+*   **Persona Names**: A name such as `egm-design`, as `egm-review` passes,
+    is the frontmatter `name` of a persona file, not a file stem. Map it to
+    the persona file in `agents/` that declares it (for example, `egm-design`
+    maps to `agents/design_critic.md`).
 *   **Standard Shortnames**: Map standard shortname (e.g., `feature-spec-standard`,
     `implementation-readiness-standard`, `zoom-out-standard`, `heilmeier-standard`,
     `re-implementation-standard`) to `resources/document_standards/{name}.md`.
@@ -127,8 +131,8 @@ file` mode is specified, confirm full-file line bounds).
         requested reviewer.
     *   **Direct Dispatch (Flat Swarm)**: Alternatively, spawn each requested
         reviewer subagent in `Reviewers` directly.
-        Instruct each subagent to first read its persona definition in
-        `agents/{name}.md`, then audit `TargetFile` at the resolved line range
+        Instruct each subagent to first read its persona file, resolved as
+        above, then audit `TargetFile` at the resolved line range
         against its designated standard in `resources/document_standards/`,
         supplying `GoldfishContext`.
     *   Each reviewer produces findings with severity (🔴 Blocker, 🟡 Major, 🟢
