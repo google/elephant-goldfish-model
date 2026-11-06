@@ -113,6 +113,11 @@ Each documentation page has a matching `.md` URL and an alternate link in its
 HTML. `starlight-llms-txt` generates `/llms.txt`, `/llms-full.txt`, and
 `/llms-small.txt`. These are static files with no AI service or API key.
 
+Copy page appears below the desktop contents list and near the mobile title.
+Both the homepage and docs use the shared header, footer, grid, and gBreeze controls.
+The build fetches the GitHub star count once and omits it when GitHub is unavailable.
+The header rounds counts above 1,000 stars to the nearest thousand.
+
 ## Deploy
 
 `.github/workflows/deploy-site.yml` builds and publishes `dist/` on every push

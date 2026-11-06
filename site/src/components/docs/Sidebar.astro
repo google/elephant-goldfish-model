@@ -1,0 +1,25 @@
+---
+import MobileMenuFooter from '@astrojs/starlight/components/MobileMenuFooter.astro';
+const { sidebar } = Astro.locals.starlightRoute;
+---
+<div class="sections">
+  {sidebar.map(entry => entry.type === 'link' ?
+    <a class="index" href={entry.href} aria-current={entry.isCurrent ? 'page' : undefined}>{entry.label}</a> :
+    <section>
+      <h2>{entry.label}</h2>
+      <ul>{entry.entries.map(item => item.type === 'link' && <li><a href={item.href} aria-current={item.isCurrent ? 'page' : undefined}>{item.label}</a></li>)}</ul>
+    </section>
+  )}
+</div>
+<div class="mobile-footer"><MobileMenuFooter /></div>
+<style>
+  .sections { display:flex; flex-direction:column; gap:24px; font-size:.875rem; }
+  h2 { font-size:.75rem; line-height:1.5; font-weight:500; color:var(--md-sys-color-on-surface-variant); margin:0 0 8px; padding-inline:8px; }
+  ul { list-style:none; margin:0; padding:0; }
+  a { display:block; padding:5px 8px; line-height:1.5; text-decoration:none; border-radius:6px; color:var(--md-sys-color-on-surface-variant); }
+  a:hover { color:var(--md-sys-color-on-surface); background:var(--md-sys-color-surface-container-low); }
+  a[aria-current] { font-weight:500; color:var(--md-sys-color-on-surface); background:var(--md-sys-color-secondary-container); }
+  .index { font-weight:500; }
+  @media(min-width:50rem) { .mobile-footer { display:none; } }
+  @media(max-width:49.999rem) { a { padding-block:11px; } }
+</style>

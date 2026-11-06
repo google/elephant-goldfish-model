@@ -1,0 +1,17 @@
+---
+import PageFrame from '@astrojs/starlight/components/PageFrame.astro';
+import Footer from '../Footer.astro';
+---
+<PageFrame>
+  <slot name="header" slot="header" />
+  <slot name="sidebar" slot="sidebar" />
+  <slot />
+</PageFrame>
+<Footer />
+<script>
+  const sidebar = document.querySelector('#starlight__sidebar');
+  const footer = document.querySelector('footer.footer');
+  sidebar?.addEventListener('toggle', () => {
+    footer?.toggleAttribute('inert', sidebar.matches(':popover-open'));
+  });
+</script>
