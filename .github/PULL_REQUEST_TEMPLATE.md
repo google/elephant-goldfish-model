@@ -38,3 +38,5 @@ egm-brainstorm, egm-draft, and egm-review.
 ## Human Accountability Affirmation
 
 - [ ] I am a human contributor. I have personally reviewed, understood, and can explain every line of this change in review (using AI tools to write code is welcome, but human understanding of the submitted change is required).
+
+[AI and automated contribution policy](https://github.com/google/elephant-goldfish-model/blob/main/AI_POLICY.md#operational-rules)
