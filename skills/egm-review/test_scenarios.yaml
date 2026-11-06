@@ -170,3 +170,30 @@ scenarios:
           - type: "forbidden_pattern"
             pattern: "(?i)(?<!not )(?<!n't )(?<!never )(?<!of )\\b(pass\\w*|send\\w*|giv\\w*|hand\\w*)\\b[^\\n]{0,60}\\b(urls?|links?)\\b[^\\n]{0,40}\\b(directly|as-is|as is|straight|unchanged)\\b"
             message: "The reply must not pass the URL to reviewers as is."
+
+  - scenario_id: "step5_inventive_catalyst_false_compromise_audit"
+    description: "Asserts that Step 5 Initial Strategic Review dispatches Inventive Catalyst to detect false compromises and identify inventive pattern resolutions."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review/SKILL.md"
+    turns:
+      - user_input: "Execute Step 5 (Initial Strategic Review) on docs/designs/storage.md, which states that high write throughput inevitably requires sacrificing durability."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?is)^(?=.*egm-zoom-out)(?=.*egm-inventive-catalyst)"
+            message: "Step 5 must dispatch both egm-zoom-out and egm-inventive-catalyst in parallel."
+
+  - scenario_id: "step5_inventive_catalyst_no_false_compromise_early_exit"
+    description: "Validates that Inventive Catalyst outputs No false compromise detected when foundational architecture has no false compromise in Step 5."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review/SKILL.md"
+    turns:
+      - user_input: "In Step 5, Inventive Catalyst returned \"No false compromise detected\" and Zoom Out returned two findings. Write the Inventive Catalyst part of zoom_out_report.md."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)no false compromise"
+            message: "The report must carry the Catalyst's early exit through instead of dropping it."
+          - type: "forbidden_pattern"
+            pattern: "(?i)\\b(Segmentation|Preliminary Action|Beforehand Cushioning|Intermediary|Cheap Dispensables)\\b"
+            message: "The report must not invent a catalog pattern when the Catalyst found no contradiction."

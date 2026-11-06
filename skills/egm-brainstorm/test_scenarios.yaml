@@ -132,3 +132,30 @@ scenarios:
           - type: "forbidden_pattern"
             pattern: "Rejected by maintainer"
             message: "Brainstorming must not attribute contributor rejections to maintainer."
+
+  - scenario_id: "inventive_catalyst_analysis_synthesis"
+    description: "Asserts that the ## Analysis section captures inventive contradictions, catalog pattern recommendations, and secondary trade-offs."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-brainstorm/SKILL.md"
+    turns:
+      - user_input: "We completed the 7-lens Goldfish brainstorm on high-throughput durable event streaming. Inventive Catalyst reported a contradiction between write latency and persistent disk durability, suggesting Preliminary Action (cache warming and pre-allocated buffers) with secondary trade-offs in idle memory consumption. Format the ## Analysis section of concepts_brief.md."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?is)^(?=.*\\bcontradiction)(?=.*Preliminary Action)(?=.*trade-?offs?)"
+            message: "Analysis must capture the inventive contradiction, pattern recommendation, and secondary trade-offs."
+
+  - scenario_id: "inventive_catalyst_no_false_compromise_early_exit"
+    description: "Validates the No false compromise detected early-exit guardrail when the architecture is already optimal."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-brainstorm/SKILL.md"
+    turns:
+      - user_input: "Inventive Catalyst returned \"No false compromise detected\" for the event streaming concept. Format the ## Analysis section of concepts_brief.md."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)no false compromise"
+            message: "The brief must carry the Catalyst's early exit through instead of dropping it."
+          - type: "forbidden_pattern"
+            pattern: "(?i)\\b(Segmentation|Preliminary Action|Beforehand Cushioning|Intermediary|Cheap Dispensables)\\b"
+            message: "The brief must not invent a catalog pattern when the Catalyst found no contradiction."
