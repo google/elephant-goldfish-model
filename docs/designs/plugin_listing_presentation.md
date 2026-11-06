@@ -245,6 +245,9 @@ Issue #122 remains the publication scope reference. This design does not complet
 
 ## Required Tests
 
+- Before merging skill-description changes, complete the Claude distribution cutover in the [release-branch design](claude_release_branch_distribution.md). Keep the generated directory until the publisher and marketplace path are validated and the listing owner confirms the branch switch.
+- For each supported host that discovers skills from descriptions, compare the current and proposed packages using identical task prompts in fresh sessions with one package installed at a time. Cover each changed skill with a matching prompt that omits its name and include adjacent requests that should select no EGM skill.
+- Record the host and model versions, package revision, and observed skill load or absence for each case. Require the intended skill to load without new misses or false triggers. Record unsupported or untested hosts separately. Explicit starter-prompt invocations count as workflow checks.
 - Run the complete repository unit suite.
 - Build OpenAI and Claude packages with `scripts/pack_plugin.py`.
 - Check manifest schema validity and shared metadata equality.
