@@ -184,7 +184,8 @@ graph TD
         2.  Module entry points (e.g., `main.*`, `index.*`, `lib.*`, `mod.*`,
             `__init__.py`, or files matching the directory name), then
             production source files alphabetically, read in full.
-        3.  Templates and configuration files, up to 200 lines each.
+        3.  Templates and configuration files, up to 200 lines each (800 in
+            config-only directories).
         4.  Test files are completely ignored during context loading.
     *   **Output Schema**:
 
@@ -549,7 +550,9 @@ not the execution root).
     *   **Optional Drift Review**: The Root Orchestrator calls `ask_question` to
         offer running the `egm-drift-report` skill on the generated updates to
         verify consistency with the codebase.
-    *   Terminates successfully.
+    *   **Incomplete Report**: Prints each incomplete directory with its
+        uncovered `path:start-end` ranges, the reason, and the rerun command
+        from the original `path`, then stops.
 
 ### 2.6 Processing Tools
 
