@@ -73,8 +73,9 @@ context:
 *   **Link Normalization**: Constructs clean markdown links for all referenced
     lines: `[path:Lstart-end](path#Lstart-Lend)`.
 *   **Artifact Emission**: Writes the consolidated report to
-    `goldfish_review_report.md`. `egm-review` writes the per-stage reports
-    such as `zoom_out_report.md` and `comprehension_report.md`.
+    the report file the caller names, `goldfish_review_report.md` if none.
+    `egm-review` writes `comprehension_report.md` itself, since the
+    Comprehension Test does not use the synthesizer.
 
 --------------------------------------------------------------------------------
 
@@ -98,6 +99,8 @@ context:
     *   `Reviewers`: Array of reviewer persona shortnames.
     *   `Standards`: Key-value mapping of reviewers to standard markdown files.
     *   `GoldfishContext`: Supplementary reading list for reviewer baseline.
+    *   Report filename: Optional caller-specified output path; defaults to
+        `goldfish_review_report.md` in REVIEW mode.
 2.  **Output Contract**:
     *   The synthesizer must never output the full report text in chat or via
         `send_message`.
