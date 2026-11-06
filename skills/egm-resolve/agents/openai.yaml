@@ -3,4 +3,5 @@ interface:
   short_description: "Resolve review findings in a design"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
+  default_prompt: "Use $egm-resolve to work through these review findings and agree on changes."
   brand_color: "#1B6EF3"

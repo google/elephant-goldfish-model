@@ -3,4 +3,5 @@ interface:
   short_description: "Create directory guides for a codebase"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
+  default_prompt: "Use $egm-bootstrap to document this codebase so a new teammate can understand it."
   brand_color: "#1B6EF3"

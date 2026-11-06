@@ -57,6 +57,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
       metadata = yaml.safe_load(bundle.read((prefix / "agents/openai.yaml").as_posix()))
       interface = metadata["interface"]
       assert interface["display_name"]
+      assert f"${skill.parent.name}" in interface["default_prompt"]
       assert 25 <= len(interface["short_description"]) <= 64
       for field in ("icon_small", "icon_large"):
         icon = Path(interface[field])
@@ -112,6 +113,7 @@ def test_skill_icon_and_host_palette_match(skill: str, base: str, facet: str) ->
   root = ROOT / "skills" / f"egm-{skill.replace('_', '-')}"
   metadata = yaml.safe_load((root / "agents/openai.yaml").read_text())["interface"]
   assert metadata["brand_color"].lower() == base
+  assert metadata["display_name"] == "EGM " + skill.replace("_", " ").capitalize()
   for field in ("icon_small", "icon_large"):
     svg = ElementTree.parse(root / metadata[field]).getroot()
     assert svg.get("viewBox") == "0 0 24 24"
