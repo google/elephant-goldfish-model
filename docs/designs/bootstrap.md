@@ -263,6 +263,18 @@ following schema:
         },
         "required": ["path", "summary"]
       }
+    },
+    "incomplete": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string" },
+          "ranges": { "type": "array", "items": { "type": "string" } },
+          "reason": { "type": "string" }
+        },
+        "required": ["path", "ranges", "reason"]
+      }
     }
   },
   "required": ["subtree_index"]

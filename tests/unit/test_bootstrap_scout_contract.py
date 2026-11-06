@@ -167,3 +167,14 @@ def test_design_doc_matches_skill_fault_tolerance() -> None:
     assert current in text, f"design doc does not describe {current!r}"
   # The scout output schema in the doc must require files_read, as the skill does.
   assert '"required": ["interface", "invariants", "side_effects", "files_read"]' in text
+
+
+def test_design_doc_worker_schema_matches_reference() -> None:
+  """The JSON block under 'Worker Return Interface Schema' must equal the file."""
+  doc = DESIGN.read_text(encoding="utf-8")
+  start = doc.index("Worker Return Interface Schema")
+  block = re.search(r"```json\n(.*?)\n```", doc[start:], re.S).group(1)
+  assert json.loads(block) == json.loads(SCHEMA.read_text(encoding="utf-8")), (
+      "docs/designs/bootstrap.md worker schema drifted from "
+      "references/worker-return.schema.json"
+  )
