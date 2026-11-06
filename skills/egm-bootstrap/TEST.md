@@ -15,3 +15,7 @@ Frontmatter and link checks run in `pytest tests/unit` (see [TESTING.md](../../T
    - Run in an environment without task delegation tools.
    - Verify that the agent reads source files and performs the scout steps inline, then generates and checks the contracts.
    - Repeat with more than 15 directories and verify that the user confirmation gate still applies.
+4. **Unsupported Source Check**:
+   - Target a tree containing source files, inside and outside a test directory, whose extension is not in the *Source Code Files* list.
+   - Verify that, before discovery starts, the agent runs the shell command in `references/unsupported-source-check.md`, lists that extension with a file count and an example path, warns that EGM has not been tuned for it, and asks whether to proceed. Verify that choosing abort stops execution.
+   - Target a tree whose only other files are documentation, data, and manifests (`.md`, `.json`, `.yaml`, `.csv`, `.toml`). Verify that no such question appears.
