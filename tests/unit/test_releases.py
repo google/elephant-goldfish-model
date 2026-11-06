@@ -35,7 +35,8 @@ HOST_MANIFESTS = (".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
 
 @pytest.mark.parametrize("drifted", HOST_MANIFESTS)
 def test_reject_host_version_drift(release: dict, tmp_path: Path, drifted: str) -> None:
-    for name in ("plugin.json", *HOST_MANIFESTS):
+    assert release["HOST_MANIFESTS"] == ("plugin.json", *HOST_MANIFESTS)
+    for name in release["HOST_MANIFESTS"]:
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"version": "0.1.0"}))
