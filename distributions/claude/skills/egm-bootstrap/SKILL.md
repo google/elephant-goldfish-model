@@ -130,9 +130,10 @@ If your harness has no subagent tool, run the scout steps inline.
     *   *Source Code Files*: Files matching recognized source code, schema, and
         contract extensions:
         - Systems & Compiled: `.c`, `.cc`, `.cpp`, `.cxx`, `.h`, `.hh`, `.hpp`,
-          `.rs`, `.go`, `.zig`, `.lean`
-        - Managed & Enterprise: `.java`, `.kt`, `.scala`, `.cs`, `.fs`
-        - Scripting & Dynamic: `.py`, `.rb`, `.php`, `.lua`, `.sh`, `.bash`
+          `.rs`, `.go`, `.zig`, `.lean`, `.f90`, `.f95`, `.hs`
+        - Managed & Enterprise: `.java`, `.kt`, `.scala`, `.cs`, `.fs`, `.vb`
+        - Scripting & Dynamic: `.py`, `.rb`, `.php`, `.lua`, `.sh`, `.bash`,
+          `.ps1`, `.r`, `.R`, `.ex`, `.exs`
         - Web & Mobile: `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.swift`,
           `.m`, `.dart`
         - Data & Schemas / IDLs: `.sql`, `.proto`, `.graphql`, `.gql`,
