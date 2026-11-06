@@ -1,0 +1,13 @@
+---
+import MobileTableOfContents from '@astrojs/starlight/components/MobileTableOfContents.astro';
+import TableOfContents from '@astrojs/starlight/components/TableOfContents.astro';
+import PageActions from './PageActions.astro';
+const { toc } = Astro.locals.starlightRoute;
+---
+{toc && <>
+  <div class="lg:sl-hidden"><MobileTableOfContents /></div>
+  <div class="contents-rail sl-hidden lg:sl-block">
+    <TableOfContents />
+    <PageActions placement="rail" />
+  </div>
+</>}

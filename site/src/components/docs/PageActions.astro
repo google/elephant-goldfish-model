@@ -1,0 +1,50 @@
+---
+import Button from '../gb/Button.astro';
+import Symbol from '../gb/Symbol.astro';
+interface Props { placement: 'title' | 'rail' | 'standalone'; }
+const { placement } = Astro.props;
+const isDocument = Astro.locals.starlightRoute.entry.id !== '404';
+const markdown = `${Astro.url.pathname.replace(/\/$/, '')}.md`;
+---
+{isDocument && <div class:list={['page-tools', placement]}>
+  <Button class="copy-page" size="xs" label="Copy page as Markdown" data-copy-page={markdown}><Symbol name="content_copy" /><span data-copy-label>Copy page</span></Button>
+  <p class="copy-status" role="status" aria-live="polite"></p>
+  <a class="copy-fallback" href={markdown} hidden>View Markdown</a>
+</div>}
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-page]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const tools = button.closest('.page-tools')!;
+      const status = tools.querySelector<HTMLElement>('.copy-status')!;
+      const fallback = tools.querySelector<HTMLAnchorElement>('.copy-fallback')!;
+      button.disabled = true;
+      status.textContent = '';
+      fallback.hidden = true;
+      try {
+        const response = await fetch(button.dataset.copyPage!);
+        if (!response.ok) throw new Error('Markdown unavailable');
+        await navigator.clipboard.writeText(await response.text());
+        button.querySelector('[data-copy-label]')!.textContent = 'Copied';
+        status.textContent = 'Page copied as Markdown.';
+      } catch {
+        status.textContent = 'Could not copy. Open the Markdown version instead.';
+        fallback.hidden = false;
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+</script>
+<style>
+  .page-tools { width:fit-content; max-width:100%; }
+  .page-tools :global(.copy-page), .page-tools :global(.copy-page span) { font-size:.8125rem; font-weight:400; }
+  .page-tools :global(.copy-page svg) { width:14px; height:14px; }
+  .page-tools :global(.copy-page) { --label-text:400 .8125rem / 1.5 var(--font-display); --icon-size:16px; --label-text-color:var(--md-sys-color-on-surface-variant); --icon-color:var(--md-sys-color-on-surface-variant); --leading-space:8px; --trailing-space:8px; }
+  .page-tools :global(.copy-page:hover) { --label-text-color:var(--md-sys-color-on-surface); --icon-color:var(--md-sys-color-on-surface); }
+  .copy-status { margin:0; font-size:.8125rem; line-height:1.5; color:var(--md-sys-color-on-surface-variant); }
+  .copy-status:not(:empty) { margin-top:8px; }
+  .copy-fallback { font-size:.875rem; }
+  .title, .standalone { margin-top:20px; }
+  .rail { display:none; }
+  @media(min-width:72rem) { .title { display:none; } .rail { display:block; margin-top:16px; } }
+</style>
