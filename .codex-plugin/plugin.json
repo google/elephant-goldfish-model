@@ -25,7 +25,7 @@
     ],
     "websiteURL": "https://egm.dev",
     "supportURL": "https://github.com/google/elephant-goldfish-model/issues",
-    "privacyPolicyURL": "https://github.com/google/elephant-goldfish-model/blob/main/docs/privacy.md",
+    "privacyPolicyURL": "https://policies.google.com/privacy",
     "termsOfServiceURL": "https://github.com/google/elephant-goldfish-model/blob/main/LICENSE",
     "composerIcon": "./assets/icon.svg",
     "logo": "./assets/icon.svg"
