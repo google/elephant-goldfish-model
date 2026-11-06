@@ -35,11 +35,10 @@ def test_manifest_selects_native_adapters(installed: Path) -> None:
         (installed / ".cursor-plugin/plugin.json").read_text(encoding="utf-8")
     )
     canonical = json.loads((ROOT / "plugin.json").read_text(encoding="utf-8"))
-    for field in ("name", "version", "homepage",
+    for field in ("name", "version", "description", "homepage",
                   "repository", "license"):
         assert manifest[field] == canonical[field]
     assert manifest["author"] == {"name": "Google"}
-    assert manifest["description"] == "Draft specs, review designs, and check implementation drift."
     assert manifest["skills"] == "./skills/"
     assert manifest["agents"] == "./.cursor-plugin/agents/"
     assert manifest["rules"] == "./.cursor-plugin/rules/"
