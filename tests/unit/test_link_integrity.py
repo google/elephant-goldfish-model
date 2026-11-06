@@ -18,8 +18,8 @@ import pathlib
 import re
 from typing import Set
 
-# Vendored trees whose markdown is not ours to validate.
-IGNORED_DIRS = ("node_modules",)
+# Vendored and generated trees. The test below checks site source routes.
+IGNORED_DIRS = ("node_modules", "dist")
 
 IGNORED_SCHEMES = (
     "http://",
@@ -105,6 +105,17 @@ def test_relative_markdown_links_resolve_on_disk(
       # Strip fragment if target references another file with anchor
       file_target = target.split("#")[0]
       if not file_target:
+        continue
+
+      if file_target.startswith("/") and md_file.parent == repo_root / "docs/site":
+        route = file_target.removeprefix("/")
+        if not route:
+          source = repo_root / "site/src/pages/index.astro"
+        elif route.startswith("skills/"):
+          source = repo_root / route / "SKILL.md"
+        else:
+          source = repo_root / "docs/site" / f"{route}.md"
+        assert source.is_file(), f"Unknown site route '{target}' in {md_file}"
         continue
 
       resolved_path = (md_file.parent / file_target).resolve()
