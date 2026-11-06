@@ -3,7 +3,8 @@
 - **Author:** @aaravkhanal
 - **Status:** Proposal. Maintainer scope approval and design review pending.
 - **Date:** 2026-11-05
-- **Tracking:** [Antigravity strict validation #272](https://github.com/google/elephant-goldfish-model/issues/272)
+- **Tracking:** [Antigravity strict validation #272](
+  https://github.com/google/elephant-goldfish-model/issues/272)
 
 ## Problem and goals
 
@@ -14,13 +15,13 @@ interprets a plugin-root `AGENTS.md` as misplaced rule content; moving it to
 `rules/AGENTS.md` would load EGM contributor instructions in users' workspaces.
 The root manifest also lacks the top-level `logo` field Antigravity recommends.
 
-The repository already has an allowlisted runtime package. A maintainer
-reported that an Antigravity 1.4.12 strict validation of a fresh
-`pack_plugin.py --target openai` output passed except for the top-level logo
-hint, and that adding a top-level logo to a copy of `plugin.json` cleared that
-hint ([review evidence](https://github.com/google/elephant-goldfish-model/pull/310#discussion_r4476758268)). The root checkout still fails strict validation on
-`AGENTS.md`, as reported in #272. The package was not installed during that
-probe.
+The repository already has an allowlisted runtime package. On Antigravity CLI
+1.4.12, installing a fresh `pack_plugin.py --target openai` output in a scratch
+home registered 7 skills and 9 agents. The installed tree matched the generated
+tree byte for byte. Strict validation reported only the logo hint on both
+trees; adding a top-level `logo` to a copy of `plugin.json` cleared that hint.
+The repository root still fails strict validation on `AGENTS.md`, as reported
+in #272.
 
 Use the existing allowlisted OpenAI runtime output as the Antigravity install
 source, add the shared top-level logo metadata, and update all documented
@@ -47,6 +48,7 @@ Goals:
 - Update every Antigravity install guide: the CLI command in `README.md` and
   `docs/harnesses.md`; the Antigravity App and IDE manual copy steps in
   `docs/harnesses.md`; and the generated copy at
+  `distributions/claude/README.md` and
   `distributions/claude/docs/harnesses.md`.
 - Build the OpenAI runtime, validate that generated directory with
   `agy plugin validate --strict`, and install that directory rather than the
@@ -80,10 +82,12 @@ inventory for Antigravity.
 
 Add the top-level `logo` field to root `plugin.json` with a relative reference
 to `assets/icon.svg`. The icon is already included by the shared allowlist.
-Keep host-specific `extensions.com.openai.interface` metadata intact. Test the
-root manifest reference, generated package reference, and current host
-manifest checks. Regenerate `distributions/claude` from the packager after
-shared manifest and guide changes; do not edit generated files independently.
+Keep host-specific `extensions.com.openai.interface` metadata intact. Extend
+`scripts/pack_plugin.py` to validate the top-level logo reference for both
+package targets, so missing or unbundled logo paths fail the build. Test the
+root and packaged manifest references alongside the existing host manifest
+checks. Regenerate `distributions/claude` from the packager after shared
+manifest and guide changes; do not edit generated files independently.
 
 ## Installation and validation
 
@@ -99,6 +103,12 @@ checkout. State that building requires a local checkout and Python. Do not
 imply that a generated directory is available directly from the GitHub
 repository until a separate release path exists.
 
+This changes the README's one-command GitHub install into a local clone, build,
+validation, and install sequence. A later generated branch or release could
+restore a one-command URL install. Keep that publication path out of this
+proposal; the existing [Claude release branch design](claude_release_branch_distribution.md)
+is a reference for a separate design.
+
 The generated directory and installed plugin must contain the same runtime
 files and metadata. Inspect the installed plugin identity and discovered
 skills after installation. Root validation may continue to report contributor
@@ -112,7 +122,8 @@ files by design; do not claim it passes strict validation.
 | Remove or rename the root contributor instructions | Reject unless maintainers explicitly decide how contributors will receive the same guidance. |
 | Add a third Antigravity package target | Not needed if the existing OpenAI runtime output validates and installs correctly after the shared logo field is added. Reconsider only if native install testing finds a host-specific package requirement. |
 | Add only a top-level logo and keep installing the full checkout | Insufficient. It clears the metadata hint but leaves strict validation failing on root `AGENTS.md`. |
-| Reuse the existing OpenAI runtime output with shared logo metadata | Preferred. It uses the tested allowlist, avoids duplicate packaging logic, and keeps contributor files out of the installed plugin. |
+| Reuse the existing OpenAI runtime output with shared logo metadata | Preferred. It uses the tested allowlist, avoids duplicate packaging logic, and keeps contributor files out of the installed plugin. Until a release path exists, CLI users clone and build locally instead of installing from one URL. |
+| Publish the generated runtime to a branch or release and keep `agy plugin install <URL>` | Defer. It preserves the one-command install but needs a publication path like the [Claude release branch design](claude_release_branch_distribution.md). |
 
 ## Implementation and acceptance gates
 
@@ -124,15 +135,16 @@ may:
 1. Add the top-level logo to the canonical manifest and verify the field and
    asset across all existing package targets.
 2. Update the README, `docs/harnesses.md`, and generated
-   `distributions/claude/docs/harnesses.md` instructions for CLI, App, and IDE
-   installation paths.
+   `distributions/claude/README.md` and
+   `distributions/claude/docs/harnesses.md` for CLI, App, and IDE installation.
 3. Regenerate the Claude distribution and test freshness, links, package
-   contents, metadata references, and existing host manifests.
-4. Run `agy plugin validate --strict` on the generated OpenAI runtime and
-   install it on a recorded supported CLI version. The maintainer's 1.4.12
-   validation is useful evidence, but install behavior remains unverified.
-   If native tests cannot run, mark them not run and do not claim #272 is fully
-   resolved.
+   contents, metadata references, logo-path rejection, and existing host
+   manifests.
+4. Repeat `agy plugin validate --strict` and installation on the generated
+   OpenAI runtime using a recorded CLI version. Both passed on 1.4.12 for the
+   current runtime files; repeat after implementation changes and confirm the
+   logo hint is gone. If native tests cannot run, mark them not run and do not
+   claim #272 is fully resolved.
 5. Run the required Antigravity brainstorm, draft, and review workflows before
    changing support status.
 
