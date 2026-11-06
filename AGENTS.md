@@ -28,3 +28,17 @@ You are assisting development in the EGM repository.
 * **Clear Change Summary**: In every pull request, explicitly list all key changes
   made and why. For feature proposals, define clear in-scope Goals and out-of-scope
   Non-Goals in the checked-in EGM design document (`docs/designs/<name>.md`).
+
+## Issue Intake
+
+* **Issue Templates**: Search for duplicates and read the matching form in
+  `.github/ISSUE_TEMPLATE/`. When filing through the CLI or API, use the same
+  headings and fill each required field. Sanitize any supporting evidence.
+* **Verify Native Type**: Each form sets a native issue type (`Bug`, `Feature`,
+  `Task`). After filing through the CLI or API, confirm the type with
+  `gh issue view <n> --json issueType`. Set it when authorized and report any
+  permission failure.
+* **Request Specific Gaps**: When an issue lacks a required field, comment naming
+  the exact missing field and what would satisfy it. Do not restate the whole form.
+* **No Auto Closure**: Never close, lock, or mark an issue as not planned because
+  fields are missing or it looks like a duplicate. Maintainers decide closure.

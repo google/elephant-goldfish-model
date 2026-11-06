@@ -1,0 +1,33 @@
+# Copyright 2026 Google LLC. SPDX-License-Identifier: Apache-2.0
+name: "Bug report"
+description: "Report incorrect behavior with steps to reproduce it"
+type: Bug
+body:
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe what should happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Describe what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include a minimal example and the affected skill or command.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Environment and evidence
+      description: Include the host, version, EGM commit or version, and relevant logs. Remove secrets and private project data.
+    validations:
+      required: false

@@ -47,7 +47,7 @@ replace fixing the underlying barrier.
 
 ## Report an accessibility barrier
 
-Use the [bug report template](https://github.com/google/elephant-goldfish-model/issues/new?template=bug_report.md)
+Use the [bug report template](https://github.com/google/elephant-goldfish-model/issues/new?template=bug_report.yml)
 and identify the report as an accessibility issue. Include what you can:
 
 - The page, document, skill, or task affected.

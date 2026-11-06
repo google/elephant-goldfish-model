@@ -1,0 +1,30 @@
+# Copyright 2026 Google LLC. SPDX-License-Identifier: Apache-2.0
+name: "Feature / Architectural Inquiry"
+description: "Reach out to maintainers to align on a new feature, skill, or large change (> 100 lines) before opening a Design Doc PR"
+type: Feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Once maintainers apply `design-ready`, open a Stage-1 Design Doc PR (`Refs #<issue>`) adding `docs/designs/<name>.md`. When maintainers merge that PR, they apply `pr-ready` for your Stage-2 Implementation PR (`Closes #<issue>`).
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement and motivation
+      description: 1-2 plain-English paragraphs explaining the user need, problem, or motivation for reaching out.
+    validations:
+      required: true
+  - type: textarea
+    id: overview
+    attributes:
+      label: Proposed overview
+      description: High-level summary of the proposed change.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Goals and non-goals
+      description: In-scope goals (what this will do) and out-of-scope non-goals (what this intentionally avoids), for example generated via `/egm-brainstorm`.
+    validations:
+      required: true
