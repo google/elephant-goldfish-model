@@ -29,3 +29,5 @@ session. Both packages listed all seven EGM skills, and neither returned
 an EGM Skill tool invocation for any of the nine prompts. This matches
 the explicit invocation policy in both versions. The probe did not
 exercise explicit invocation or full workflows.
+
+The listing-only revision preserves all skill files byte-for-byte. The results above apply to the withdrawn description changes.

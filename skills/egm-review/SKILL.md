@@ -2,7 +2,11 @@
 name: egm-review
 license: Apache-2.0
 disable-model-invocation: true
-description: Review a design with fresh agents across five stages.
+description: >-
+  Orchestrates the EGM Goldfish Review Protocol. Used as part of the EGM
+  process to perform design document reviews. Executes five review phases:
+  Initial Zoom Out Review, Comprehension Review, Design Critique, Intermediate
+  Zoom Out Review, and Implementation Readiness.
 ---
 
 # Review, Validation & Automated Remediation
