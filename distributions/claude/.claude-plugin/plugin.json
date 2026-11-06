@@ -21,6 +21,7 @@
     "./.claude-plugin/agents/comprehension.md",
     "./.claude-plugin/agents/design_critic.md",
     "./.claude-plugin/agents/implementation_readiness.md",
+    "./.claude-plugin/agents/inventive_catalyst.md",
     "./.claude-plugin/agents/structural.md",
     "./.claude-plugin/agents/style.md",
     "./.claude-plugin/agents/synthesizer.md",

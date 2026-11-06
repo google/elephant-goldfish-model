@@ -61,7 +61,7 @@ The open-source EGM framework is organized into four decoupled subsystems:
 
 ### 1. Skills Layer (`skills/`)
 Modular agent capabilities executable via slash commands or direct invocation:
-*   `egm-brainstorm`: 6-lens shootdown swarm for early concept exploration.
+*   `egm-brainstorm`: 7-lens shootdown swarm for early concept exploration.
 *   `egm-draft`: Section-by-section specification compiler.
 *   `egm-review`: Orchestrator for the multi-stage review pipeline.
 *   `egm-review-loop`: Concurrent subagent review dispatcher.
@@ -73,7 +73,7 @@ Modular agent capabilities executable via slash commands or direct invocation:
 ### 2. Personas Layer (`agents/`)
 Stateless system prompt instructions for isolated Goldfish reviewer subagents
 (Comprehension, Design Critic, Implementation Readiness, Codebase Auditor,
-Structural Validator, Style Editor, and Synthesizer).
+Structural Validator, Style Editor, Inventive Catalyst, and Synthesizer).
 
 ### 3. Document Standards (`resources/document_standards/`)
 Goldfish reviewers load the versioned rubrics listed in the
@@ -116,7 +116,7 @@ sequenceDiagram
 
 *   **Command**: `/egm-brainstorm`
 *   **Mechanics**: The Elephant interviews the engineer to anchor a core hypothesis,
-    then spawns a 6-lens Goldfish swarm to shoot down flawed assumptions.
+    then spawns a 7-lens Goldfish swarm to shoot down flawed assumptions.
 *   **Output**: A structured brief written to `concepts_brief.md`.
 
 ### Phase 2: Spec Authoring & Semantic Boundaries
@@ -158,7 +158,7 @@ sequenceDiagram
 *   **Execution**: Coding agents implement code strictly adhering to the
     approved design document. (No Skill.md is required here because the design 
     document is complete and detailed.)
-*   **Phase Write Boundaries**: Phases 1–4 (`/egm-brainstorm`, `/egm-draft`,
+*   **Phase Write Boundaries**: Phases 1-4 (`/egm-brainstorm`, `/egm-draft`,
     `/egm-review`, and `/egm-resolve`) should write only specification and
     review artifacts: `concepts_brief.md`, `design_draft.md`, the review
     reports, the design doc, and `SITEMAP.md` if it exists. They should not
