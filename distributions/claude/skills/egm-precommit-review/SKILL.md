@@ -45,8 +45,10 @@ artifact location.
 
 The parent does Git inspection; the Goldfish does not need a shell. Read
 [the evidence protocol](references/evidence.md) and follow it every round.
-Save `round-N/scope.md`, `branch.patch`, `staged.patch`, `unstaged.patch`,
-`files/`, and `checks.md`. Do not pass a summary instead of actual diffs.
+Create `round-N/scope.md` before saving any patches, source copies or raw
+captures. Complete it after capture and before checks or reviewer dispatch.
+Save `branch.patch`, `staged.patch`, `unstaged.patch`, `files/`, and
+`checks.md`. Do not pass a summary instead of actual diffs.
 
 Read manifests, CI and applicable project instructions. Detect real lint,
 typecheck, test, build or generation commands and record their source. Run

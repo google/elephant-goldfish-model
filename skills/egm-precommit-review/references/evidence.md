@@ -9,6 +9,10 @@ complete evidence, report incomplete instead of improvising a clean verdict.
    `git rev-parse --verify --end-of-options <ref>^{commit}`. Use
    `git merge-base --all <base-oid> <head-oid>` and require exactly one result.
    Pin that merge base for the run. With no BaseRef, branch.patch is empty.
+   Create `round-N/scope.md` with a capture-in-progress note before saving
+   any patch, file copy or raw Git capture for the round. This file marks
+   the directory as generated even if capture is interrupted. If the note
+   cannot be saved, report incomplete and stop before writing evidence.
 2. Capture `git status --porcelain=v1 -z --untracked-files=all`,
    `git ls-files --stage -z`, and `git ls-files --others --exclude-standard -z`.
    Parse NUL records, including both paths of a rename, without whitespace
@@ -17,9 +21,10 @@ complete evidence, report incomplete instead of improvising a clean verdict.
    file outside the following artifact exclusions. Inspect only direct child
    directories named `egm-precommit-*` under the configured artifact directory.
    Exclude untracked descendants of this run and prior runs identified by their
-   generated layout: a `round-N/scope.md` or both `precommit_report.md` and
-   `ledger.md`. Check path components and file types without following symlinks
-   or reading prior report contents. Apply exclusions at directory boundaries.
+   generated layout: a `round-N/scope.md` (even if capture is unfinished) or
+   both `precommit_report.md` and `ledger.md`. Check path components and file
+   types without following symlinks or reading prior report contents. Apply
+   exclusions at directory boundaries.
    Keep all tracked changes and every other untracked file, including directories
    that share the prefix but lack the generated layout. Apply no extension filter.
 3. Save three distinct diffs with `--binary --full-index --no-ext-diff
@@ -45,8 +50,10 @@ complete evidence, report incomplete instead of improvising a clean verdict.
    when text review succeeds. Do not copy secrets identified during collection
    into artifacts or prompts; record the omission as incomplete and tell the
    user. Ignored paths stay excluded; do not recursively scan .git or logs.
-6. scope.md records all in-scope inventory records as readable text, with
-   paths escaped losslessly (for example as JSON strings). Include HEAD,
+6. After saving the round evidence, replace the note in `scope.md` with the
+   complete inventory before running checks or dispatching a reviewer. Record
+   it as readable text with paths escaped losslessly (for example as JSON
+   strings). Include HEAD,
    pinned base, change-layer mapping, excluded run directories and coverage
    gaps. Keep any saved raw NUL-delimited captures in the run directory,
    outside `round-N/`. Do not give them to the reviewer. The reviewer uses
@@ -65,9 +72,9 @@ complete evidence, report incomplete instead of improvising a clean verdict.
    unverified and the review incomplete. Do not claim atomicity: a file can
    change and change back between observations.
 
-Validation evidence uses the same state identity. After saving scope.md, hash
-its exact bytes with SHA-256. That file records the HEAD, base, inventory and
-the patch and snapshot hashes. Record this digest and the tested layer in
+Validation evidence uses the same state identity. After completing scope.md,
+hash its exact bytes with SHA-256. That file records the HEAD, base, inventory,
+and the patch and snapshot hashes. Record this digest and the tested layer in
 checks.md alongside each command, source, exit status and result. Keep scope.md
 fixed for that round. Compare the captured repository evidence itself when
 checking for drift. If it changes after checks, rerun affected checks against

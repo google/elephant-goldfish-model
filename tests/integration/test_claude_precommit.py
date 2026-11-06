@@ -40,11 +40,12 @@ def test_native_precommit(tmp_path: Path, repo_root: Path, mode: str) -> None:
     reports = workspace / "reports"
     if mode == "review":
         prior_round = reports / "egm-precommit-previous" / "round-1"
-        prior_round.mkdir(parents=True)
-        (prior_round / "scope.md").write_text("# Previous review scope\n")
-        prior_marker = "prior-review-only-" + uuid.uuid4().hex
-        prior_review = prior_round / "review.md"
-        prior_review.write_text(prior_marker + "\n")
+        (prior_round / "files").mkdir(parents=True)
+        (prior_round / "scope.md").write_text("Capture in progress.\n")
+        prior_marker = "interrupted-copy-" + uuid.uuid4().hex
+        prior_copy = prior_round / "files" / "01_access.py"
+        prior_copy.write_text(f"raise RuntimeError({prior_marker!r})\n")
+        original_copy = prior_copy.read_bytes()
         source_dir = reports / "egm-precommit-examples"
         source_dir.mkdir()
         source_marker = "UNTRACKED_EXAMPLE = 42"
@@ -139,7 +140,8 @@ Complete the review and save the skill's reports. Use default BaseRef.
         assert "owner != user" in evidence and "return int(dollars)" in evidence
         assert "egm-precommit-previous" in (rounds[0] / "scope.md").read_text()
         assert source_marker in evidence, "Untracked source with a similar name was omitted"
-        assert prior_review.read_text() == prior_marker + "\n"
+        assert prior_copy.read_bytes() == original_copy
+        assert (prior_round / "scope.md").read_text() == "Capture in progress.\n"
         assert "index" in answer.lower() or "staged" in answer.lower()
         assert "no findings" not in answer.lower()
         assert "not run" in final and "incomplete" in final
