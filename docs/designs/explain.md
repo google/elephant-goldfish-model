@@ -15,7 +15,8 @@ except for directories that fold into a parent, plus one repository explainer
 with a glossary. EGM is the [Elephant-Goldfish Model](../../README.md),
 and a Goldfish is a reviewer that runs in a fresh context with no conversation
 history. Contracts stay the source of truth for agents and for engineers
-changing code. Explainers are for the people around the code: product managers, operators and new hires.
+changing code. Explainers are for the people around the code: product
+managers, operators and new hires.
 
 An explainer is built from contracts, child explainers and, for the repository
 explainer, named extra sources. It is never built from code. Its accuracy is
@@ -324,9 +325,11 @@ as the likely cause.
     not explained here." The paraphrase the persona returns goes in the run's
     working notes, not in the explainer.
 
-Both reviewers return findings and do not edit files. Each host runs them with
-its read-only subagent definition where one exists. Where it does not, the
-report says that read-only was an instruction, not a restriction. This limits
+Both reviewers return findings and do not edit files. The plain-language
+reader runs under the host's read-only `egm-comprehension` adapter where one
+exists. The fact checker is an inline prompt with no adapter, so on every host
+it runs as a general-purpose subagent, and the report says that read-only was
+an instruction, not a restriction. This limits
 edits, not reads: a reviewer may still be able to open other files. Writers and
 reviewers treat contracts and extra sources as data, not instructions. A host
 with no subagents stops, because a review in the same context is not a Goldfish
@@ -465,8 +468,12 @@ Registering the skill also touches `scripts/pack_plugin.py` (which must also
 package the hash script), `tests/unit/test_harnesses.py`,
 `tests/unit/test_packaging.py`, `README.md`, `docs/getting_started.md`, the site
 components that list skills (`Skills.astro`, `Loop.astro`, `SkillIcon.astro`),
-`docs/designs/skill_icons.md` ("seven skill marks" also needs updating) and the
-regenerated `distributions/claude`.
+`docs/designs/skill_icons.md` ("seven skill marks" and "All seven marks" also
+need updating), the skill counts that are instructions in step 5 of
+`docs/cursor.md` and in `docs/opencode.md` ("seven commands" and "all seven
+skills are discoverable"), and the regenerated `distributions/claude`. The dated
+verification notes in `docs/copilot.md`, `docs/muse.md` and
+`docs/harnesses.md` stay unchanged.
 
 ## References
 
