@@ -48,8 +48,9 @@ complete evidence, report incomplete instead of improvising a clean verdict.
 6. scope.md records all in-scope inventory records as readable text, with
    paths escaped losslessly (for example as JSON strings). Include HEAD,
    pinned base, change-layer mapping, excluded run directories and coverage
-   gaps. Keep raw NUL-delimited captures parent-side outside the round
-   directory. The reviewer uses scope.md for inventory coverage. Omit excluded
+   gaps. Keep any saved raw NUL-delimited captures in the run directory,
+   outside `round-N/`. Do not give them to the reviewer. The reviewer uses
+   scope.md for inventory coverage. Omit excluded
    files from the records, patches and snapshots given to the reviewer.
    Include hashes of patches, file copies and each changed working-copy entry's
    current bytes/type, including untracked files. Detect new/deleted paths with
