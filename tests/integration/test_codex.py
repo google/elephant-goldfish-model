@@ -300,10 +300,10 @@ Repro: create Catalog(); call lookup('north', 'guide', now=0), then
 lookup('south', 'guide', now=1). The reported results are North guide twice.
 Expected: North guide followed by South guide. No network or external services.
 
-Parent-only initial hypothesis: {hypothesis_text}. Label this hypothesis
-{marker} in elephant_hypothesis.md before dispatch, but do not pass the label,
-theory, or hypothesis file to the Goldfish. Record it as a hypothesis to check,
-not a fact. Preserve it even if source inspection suggests another explanation.
+Parent-only initial hypothesis: {hypothesis_text}. Preserve it with label
+{marker} and follow the skill's persistence rules. Keep the theory and label
+out of the observations and the Goldfish task. Preserve the hypothesis even
+if source inspection suggests another explanation.
 Run one actual native fresh-context diagnosis Goldfish using the skill's task.
 Do not simulate its result or use memory. You may run existing local Python
 reproductions with bytecode disabled; do not edit source or create tests.
@@ -356,9 +356,13 @@ commit, modify the plugin, or proceed to fixing the bug.
     )
     independent = preserved.lower()
     assert "diverg" in report, "The misleading parent theory must be compared"
-    assert "tenant" in independent and "slug" in independent
+    assert "tenant" in independent and "cache" in independent
+    assert any(key in independent for key in ('slug', '"guide"', "'guide'"))
     assert "catalog.py:" in independent, "Candidate must cite source lines"
-    assert "falsif" in independent or "disprov" in independent
+    assert any(term in independent for term in (
+        "falsif", "disprov", "rule out", "cannot explain", "refut",
+        "would require another explanation",
+    )), "Candidate must explain what observation would rule it out"
     assert fixture.read_bytes() == original, "Diagnosis changed application source"
     assert sorted(p.relative_to(source).as_posix() for p in source.rglob("*")
                   if p.is_file()) == ["catalog.py"]

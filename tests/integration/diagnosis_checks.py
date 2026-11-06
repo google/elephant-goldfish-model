@@ -83,3 +83,40 @@ def claude_diagnosis_answer(raw: str) -> str:
                 assert not block.get("is_error"), "Rejected diagnosis handback"
     assert isinstance(answer, str) and answer.strip(), "Missing final diagnosis"
     return answer
+
+
+def assert_hypothesis_write_order(
+    parent_trace: str, hypothesis_path: Path, marker: str, child_answer: str,
+) -> None:
+    """Require the native foreground result before any hypothesis write."""
+    dispatch = None
+    returned = False
+    wrote_hypothesis = False
+    for line in parent_trace.split("\n"):
+        if not line.strip():
+            continue
+        event = json.loads(line)
+        content = event.get("message", {}).get("content", [])
+        for block in content if isinstance(content, list) else []:
+            if event.get("type") == "assistant" and block.get("type") == "tool_use":
+                if block.get("name") == "Agent":
+                    dispatch = block["id"]
+                if block.get("name") == "Write":
+                    args = block["input"]
+                    is_hypothesis_file = Path(args["file_path"]).resolve() == hypothesis_path.resolve()
+                    contains_marker = marker in args["content"]
+                    if is_hypothesis_file or contains_marker:
+                        assert returned, "Hypothesis written before child return"
+                    wrote_hypothesis |= is_hypothesis_file and contains_marker
+            if (event.get("type") == "user" and block.get("type") == "tool_result"
+                    and dispatch and block.get("tool_use_id") == dispatch
+                    and not block.get("is_error")):
+                result = block.get("content", "")
+                if isinstance(result, list):
+                    result = "\n".join(part["text"] for part in result
+                                       if part.get("type") == "text")
+                if result.startswith("[Subagent hand-back]"):
+                    # Claude indents every line of the report inside its frame.
+                    result = "\n".join(line.removeprefix("  ") for line in result.split("\n"))
+                returned = child_answer.strip() in result
+    assert wrote_hypothesis, "No native write preserved the original hypothesis"

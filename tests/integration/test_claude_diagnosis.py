@@ -11,7 +11,10 @@ import uuid
 
 import pytest
 
-from .diagnosis_checks import assert_unbiased_input, claude_diagnosis_answer, claude_reads
+from .diagnosis_checks import (
+    assert_hypothesis_write_order, assert_unbiased_input, claude_diagnosis_answer,
+    claude_reads,
+)
 from .test_claude import trace_directory
 
 pytestmark = pytest.mark.skipif(
@@ -41,7 +44,7 @@ def test_independent_bug_diagnosis(tmp_path: Path, repo_root: Path) -> None:
         f"Project instruction marker: {project_marker}.\n", encoding="utf-8"
     )
     session = str(uuid.uuid4())
-    reports = workspace / "reports"
+    reports = source / "reports"
     settings = {
         "disableAllHooks": True,
         "permissions": {"allow": [
@@ -57,11 +60,11 @@ Symptom: south's guide lookup returns North guide instead of South guide.
 Repro: create Catalog(); call lookup('north', 'guide', now=0), then
 lookup('south', 'guide', now=1). Reported results: North guide twice.
 Expected: North guide followed by South guide.
-Parent-only initial hypothesis: {hypothesis}. Record it unchanged with the
-label {parent_marker} in elephant_hypothesis.md before dispatch. Keep both
-the theory and label out of the observations and the child's task.
+Parent-only initial hypothesis: {hypothesis}. Preserve it unchanged with the
+label {parent_marker}. Follow the installed skill's persistence rules. Keep
+both the theory and label out of observations and the child's task.
 Investigate using the installed diagnosis skill and its native adapter, using
-this candidate plugin's namespace {name}. Run one actual fresh Goldfish.
+this candidate plugin's namespace {name}. Run one fresh foreground Goldfish.
 Do not execute reproductions in this fixture; mark checks as not run. Do not
 edit source, write tests, use external services, publish, or commit.
 Use Read, Grep, Glob, and Write for local files. Write creates parent folders;
@@ -72,7 +75,8 @@ Write all four artifacts and preserve the original child report unchanged.
         ["claude", "-p", "--output-format", "json", "--session-id", session,
          "--setting-sources", "", "--settings", json.dumps(settings),
          "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
-         "--plugin-dir", str(plugin), "--allowedTools", "Agent", "Skill",
+         "--plugin-dir", str(plugin), "--tools", "Agent,Read,Grep,Glob,Write",
+         "--allowedTools", "Agent",
          "--", prompt],
         cwd=workspace, capture_output=True, text=True, timeout=600,
     )
@@ -109,7 +113,8 @@ Write all four artifacts and preserve the original child report unchanged.
     observations = run / "observations.md"
     assert_unbiased_input(observations.read_text(encoding="utf-8"),
                           parent_marker, hypothesis)
-    assert parent_marker in (run / "elephant_hypothesis.md").read_text(encoding="utf-8")
+    hypothesis_path = run / "elephant_hypothesis.md"
+    assert parent_marker in hypothesis_path.read_text(encoding="utf-8")
     reads = claude_reads(raw_child)
     required = {plugin / "agents/bug_diagnosis.md", observations, fixture}
     assert {path.resolve() for path in required} <= reads.keys()
@@ -119,6 +124,7 @@ Write all four artifacts and preserve the original child report unchanged.
     parent_reads = claude_reads(raw_parent)
     assert (plugin / "docs/claude.md").resolve() in parent_reads
     answer = claude_diagnosis_answer(raw_child)
+    assert_hypothesis_write_order(raw_parent, hypothesis_path, parent_marker, answer)
     preserved = (run / "goldfish_diagnosis.md").read_text(encoding="utf-8")
     assert preserved.strip() == answer.strip(), "Child report was rewritten"
     assert "tenant" in answer.lower() and "slug" in answer.lower()
@@ -128,4 +134,4 @@ Write all four artifacts and preserve the original child report unchanged.
     assert "diverg" in report.lower()
     assert fixture.read_bytes() == original
     assert sorted(p.relative_to(source).as_posix() for p in source.rglob("*")
-                  if p.is_file()) == ["catalog.py"]
+                  if p.is_file() and not p.is_relative_to(reports)) == ["catalog.py"]

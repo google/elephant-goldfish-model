@@ -48,7 +48,10 @@ report writes using `Read` and `Edit` permission rules. It checks the native
 diagnosis adapter, unresumed dispatch, successful persona/observations/source
 reads, allowed child tools, absence of parent and project-instruction markers
 from visible records, hypothesis-free inputs, an unchanged child report, and
-unchanged source. Marker absence alone does not establish context isolation.
+unchanged source. The fixture puts the artifact directory inside the source
+root and permits only native file writes. Its trace must place the first
+hypothesis write after the child returns. Marker absence alone does not
+establish context isolation.
 Proposed experiments are not executed in this fixture.
 
 The `EGM_CLAUDE_LIVE=1 pytest tests/integration/test_claude.py -v` probes exercise
@@ -65,7 +68,7 @@ checks, not a substitute for the following artifact and native trace checks:
 
 | Case | Required evidence |
 | :--- | :---------------- |
-| Divergence | Parent records a TTL hypothesis first. The child receives no hypothesis, cites the slug-only cache key, and proposes a check that distinguishes tenant collision from expiration. Parent preserves both accounts and explains the disagreement. |
+| Divergence | Parent records a TTL hypothesis in its own conversation and writes it to disk only after the child returns. The child receives no hypothesis, cites the slug-only cache key, and proposes a check that distinguishes tenant collision from expiration. Parent preserves both accounts and explains the disagreement. |
 | Convergence | Parent initially suspects the cache key. Child reaches that cause independently. Agreement is recorded without claiming confirmation from agreement alone. |
 | Missing repro | With neither a repro nor concrete failure trace, no child launches; the parent requests evidence. |
 | Failed reviewer | Deny the persona or source read. No completed diagnosis or clean verdict is reported; the parent records incomplete execution and does not substitute itself. |

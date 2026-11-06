@@ -44,6 +44,30 @@ def test_native_diagnosis_answer(handback: bool) -> None:
     assert checks["claude_diagnosis_answer"](raw(record("assistant", block))) == answer
 
 
+@pytest.mark.parametrize("early", [True, False])
+@pytest.mark.parametrize("framed", [True, False])
+def test_hypothesis_write_must_follow_child_return(
+    early: bool, framed: bool, tmp_path: Path,
+) -> None:
+    hypothesis = tmp_path / "elephant_hypothesis.md"
+    write = record("assistant", {
+        "type": "tool_use", "name": "Write",
+        "input": {"file_path": str(hypothesis), "content": "parent-only-marker"},
+    })
+    dispatch = record("assistant", {"type": "tool_use", "name": "Agent", "id": "agent"})
+    answer = "Diagnosis returned\nSource cited"
+    payload = "[Subagent hand-back]\n  Diagnosis returned\n  Source cited" if framed else answer
+    returned = record("user", {
+        "type": "tool_result", "tool_use_id": "agent", "content": payload,
+    })
+    verify = checks["assert_hypothesis_write_order"]
+    if early:
+        with pytest.raises(AssertionError, match="before child return"):
+            verify(raw(dispatch, write, returned), hypothesis, "parent-only-marker", answer)
+    else:
+        verify(raw(dispatch, returned, write), hypothesis, "parent-only-marker", answer)
+
+
 @pytest.mark.parametrize("case", [
     "write", "shell", "missing", "only_narration", "after_handback", "denied_handback",
     "empty_handback", "malformed_handback",

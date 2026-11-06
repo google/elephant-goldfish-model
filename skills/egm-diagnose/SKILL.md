@@ -41,16 +41,17 @@ evidence and stop before dispatch. Do not invent a reproduction. An intermittent
 failure trace is usable evidence, but mark its repeatability as unknown unless
 measured. Diagnosis can remain inconclusive.
 
-Inspect the relevant source and create two separate files:
+Inspect the relevant source and fix the Elephant's initial hypothesis in the
+parent conversation before dispatch. Include the candidate cause, source
+evidence, uncertainty, and a check that would disprove it. Use `unknown` if
+there is not enough evidence. Keep this entry unchanged for comparison.
+Do not write the entry to a file, scratchpad, or other shared storage while
+the Goldfish could still be running. Do not copy it into a child task.
 
-1. `observations.md`: Symptom, expected behavior, reproduction steps, actual
-   results, environment facts, and narrowly selected evidence excerpts. Mark
-   each result as user-reported or observed in this run. Include source paths
-   when they appear in observed traces, not just because they fit a theory.
-2. `elephant_hypothesis.md`: The Elephant's current candidate cause, supporting
-   evidence, uncertainties, and a check that would disprove it. Use `unknown`
-   when there is not enough evidence. Record this before reading the Goldfish
-   result and keep it unchanged for the later comparison.
+Write `observations.md` with the symptom, expected behavior, reproduction steps,
+actual results, environment facts, and narrowly selected evidence excerpts.
+Mark each result as user-reported or observed in this run. Include source paths
+when they appear in observed traces, not just because they fit a theory.
 
 Build observations by selecting facts, not by copying the full problem doc,
 issue, conversation, or logs. Omit proposed causes, suggested fixes, verdicts,
@@ -58,7 +59,8 @@ and links to discussions containing them. Save needed evidence as excerpts in
 `observations.md` instead of passing unfiltered external files or URLs.
 Do not include diagnostic hints in the run directory name.
 
-Record the inspected revision and relevant working-tree changes, if available.
+Record the inspected revision and whether the tree has edits, if available.
+Keep interpretations of those edits and attempted fixes in the parent context.
 If an attempted fix is already present, say so in the final report: the source
 can reveal the hypothesis even when the dispatch prompt does not. Do not reset,
 stash, or undo the user's changes to manufacture an independent baseline.
@@ -102,10 +104,19 @@ Wait for actual completion. A launch, empty response, denied persona read,
 timeout, or unhandled tool failure is not a completed diagnosis. Save an
 incomplete report explaining what is missing; do not substitute the Elephant's
 own reasoning and call it a Goldfish result. Do not retry silently.
+On timeout or uncertain child state, keep the hypothesis off disk unless the
+host confirms the child has stopped. Record that the comparison was skipped.
 
 ## 3. Preserve and check the result
 
-Write the returned report unchanged to `goldfish_diagnosis.md`. It must contain:
+After confirmed child completion, write the unchanged parent-context entry to
+`elephant_hypothesis.md`. Do this before interpreting the returned candidates.
+If the original entry was lost, record it as unavailable instead of reconstructing
+it from the Goldfish's answer.
+
+Write only the child's report text verbatim to `goldfish_diagnosis.md`.
+Keep host metadata and any parent annotations in `diagnosis_report.md`.
+The child report must contain:
 
 - Completion status: `complete` or `incomplete`, with any access limitations.
 - The files actually read and whether the persona and observations were read.
@@ -122,7 +133,7 @@ verified isolation from a child's assurance alone.
 
 ## 4. Compare evidence and write the handoff
 
-Only now compare the Goldfish's candidates with `elephant_hypothesis.md`:
+Only now compare the Goldfish's candidates with the preserved parent hypothesis:
 
 - **Converged**: Both identify the same mechanism. Identify a diagnostic check
   that distinguishes it from the strongest alternative; agreement is not proof.
@@ -133,8 +144,9 @@ Only now compare the Goldfish's candidates with `elephant_hypothesis.md`:
   a completed Goldfish with zero candidates while the Elephant has a hypothesis.
   Preserve the completed execution status and record what evidence would resolve
   the uncertainty.
-- **Not compared**: The Goldfish did not complete or its report is invalid
-  (for example, missing the required status or read accounting). Record the
+- **Not compared**: The Goldfish did not complete, its report is invalid
+  (for example, missing status or read accounting), or the initial hypothesis
+  entry could not be preserved. Record the
   execution or report-validation failure and the next recovery step. A valid
   complete report with no supported candidates is inconclusive, not failed.
 
