@@ -311,11 +311,12 @@ as the likely cause.
 ### Goldfish Review
 
 1.  **Fact check** (an inline reviewer prompt in `SKILL.md`, not a persona
-    under `agents/`): sees the explainer and exactly what its writer was given:
-    its contracts, reviewed child explainers, and named extra sources, and is
-    told not to read anything else. It reports any claim, number, node or arrow
-    those sources do not support, and any shareable-mode leak. General-knowledge
-    definitions of terms are exempt.
+    under `agents/`): sees the explainer and the sources its writer was given:
+    its contracts, reviewed child explainers, and named extra sources. On a
+    rewrite it does not see the previous explainer, and it is told not to read
+    anything else. It reports any claim, number, node or arrow those sources do
+    not support, and any shareable-mode leak. General-knowledge definitions of
+    terms are exempt.
     `egm-codebase-details` is not used: its instructions require reading code,
     which this skill deliberately leaves out.
 2.  **Plain-language reader** (`egm-comprehension` in `REVIEW` mode, explainer
