@@ -29,13 +29,14 @@ def test_release_version_matches_source(release: dict) -> None:
     assert release["version_for_tag"](ROOT, f"v{version}") == version
 
 
-HOST_MANIFESTS = (".claude-plugin/plugin.json", ".codex-plugin/plugin.json",
-                  ".cursor-plugin/plugin.json", ".plugin/plugin.json")
+HOST_MANIFESTS = ("plugin.json", ".claude-plugin/plugin.json",
+                  ".codex-plugin/plugin.json", ".cursor-plugin/plugin.json",
+                  ".plugin/plugin.json")
 
 
 @pytest.mark.parametrize("drifted", HOST_MANIFESTS)
 def test_reject_host_version_drift(release: dict, tmp_path: Path, drifted: str) -> None:
-    assert release["HOST_MANIFESTS"] == ("plugin.json", *HOST_MANIFESTS)
+    assert release["HOST_MANIFESTS"] == HOST_MANIFESTS
     for name in release["HOST_MANIFESTS"]:
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
