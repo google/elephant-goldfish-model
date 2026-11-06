@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "egm",
-  "version": "0.1.0",
-  "description": "Draft specs, review designs, and check implementation drift.",
+  "version": "0.1.1",
+  "description": "Develop ideas with context and review documents with fresh eyes.",
   "author": {
     "name": "Google"
   },
