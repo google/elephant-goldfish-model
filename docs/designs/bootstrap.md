@@ -166,11 +166,11 @@ graph TD
 *   **`goldfish-explorer`**:
 
     *   A read-only, dynamic scout agent.
-    *   **System Prompt**: > "You are a read-only codebase explorer. Your task
-        is to analyze the source files in the target directory and return a
-        concise, factual summary. Do not write or modify any files. Return a
-        JSON object containing the directory's public symbols (interface),
-        invariants, and side effects."
+    *   **System Prompt**: > "You are a read-only codebase explorer. Analyze
+        the source files you are given; do not modify any file. Return a JSON
+        object with the directory's public symbols (interface), invariants,
+        side effects, and `files_read`, listing every read as
+        `path:start-end`."
     *   **Scout File Constraints**: There is no byte cap; every non-test file
         is read in full. The worker bounds each scout call to about 1,500
         lines by cutting files at top-level definitions and spawning one scout
@@ -203,9 +203,13 @@ graph TD
             "side_effects": {
               "type": "array",
               "items": { "type": "string" }
+            },
+            "files_read": {
+              "type": "array",
+              "items": { "type": "string" }
             }
           },
-          "required": ["interface", "invariants", "side_effects"]
+          "required": ["interface", "invariants", "side_effects", "files_read"]
         }
         ```
 

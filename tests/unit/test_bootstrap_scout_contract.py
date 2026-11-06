@@ -152,7 +152,7 @@ def test_rerun_scenario_removes_marker_and_keeps_human_notes() -> None:
       a["pattern"] for a in assertions if a["type"] == "required_pattern")
   assert "documentation incomplete" in forbidden, "marker must be forbidden after coverage"
   assert "egm-bootstrap" in forbidden, "a rerun command must be forbidden after coverage"
-  for needle in ("uncovered_fn", "covered_fn", "maintainer note"):
+  for needle in ("uncovered_fn", "\\b(covered_fn", "maintainer note"):
     assert needle in required, f"rerun scenario no longer requires {needle!r}"
 
 
@@ -165,3 +165,5 @@ def test_design_doc_matches_skill_fault_tolerance() -> None:
   for current in ("files_read", "Documentation incomplete: scout failed",
                   "`incomplete` array", "removes a marker once its range is covered"):
     assert current in text, f"design doc does not describe {current!r}"
+  # The scout output schema in the doc must require files_read, as the skill does.
+  assert '"required": ["interface", "invariants", "side_effects", "files_read"]' in text
