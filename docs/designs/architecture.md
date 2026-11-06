@@ -72,8 +72,8 @@ Modular agent capabilities executable via slash commands or direct invocation:
 ### 2. Personas Layer (`agents/`)
 Stateless system prompt instructions for isolated Goldfish reviewer subagents
 (Zoom Out, Comprehension, Design Critic, Implementation Readiness, Codebase
-Auditor, Structural Validator, Style Editor, and Inventive Catalyst), the Synthesizer, and the
-bootstrap orchestrator that `egm-bootstrap` uses.
+Auditor, Structural Validator, Style Editor, and Inventive Catalyst), the
+Synthesizer, and the bootstrap orchestrator that `egm-bootstrap` uses.
 
 ### 3. Document Standards (`resources/document_standards/`)
 Goldfish reviewers load the versioned rubrics listed in the
