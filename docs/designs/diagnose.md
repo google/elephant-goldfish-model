@@ -110,9 +110,15 @@ an intermittent failure.
 1. **Add the skill and reviewer.** The skill defines explicit invocation and
    resolves the host integration guide. Inspect path metadata in the source,
    working and artifact directories for earlier `egm-diagnosis-*/` runs,
-   including nested, hidden and ignored paths. Leave old runs untouched.
-   If there are no reachable prior artifacts, or the host can enforce their
-   exclusion, create a fresh `egm-diagnosis-<unique-id>/` directory under the
+   including nested, hidden and ignored paths. Leave earlier runs untouched.
+   If the host cannot enforce exclusion for reachable earlier runs, stop and
+   list the full paths of the run directories that block the retry. The
+   developer moves each whole directory, including its reports and hypotheses,
+   to a location the child cannot read and removes any links that still make
+   it reachable from the source, working or artifact directory. With the
+   default working-directory artifact location, a repeat run remains blocked
+   until the earlier runs are moved out of reach or the host enforces exclusion.
+   Otherwise create a fresh `egm-diagnosis-<unique-id>/` directory under the
    host's artifact directory. Write `observations.md` with observed and
    user-reported facts separated. Form the initial hypothesis before dispatch
    and retain it only in the Elephant conversation. Record revision and
@@ -193,9 +199,9 @@ an intermittent failure.
   a fresh read-only dispatch, source citations, unchanged source and the
   independent result. With the output directory inside the source root,
   require the first hypothesis write to follow the native child return.
-  With a prior run under an ignored source directory and no path restriction,
-  require incomplete execution without launching a child or opening the
-  old hypothesis.
+  With an earlier run under an ignored source directory and no enforced
+  exclusion, require incomplete execution without launching a child or
+  opening the earlier hypothesis. The result names the blocking directory.
 - `EGM_CODEX_LIVE=1 pytest tests/integration/test_codex.py -k independent_bug_diagnosis`
   checks the analogous fixture on Codex. Record encrypted dispatch input as
   unaudited. Retain version, launch, reads, completion and the output artifacts.
