@@ -1,0 +1,67 @@
+---
+import Button from './gb/Button.astro';
+import Mark from './Mark.astro';
+import Symbol from './gb/Symbol.astro';
+const startingPoints = [
+  { title: 'Develop an idea', text: 'Work through the questions and write a brief.', href: '/getting-started' },
+  { title: 'Review a document', text: 'Choose reviewers and standards for a plan you already have.', href: '/skills/egm-review-loop' },
+  { title: 'Check for drift', text: 'Compare software documentation with the current code.', href: '/skills/egm-drift-report' },
+];
+---
+<section class="wrap hero">
+  <div class="introduction">
+    <h1>Draft with context.<br />Review with fresh eyes.</h1>
+    <p class="lead">EGM is an open-source plugin for AI assistants. Develop a plan with an assistant that knows the background. Then get feedback from reviewers who do not see the conversation.</p>
+    <p class="adoption"><a href="https://opensource.googleblog.com/2026/10/introducing-elephant-goldfish-model-plugin.html">Used by thousands of Google engineers.</a></p>
+    <div class="actions"><Button color="filled" size="md" href="/install">Install EGM</Button><a href="/getting-started">Get started</a></div>
+  </div>
+  <figure class="example" aria-label="How EGM separates drafting from review">
+    <div class="process-step"><Mark variant="elephant" size={32} /><div><h3>Build the plan together</h3><p>You + an AI assistant</p><div class="context">Goal · Background · Constraints</div></div></div>
+    <div class="handoff"><Symbol name="arrow_forward" /><div><strong>Your written plan</strong><p>Shared with a fresh reviewer</p><p class="boundary">The conversation stays here.</p></div></div>
+    <div class="process-step"><Mark variant="goldfish" size={32} /><div><h3>Review with fresh eyes</h3><p>A separate AI reviewer reads the plan.</p><div class="context">Missing steps? Unclear assumptions?</div></div></div>
+    <div class="decision">You check the feedback and decide what to change.</div>
+  </figure>
+</section>
+<section class="wrap starting-points">
+  <div class="explanation">
+    <h2>Start with the work you have.</h2>
+    <p>Bring a class project, a design brief, a delivery plan, or a software design. Write down the goal, constraints, and decisions a reviewer needs to understand.</p>
+    <p>The plugin organizes drafting, independent review, and follow-up. You check the findings and decide what to change.</p>
+    <a href="/guide">Read the guide</a>
+  </div>
+  <nav aria-label="Choose a starting point">
+    {startingPoints.map(item => <a href={item.href}><div><h3>{item.title}</h3><p>{item.text}</p></div><Symbol name="arrow_forward" /></a>)}
+  </nav>
+</section>
+<style>
+  p { text-wrap:pretty; }
+  .hero { display:grid; grid-template-columns:1.15fr 1fr; gap:64px; align-items:center; padding-block:88px 96px; }
+  h1 { font:500 clamp(2.25rem,3.7vw,3.25rem) / 1.12 var(--font-display); letter-spacing:-.025em; }
+  .lead { max-width:55ch; margin-top:28px; line-height:1.7; text-wrap:pretty; }
+  .adoption { margin-top:16px; font-size:.875rem; line-height:1.5; color:var(--md-sys-color-on-surface-variant); }
+  .actions { display:flex; flex-wrap:wrap; align-items:center; gap:24px; margin-top:32px; }
+  .actions>a:not(.btn) { font-size:1rem; }
+  .example { display:grid; gap:28px; margin:0; border:1px solid var(--md-sys-color-outline-variant); border-radius:12px; padding:32px; }
+  .process-step,.handoff { display:grid; grid-template-columns:32px minmax(0,1fr); align-items:start; gap:16px; }
+  .process-step h3 { margin:0 0 6px; line-height:1.5; }
+  .process-step p,.context,.handoff,.decision { font-size:.875rem; line-height:1.6; }
+  .context { margin-top:8px; }
+  .handoff :global(svg) { width:48px; height:48px; margin:-8px; transform:rotate(90deg); flex:none; }
+  .handoff strong { display:block; margin-bottom:6px; font-size:1.125rem; line-height:1.5; font-weight:500; color:var(--md-sys-color-on-surface); }
+  .handoff p { margin-top:0; }
+  .handoff .boundary { margin-top:8px; }
+  .decision { padding-top:20px; border-top:1px solid var(--md-sys-color-outline-variant); }
+  .starting-points { display:grid; grid-template-columns:1fr 1fr; column-gap:80px; padding-block:64px 72px; border-top:1px solid var(--md-sys-color-outline-variant); }
+  h2 { font-size:2rem; font-weight:500; line-height:1.2; letter-spacing:-.02em; margin-bottom:24px; }
+  .explanation>p { max-width:52ch; line-height:1.7; margin-bottom:20px; }
+  .explanation>a { display:inline-block; margin-top:4px; }
+  nav>a { display:flex; align-items:center; justify-content:space-between; gap:24px; padding-block:24px; text-decoration:none; }
+  nav>a:first-child { padding-top:0; }
+  nav>a+a { border-top:1px solid var(--md-sys-color-outline-variant); }
+  h3 { font-size:1.125rem; font-weight:500; margin-bottom:8px; }
+  nav p { max-width:42ch; line-height:1.6; }
+  nav>a:hover h3 { text-decoration:underline; text-underline-offset:.2em; }
+  nav :global(svg) { width:20px; height:20px; flex:none; color:var(--md-sys-color-on-surface-variant); }
+  @media(max-width:900px) { .hero { gap:40px; } }
+  @media(max-width:760px) { .hero,.starting-points { grid-template-columns:1fr; gap:40px; } h1 { font-size:clamp(2rem,8.5vw,2.75rem); } .hero { padding-block:48px 56px; } .starting-points { padding-block:40px 48px; } .example { padding:24px; } }
+</style>
