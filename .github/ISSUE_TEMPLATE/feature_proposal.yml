@@ -1,0 +1,31 @@
+# Copyright 2026 Google LLC. SPDX-License-Identifier: Apache-2.0
+name: Feature or architectural inquiry
+description: Ask maintainers to align on a new feature, skill, or large change.
+type: Feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Wait for `design-ready` before opening a design PR with `Refs #<issue>`.
+        Add the design under `docs/designs/` and update its index. After that PR merges, wait for `pr-ready` before opening the implementation PR with `Closes #<issue>`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and motivation
+      description: Explain who needs this and what problem they face.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Describe the approach in plain language.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Goals and non-goals
+      description: List what is in scope and what is outside it.
+    validations:
+      required: true

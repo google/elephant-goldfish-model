@@ -1,0 +1,26 @@
+# Copyright 2026 Google LLC. SPDX-License-Identifier: Apache-2.0
+name: Task
+description: Track maintenance, documentation, or validation.
+type: Task
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: Explain what should change and why.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Describe the work, limits, and any blockers.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: List observable completion checks and the evidence to record.
+    validations:
+      required: true
