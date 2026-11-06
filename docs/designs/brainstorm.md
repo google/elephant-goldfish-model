@@ -33,7 +33,7 @@ sequenceDiagram
     actor Human as Software Engineer
     participant Brainstorm as egm-brainstorm Skill
     participant Synth as Synthesizer Persona (Mode: BRAINSTORM)
-    participant Swarm as 6-Lens Goldfish Swarm
+    participant Swarm as 7-Lens Goldfish Swarm
     participant Artifact as Artifact: concepts_brief.md
 
     Human->>Brainstorm: /egm-brainstorm (Raw Feature Idea)
@@ -44,7 +44,7 @@ sequenceDiagram
     Brainstorm->>Human: Summarize anchored hypothesis & confirm readiness
     Human->>Brainstorm: Confirm ready for shootdown
     Brainstorm->>Synth: invoke_subagent (Mode: BRAINSTORM, FeatureConcept)
-    Synth->>Swarm: Parallel shootdown across 6 lenses
+    Synth->>Swarm: Parallel shootdown across 7 lenses
     Swarm-->>Synth: Raw critiques & feasibility risks
     Synth->>Artifact: write_to_file (concepts_brief.md)
     Synth-->>Brainstorm: send_message (Completion & artifact link)
@@ -62,9 +62,9 @@ sequenceDiagram
 *   Constructs a 2-3 sentence anchored hypothesis and requires explicit human
     approval before spawning the subagent swarm.
 
-### 2. Step 2: The 6 Goldfish Brainstorming Lenses
+### 2. Step 2: The 7 Goldfish Brainstorming Lenses
 
-The `synthesizer` persona spawns six concurrent Goldfish subagents to audit the
+The `synthesizer` persona spawns seven concurrent Goldfish subagents to audit the
 concept from distinct, conflicting perspectives:
 
 | Lens / Persona | Core Objective | Key Question Challenged |
@@ -75,6 +75,7 @@ concept from distinct, conflicting perspectives:
 | **4. Migration & Compatibility** | Rollout safety & version skew | *How do existing clients/data migrate? Does this break serialized formats or persistent storage?* |
 | **5. Observability & SRE** | Telemetry & debuggability | *Are operations traceable with distributed tracing? Are monitoring metrics and alerts actionable for oncalls?* |
 | **6. Tech Debt & Maintenance** | Long-term maintainability | *Does this introduce tightly coupled state machines that will become tech debt in 2 years?* |
+| **7. Inventive Catalyst** | Contradiction elimination & inventive transforms | *What fundamental trade-off is this design accepting as inevitable? How can we resolve this conflict using proven software transforms to achieve the Ideal Final Result without compromise?* |
 
 ### 3. Step 3: Synthesis into `concepts_brief.md`
 
@@ -117,13 +118,14 @@ specialized Goldfish personas defined in `agents/` and document standards:
 *   **Intermediate Orchestration**:
     [`agents/synthesizer.md`](../../agents/synthesizer.md) (`Mode: BRAINSTORM`)
     coordinates the parallel fan-out and compiles `concepts_brief.md`.
-*   **6-Lens Goldfish Personas**:
+*   **7-Lens Goldfish Personas**:
     *   [`agents/zoom_out.md`](../../agents/zoom_out.md): Contrarian / YAGNI Lens.
     *   [`agents/design_critic.md`](../../agents/design_critic.md): Cost, Quota & Resource Economics Lens.
     *   [`agents/comprehension.md`](../../agents/comprehension.md): UX & Developer Ergonomics Lens.
     *   [`agents/implementation_readiness.md`](../../agents/implementation_readiness.md): Migration & Compatibility Lens.
     *   [`agents/codebase_details.md`](../../agents/codebase_details.md): Codebase Grounding & Existing Reuse Lens.
     *   [`agents/structural.md`](../../agents/structural.md): Maintainability & Tech Debt Lens.
+    *   [`agents/inventive_catalyst.md`](../../agents/inventive_catalyst.md): Contradiction Elimination & Inventive Transforms Lens.
 *   **Referenced Standards**: Evaluates concepts against
     [`zoom-out-standard.md`](../../resources/document_standards/zoom-out-standard.md)
     and [`heilmeier-standard.md`](../../resources/document_standards/heilmeier-standard.md).
