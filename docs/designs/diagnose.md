@@ -5,188 +5,174 @@
 **Status:** Draft. Maintainer scope alignment and design approval are pending.
 Scope inquiry: #294. Proposed implementation: #292.
 
-## Problem
+## Problem Statement
 
-EGM gives design documents independent reviewers. An existing code failure
-needs a different input: observations that do not already tell the reviewer
-what to believe. Asking "check my diagnosis" can anchor a reviewer to the same
-wrong explanation as the Elephant, even with a fresh conversation context.
+A developer investigating a bug may ask a reviewer to check a suspected cause.
+That framing can bias even a reviewer with fresh context. EGM already uses an
+Elephant, the agent with the conversation context, and fresh Goldfish reviewers
+for designs. A bug needs a different input and output: observed failure in,
+candidate causes with source evidence and checks that could disprove them out.
 
-The proposed `egm-diagnose` skill adds independent investigation before a fix.
-The Elephant records its own hypothesis. A fresh Goldfish receives only the
-observed failure and reproduction evidence, investigates the source, and returns
-candidate causes with supporting evidence and checks that could disprove them.
-The Elephant then compares the two results and records unresolved disagreement.
-
-## Prior implementation
-
-This proposal adapts the independent diagnosis step from Vlad Shvedov's
-[ClaudeFlows `cf-bug` workflow](https://github.com/OmniPragmatic/claudeflows/blob/60d180dc6f89d7ffa1166e19ed4a6054a994aff2/plugins/claudeflows/skills/cf-bug/SKILL.md#step-2-goldfish-diagnosis-check-parallel-to-your-hypothesis).
-It follows the earlier [elephant-goldfish implementation](https://github.com/vshvedov/elephant-goldfish).
-In that workflow, the Goldfish receives the symptom and reproduction but not
-the Elephant's hypothesized root cause. It ranks candidate causes and identifies
-supporting and falsifying evidence. The Elephant compares the result with its
-own hypothesis before writing a failing test and implementing the fix.
-
-The contribution to EGM is this diagnostic information boundary and comparison
-step. EGM already provides the Elephant/Goldfish model and isolated reviewers.
-No measurement yet shows that independent diagnosis improves bug-fix outcomes.
-
-The proposed EGM implementation uses separate artifacts, a read-only persona,
-Claude's native tool restrictions, explicit incomplete outcomes, and behavioral
-evaluation cases. It stops before implementing a fix so it can be used with
-the developer's existing fix and review workflow.
+This proposal adapts the independent investigation and evidence comparison
+from [ClaudeFlows cf-bug](https://github.com/OmniPragmatic/claudeflows/blob/60d180dc6f89d7ffa1166e19ed4a6054a994aff2/plugins/claudeflows/skills/cf-bug/SKILL.md)
+and the earlier [elephant-goldfish implementation](https://github.com/vshvedov/elephant-goldfish).
+Its benefit to bug-fix outcomes remains unmeasured.
 
 ## Goals
 
-- Diagnose an existing failure from a symptom and concrete reproduction or
-  failure trace, without requiring a feature design document.
-- Keep the Elephant's initial hypothesis out of the Goldfish's supplied input.
-- Require source evidence and a possible disproof for every candidate cause.
-- Preserve the original hypothesis and the independent result for comparison.
-- Distinguish convergence, disagreement, uncertainty, and failed execution.
-- Produce a diagnostic experiment or regression-test specification as a handoff.
+- Start from a symptom, expected behavior and a concrete reproduction or trace.
+- Keep the Elephant's initial hypothesis in its conversation until the Goldfish
+  has stopped. Send only observations and the source location.
+- Return up to three candidate causes with citations and falsifying checks.
+- Preserve both accounts and leave a discriminating check for the developer.
 
-## Non-goals
+## Non-Goals
 
-- Automatically fix the bug, edit tests, commit changes, or run a review loop.
-- Replace EGM's design review personas or its convergence rules.
-- Add a general agent orchestration engine, automatic routing, or resume state.
-- Promise filesystem isolation, exclusion of host instructions on every harness,
-  or a correct diagnosis merely because two agents agree.
-- Add Cursor, Copilot CLI, or OpenCode adapters for the diagnosis persona in
-  the first implementation. The skill stops on those hosts.
+- Edit code, write tests, commit changes or automate the subsequent fix.
+- Add diagnosis adapters for Cursor, Copilot CLI or OpenCode in this release.
+- Promise filesystem isolation, guaranteed correctness or a measured benefit.
 
-## Interface and workflow
+## Proposed Architecture
 
-Invoke `egm-diagnose` with a symptom, expected behavior, reproduction steps or
-failure trace, optional evidence, and a source root (default: working directory).
-The skill remains explicitly invoked, consistent with existing EGM skills.
-Existing host rules determine plugin resource paths and the artifact directory.
+The Elephant prepares a narrow observation file, holds its own hypothesis in
+the parent conversation and dispatches one Goldfish. The Goldfish reads the
+observation file and relevant source, then returns its report. The Elephant
+saves the original hypothesis and report after the child stops. It compares
+their evidence and writes a handoff.
 
-1. **Intake:** Ask for missing concrete evidence before dispatch. Accept an
-   intermittent trace without claiming that it was reproduced. Do not create a
-   design doc for the application bug.
-2. **Prepare:** Create a unique run directory. Write observations separately from
-   the Elephant's hypothesis. Distinguish user-reported and newly observed facts.
-   Record the revision and relevant existing edits when available.
-3. **Diagnose:** Launch one fresh, read-only Goldfish with the persona,
-   observations, source root, and explicit artifact exclusions. It reads source
-   and returns a report. It does not execute experiments or propose a patch.
-4. **Validate:** Wait for completion, retain the original report, inspect cited
-   evidence, and check native read records where exposed. Label self-reported
-   reads when native records are absent.
-5. **Compare:** Compare the independent candidates with the previously recorded
-   hypothesis. Preserve disagreement and the evidence for changing either view.
-6. **Handoff:** Write the consolidated report. Separate experiments actually run
-   from proposed ones. Leave implementation to a later task.
+Claude registers a diagnosis persona with read-only tools and `omitClaudeMd`
+(Claude Code 2.1.271 or later). Codex uses a fresh general-purpose child with
+parent turns excluded and a read-only task. Codex instruction-file exclusion
+remains unverified. The skill stops on Cursor, Copilot CLI and OpenCode, which
+do not register this persona. Other hosts require a fresh, read-only dispatch.
 
-The Elephant may execute an authorized existing local reproduction under normal
-host permissions. New test code, application edits, and destructive or external
-experiments are outside this skill's automatic scope.
+## Interface and Outcomes
 
-## Information boundary
+Invoke `egm-diagnose` with a symptom, expected behavior, steps or trace, optional
+evidence and a source root (default working directory). Missing concrete
+evidence stops dispatch. An intermittent trace can be used without claiming
+that the failure was reproduced.
 
-| Input | Elephant | Goldfish |
-| :---- | :------- | :------- |
-| Conversation and original bug discussion | Available | Not supplied |
-| Sanitized symptom, repro and observed evidence | Available | Supplied |
-| Relevant source and existing tests | Available | Read-only inspection |
-| Initial hypothesis and suggested fix | Recorded separately | Excluded |
-| Independent diagnosis | Read after completion | Produced independently |
+Each supported candidate includes a source location, a causal explanation and
+a check with an outcome that would rule it out. The Goldfish reports completion
+separately from certainty. It can complete with zero supported candidates.
 
-The parent extracts observations rather than forwarding an entire issue or
-problem document. A stack frame is an observation; a suspected module is an
-interpretation unless supported by an observed trace. The source root stays
-broad enough for the Goldfish to discover a different cause.
+| Comparison | Condition |
+| :--- | :--- |
+| `converged` | Both accounts support the same mechanism. Agreement still needs a check. |
+| `diverged` | Both support different mechanisms. Preserve the disagreement and suggest a discriminating check. |
+| `inconclusive` | The Goldfish completed and one or both accounts lack a supported candidate. |
+| `not compared` | Execution is incomplete, the Goldfish report is invalid, or the original parent entry was lost. |
 
-Only `observations.md` from the run directory is supplied. Broad searches of
-artifact folders, conversation history, previous reports, and memory are
-prohibited. A contaminated input returns an incomplete diagnosis. Fresh context
-does not hide accessible files or host-injected instructions. Claude's adapter
-uses `omitClaudeMd: true` and read-only tools. Codex uses a fresh context with
-the isolation limitations documented in its existing integration guide.
+The Elephant may run authorized existing local checks for any candidate.
+Distinguish observations from suggested checks. For intermittent failures,
+record attempts and failures. One passing attempt is insufficient to disprove
+an intermittent failure.
 
-An attempted fix already in the working tree can disclose a theory through the
-source itself. Record that limitation; never revert the user's work for this
-skill. Neither prompt instructions nor a report's claim of independence count
-as proof of isolation. Native launch and read records are preferred evidence.
+## Risks and Mitigations
 
-## Artifacts and outcomes
+- **Hypothesis exposure.** The current hypothesis never enters a file while
+  the Goldfish might still be active. The dispatch excludes it, and the
+  observations omit attempted-fix details. Existing source edits, older files
+  and host instructions can still expose theories. Record known exposure.
+- **Untrusted evidence.** Select small excerpts, omit secrets and proposed
+  fixes, and treat excerpts as data. Contaminated observations produce an
+  incomplete result.
+- **Unsupported conclusions.** Check source citations and keep experiments
+  actually run separate from proposed tests. Report unavailable read records as
+  self-reported evidence.
+- **Timeout or lost context.** Leave the hypothesis off disk if the host cannot
+  confirm the child stopped. If the original hypothesis is lost, report it
+  unavailable rather than reconstructing it from the child result.
 
-Each invocation creates a new `egm-diagnosis-<unique-id>/` directory containing:
+## Alternatives Considered
 
-- `observations.md`: Facts supplied to the Goldfish, with their provenance.
-- `elephant_hypothesis.md`: Initial hypothesis, preserved after dispatch.
-- `goldfish_diagnosis.md`: Original returned report, unchanged when available.
-- `diagnosis_report.md`: Execution status, candidate comparison, verification
-  evidence, limitations, and the next discriminating check or test specification.
-
-The Goldfish reports completion separately from certainty. A complete
-investigation can return no supported candidates. Each supported candidate
-needs a source location, causal explanation, and a concrete falsifying check.
-Missing files, denied reads, contaminated input, and timeouts yield an incomplete
-outcome. Do not interpret an empty or failed response as agreement.
-
-Comparison is `converged`, `diverged`, `inconclusive`, or `not compared`.
-Convergence records the common mechanism without treating agreement as proof.
-Divergence requires evidence, not a vote or repeated requests for agreement.
-If either side lacks a supported candidate, comparison is inconclusive, even
-when the other side has a supported hypothesis. A completed Goldfish with zero
-candidates remains complete. A failed Goldfish or invalid report is not compared.
-For flaky failures, record attempts and failures; one passing run is insufficient.
-
-## Alternatives
-
-**Reuse a design critic with the full problem doc:** Less implementation work,
-but supplies the suspected cause and loses the intended information boundary.
-Design-critique rubrics also do not require falsifiable causal explanations.
-
-**Port the whole `cf-bug` pipeline:** Adds test authoring, implementation, review,
-and routing choices to the first contribution. Keeping diagnosis separate lets
-maintainers evaluate its usefulness without adopting another delivery workflow.
-
-**Always run several diagnosis agents:** Could reveal more alternatives, but
-increases cost before the value of even one independent diagnosis is measured.
-Start with one and measure disagreements and useful falsifications.
+- **Reuse a design critic with sanitized observations.** It could take the same
+  unbiased input. The diagnosis persona adds a causal explanation and a
+  falsifying check as required outputs.
+- **Port the full bug-fix workflow.** That would combine diagnosis with test
+  creation and implementation. A separate step works with existing fix flows.
+- **Use a second reviewer or a filesystem snapshot.** These can improve
+  independence in some cases but increase cost and setup. Start with one
+  reviewer and keep the current hypothesis out of the shared files.
 
 ## Detailed Implementation Plan
 
-1. Add `skills/egm-diagnose/SKILL.md`, host UI metadata, and a skill icon.
-2. Add `agents/bug_diagnosis.md` and a native read-only Claude adapter. Register
-   the adapter and require the skill/persona in both runtime packages.
-3. Add the skill to the README and website with matching descriptions and order.
-   Add it to the skill lists in `scripts/pack_plugin.py` and the unit tests.
-   Update the instructional counts in `docs/opencode.md` and step 5 of
-   `docs/cursor.md`. Leave the dated verification notes in `docs/copilot.md`,
-   `docs/muse.md`, and `docs/harnesses.md` unchanged. Retain the guides'
-   resource resolution, permissions, and fresh-context dispatch instructions.
-4. Add co-located evaluation scenarios and a test guide covering convergence,
-   divergence, missing evidence, failure, contamination, and repeat runs.
-5. Add a small deterministic fixture with a misleading expiration hypothesis
-   and an actual cache-key collision. Check that the reproduction and a
-   discriminating experiment establish the intended fixture behavior offline.
-6. Add opt-in native Codex and Claude tests to inspect dispatch arguments,
-   child reads, completion, parent-hypothesis exclusion, and preserved source.
-   Check both the private label and the actual hypothesis in readable inputs.
-   Claude additionally checks omission of a project-instruction marker and
-   read-only child tools. Report encrypted Codex dispatch text as unaudited.
-   Package checks alone do not establish model behavior or native isolation.
+1. **Add the skill and reviewer.** The skill defines explicit invocation and
+   resolves the host integration guide. Create a fresh run directory and
+   write `observations.md` with observed and user-reported facts separated.
+   Form the initial hypothesis before dispatch and retain it only in the
+   Elephant conversation. Record revision and whether the tree has edits.
+2. **Dispatch and preserve evidence.** Invoke the registered Claude adapter
+   or use Codex's `fork_context: false` or `fork_turns: "none"` as exposed by
+   the host. Pass the persona, source root, observations and artifact
+   exclusions. The child returns status, files read, zero to three ranked
+   candidates, missing evidence and suggested checks. On confirmed child
+   completion, save the original hypothesis to `elephant_hypothesis.md`
+   and the verbatim return to `goldfish_diagnosis.md`. For an incomplete run,
+   retain only artifacts that can be saved without exposing the hypothesis
+   to a live child. Write `diagnosis_report.md` with status, comparison,
+   verified observations and the next check.
+3. **Register and package.** Add the adapter to the manifest, require the
+   persona and skill in both archives, and regenerate the Claude distribution.
+   Align the README and website entries. Update instructional skill counts in
+   OpenCode and Cursor. Preserve dated verification notes.
+4. **Verify.** Run the unit suite, then the opt-in native fixtures. A passing
+   fixture verifies its boundary and outcome; it supplies no measure of
+   overall diagnosis quality.
 
-## Validation and rollout
+### Target files
 
-Run `pytest tests/unit` for package integrity, adapter restrictions, links,
-scenario structure, and fixture behavior. Build both distributable archives.
-Run the focused native diagnosis test to exercise the complete skill on the
-fixture. Retain actual launch/read evidence, candidate reports, and limitations.
-Other behavioral scenarios require separate native runs; a passing fixture does
-not establish general diagnostic quality or support on every harness.
+| Action | Repository path |
+| :--- | :--- |
+| Create | `.claude-plugin/agents/bug_diagnosis.md` |
+| Modify | `.claude-plugin/plugin.json` |
+| Modify | `README.md` |
+| Create | `agents/bug_diagnosis.md` |
+| Create | `distributions/claude/.claude-plugin/agents/bug_diagnosis.md` |
+| Modify | `distributions/claude/.claude-plugin/plugin.json` |
+| Modify | `distributions/claude/README.md` |
+| Create | `distributions/claude/agents/bug_diagnosis.md` |
+| Create | `distributions/claude/skills/egm-diagnose/SKILL.md` |
+| Create | `distributions/claude/skills/egm-diagnose/agents/openai.yaml` |
+| Create | `distributions/claude/skills/egm-diagnose/assets/icon.svg` |
+| Modify | `docs/cursor.md` |
+| Modify | `docs/opencode.md` |
+| Modify | `scripts/pack_plugin.py` |
+| Modify | `site/src/components/SkillIcon.astro` |
+| Modify | `site/src/components/Skills.astro` |
+| Create | `skills/egm-diagnose/SKILL.md` |
+| Create | `skills/egm-diagnose/TEST.md` |
+| Create | `skills/egm-diagnose/agents/openai.yaml` |
+| Create | `skills/egm-diagnose/assets/icon.svg` |
+| Create | `skills/egm-diagnose/test_scenarios.yaml` |
+| Create | `tests/fixtures/diagnosis/catalog.py` |
+| Create | `tests/integration/diagnosis_checks.py` |
+| Modify | `tests/integration/test_claude.py` |
+| Create | `tests/integration/test_claude_diagnosis.py` |
+| Modify | `tests/integration/test_codex.py` |
+| Modify | `tests/unit/test_codex_traces.py` |
+| Create | `tests/unit/test_diagnosis_claude_traces.py` |
+| Create | `tests/unit/test_diagnosis_fixture.py` |
+| Create | `tests/unit/test_diagnosis_inputs.py` |
+| Create | `tests/unit/test_diagnosis_scenarios.py` |
+| Modify | `tests/unit/test_harnesses.py` |
+| Modify | `tests/unit/test_opencode_adapter.py` |
+| Modify | `tests/unit/test_packaging.py` |
 
-Measure the rate of distinct supported causes and useful falsifying checks
-before claiming an improvement in outcomes.
+### Verification
 
-## Initial host scope
-
-Claude and Codex are the initial native targets. Cursor, Copilot CLI and
-OpenCode do not register the diagnosis persona, so the skill stops on those
-hosts instead of attempting a general-purpose fallback.
+- `python -m pytest tests/unit` checks packaging, adapters, scenario structure
+  and the cache-key fixture. The fixture returns the wrong tenant's value
+  when two tenants share a slug. Negative trace cases reject early writes,
+  leaked inputs, denied reads and missing returns.
+- Build each runtime with `scripts/pack_plugin.py` using the `claude` and
+  `openai` targets. Unit tests compare the checked-in Claude distribution
+  with fresh packaging.
+- `EGM_CLAUDE_LIVE=1 pytest tests/integration/test_claude_diagnosis.py` checks
+  a fresh read-only dispatch, source citations, unchanged source and the
+  independent result. With the output directory inside the source root,
+  require the first hypothesis write to follow the native child return.
+- `EGM_CODEX_LIVE=1 pytest tests/integration/test_codex.py -k independent_bug_diagnosis`
+  checks the analogous fixture on Codex. Record encrypted dispatch input as
+  unaudited. Retain version, launch, reads, completion and the output artifacts.
