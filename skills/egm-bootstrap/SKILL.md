@@ -32,7 +32,8 @@ where your harness registers named subagents. Otherwise spawn a general-purpose
 subagent and tell it to read that persona file first. Pass the prompt verbatim
 and wait for the report. If your harness cannot nest subagents,
 use direct dispatch instead of the synthesizer. See `docs/harnesses.md`.
-If your harness has no subagent tool, run the scout steps inline.
+If your harness has no subagent tool, run the scout steps inline within a
+250 KB per-directory read budget; treat the rest as uncovered.
 
 ## Inputs
 
@@ -205,16 +206,14 @@ If your harness has no subagent tool, run the scout steps inline.
 
     *   `name`: `goldfish-explorer`
     *   `description`: `Read-only codebase explorer scout.`
-    *   `system_prompt`: >- You are a read-only codebase explorer. Your task is
-        to analyze the source files in the target directory and return a
-        concise, factual summary. Do not write or modify any files. Return a
-        JSON object containing the directory's public symbols (interface),
-        invariants, and side effects matching schema: {"interface": [],
-        "invariants": [], "side_effects": []}. Never infer RPC methods,
-        routes, status enums, or invariants from file or directory names
-        alone; cite the exact `[file:symbol_or_flag]` for every entry, and
-        output `["None"]` if no explicit invariants or side effects exist in
-        code.
+    *   `system_prompt`: >- You are a read-only codebase explorer. Analyze the
+        source files you are given; do not modify any file. Return a JSON
+        object matching schema: {"interface": [], "invariants": [],
+        "side_effects": [], "files_read": []}, where `files_read` lists every
+        read as `"path:start-end"`. Never infer RPCs, routes, enums, or
+        invariants from file or directory names; cite the exact
+        `[file:symbol_or_flag]` for every entry, and output `["None"]`
+        if no explicit invariants or side effects exist in code.
     *   `enable_write_tools`: `false`
     *   `enable_subagent_tools`: `false`
 
@@ -242,17 +241,19 @@ If your harness has no subagent tool, run the scout steps inline.
 
     *   **Scout Spawning & Constraints**: Spawn `goldfish-explorer` for `D`.
 
-        *   *Scout Constraints*: No per-directory or per-file byte cap; every
-            non-test file in `D` is read in full. Bound each scout call to
-            about **1,500 lines** of source instead: list top-level definitions
+        *   *Scout Constraints*: No byte caps; every non-test file in `D` is
+            read in full. Bound each scout call to about **1,500 lines**
+            instead: list top-level definitions
             (class/func/def/route/flag lines) with your search tool, cut the
             directory's files into chunks at those boundaries (never mid-body;
             small files share a chunk), spawn one `goldfish-explorer` per
-            chunk in parallel, and merge their JSON. Give each chunk the
-            file's imports and top-level definition list so it can judge
-            visibility. Check build-manifest deps and `import` / `#include`
-            statements before attributing an RPC service, schema, or message
-            type to a local file. Read non-test files in this order:
+            chunk in parallel, and merge their JSON. Scouts cannot list
+            directories: give each chunk explicit paths and line ranges plus
+            the file's imports and top-level definition list. Before merging,
+            check that each scout's `files_read` covers its assignment. Check
+            build deps and `import` / `#include` lines before attributing an
+            RPC service, schema, or message type to a local file. Read
+            non-test files in this order:
             1.  Contracts, schemas, and build manifests (`.h`, `.hh`, `.hpp`,
                 `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`, `.sql` DDL,
                 interface classes); extract exact DDL table names and exported
@@ -264,9 +265,12 @@ If your harness has no subagent tool, run the scout steps inline.
                 directories); exclude `.css`/`.scss`.
             4.  Test files (`*_test.*`, `*Test.*`, `test_*.*`, `*.spec.*`):
                 ignore entirely, including in hybrid directories.
-        *   *Child Fault Tolerance*: If the scout fails or times out, log a
-            warning, use placeholder values `["(Details pending/documentation
-            failed)"]`, and continue execution.
+        *   *Child Fault Tolerance*: Re-run once any scout that fails, times
+            out, or under-reports coverage. If it still does, keep every
+            result backed by `files_read`, add `(Documentation incomplete:
+            scout failed: <uncovered path:start-end>)` to each of `D`'s three
+            sections, record `D` with the uncovered ranges and the reason, and
+            continue. On a later run, remove a marker once its range is covered.
 
     *   **Parent Context Propagation**: When processing a parent directory `P`,
         retrieve the compiled interface summaries of its immediate child
@@ -327,7 +331,9 @@ If your harness has no subagent tool, run the scout steps inline.
 
 3.  **Worker Reporting**: Once the assigned subtree is fully traversed, compile
     the `subtree_index` array containing the `path`, `summary`, `interface`,
-    `invariants`, and `side_effects` for every processed directory.
+    `invariants`, and `side_effects` for every processed directory, plus an
+    `incomplete` array (`path`, `ranges`, `reason`) for directories recorded
+    as incomplete.
 
 4.  If `is_worker` is `true`, read the [Worker Return Interface Schema](references/worker-return.schema.json)
     relative to this skill directory, then return a matching JSON payload to
@@ -340,15 +346,13 @@ If your harness has no subagent tool, run the scout steps inline.
 ### Step 5: Root Compilation & Termination (Root Orchestrator)
 
 1.  **Receive Worker Payloads**: Collect the JSON `subtree_index` payloads
-    returned by all parallel Sub-Orchestrators.
+    returned by all parallel Sub-Orchestrators, and merge their `incomplete`
+    arrays into the root's list for Step 5.6.
 
     *   **Root Fault Tolerance**: If a parallel worker fails or times out, log a
         warning, insert a placeholder warning link (`[Subtree Root]
         (Documentation failed / Subagent execution timeout)`) in the root
         Blueprint's subdirectory index, and complete the remaining compilation.
-        (Worker failures leaving partial files are handled as an incremental
-        progress feature; the Correction Policy allows resuming on subsequent
-        runs).
 
 2.  **Intermediate Directory Documentation**: Identify any intermediate
     directories sitting between the root `path` and the partitioned subtree
@@ -411,11 +415,11 @@ If your harness has no subagent tool, run the scout steps inline.
         the modified contracts to verify both missing code coverage and
         doc-to-code hallucinations (verifying every documented method, route,
         enum, database table, and invariant against local source files and
-        recording discrepancies in the drift report for human triage). (Note:
-        While `egm-drift-report` is often used for design documents, it can be
-        applied to EGM-compliant contracts as a variant).
+        recording discrepancies in the drift report for human triage).
 
-6.  Terminate execution successfully.
+6.  For each incomplete directory, print its path relative to `path`, the
+    uncovered `path:start-end` ranges, the reason, and the rerun command
+    `egm-bootstrap path=<path>` (plus `target_filename` if set); then stop.
 
 ---
 
