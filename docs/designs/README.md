@@ -6,6 +6,7 @@ operational guardrails.
 
 | Document | Author | Primary Component |
 | :------- | :----- | :---------------- |
+| [site_documentation.md](site_documentation.md)<br>Proposed multi-page guide, skill reference, and shared site interface. | [@n3wth](https://github.com/n3wth) | Website and documentation |
 | [diagnose.md](diagnose.md)<br>Draft independent bug diagnosis that keeps the Elephant's hypothesis out of a fresh Goldfish's input and compares the two before a fix. | [@vshvedov](https://github.com/vshvedov) | `egm-diagnose` (#294) |
 | [triz_integration.md](triz_integration.md)<br>Draft Soviet TRIZ method integration introducing the Inventive Catalyst persona to eliminate false architectural compromises in `/egm-brainstorm` and Step 5 of `/egm-review`. | [@briansuchy](https://github.com/briansuchy) | [`egm-brainstorm`](../../skills/egm-brainstorm/SKILL.md), [`egm-review`](../../skills/egm-review/SKILL.md) (#37) |
 | [ask.md](ask.md)<br>Draft read-only command that answers questions about EGM and suggests the next skill from workspace artifacts. | [@smituparmar01](https://github.com/smituparmar01) | `egm-ask` (#175) |
@@ -22,3 +23,4 @@ operational guardrails.
 | [synthesizer.md](synthesizer.md)<br>Intermediate orchestration subagent to coordinate swarm fan-out, deduplicate critiques, and normalize link citations. | [@briansuchy](https://github.com/briansuchy) | [`synthesizer`](../../agents/synthesizer.md) |
 | [additional-harnesses.md](additional-harnesses.md)<br>Proposed support for Cursor, OpenCode, and Copilot CLI. Maintainer scope approval is pending. | [@n3wth](https://github.com/n3wth) | [Harness integrations](../harnesses.md) |
 | [multi_harness_support.md](multi_harness_support.md)<br>Proposed integration requirements and verification gates for Hermes Agent, OpenClaw, and Delta; native support remains unverified. | [@Seburan](https://github.com/Seburan), [@yathamsriram243-blip](https://github.com/yathamsriram243-blip) | [Harness Architecture](../harnesses.md) |
+| [plugin_listing_presentation.md](plugin_listing_presentation.md)<br>Proposed listing text, starter prompts, and packaged skill assets without workflow-body changes. | [@n3wth](https://github.com/n3wth) | Plugin presentation (#122) |
