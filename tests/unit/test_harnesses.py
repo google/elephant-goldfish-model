@@ -28,7 +28,8 @@ EXPECTED_SKILLS = {
 }
 REVIEWERS = (
     "codebase_details", "comprehension", "design_critic",
-    "implementation_readiness", "structural", "style", "zoom_out",
+    "implementation_readiness", "inventive_catalyst", "structural", "style",
+    "zoom_out",
 )
 
 
@@ -65,6 +66,9 @@ def test_portable_manifest_schema() -> None:
   manifest = read_json("plugin.json")
   assert re.fullmatch(NAME_RE, manifest["name"])
   assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
+  assert manifest["displayName"] == "Elephant-Goldfish Model"
+  assert manifest["logo"] == "assets/icon.svg"
+  assert (ROOT / manifest["logo"]).is_file()
 
 
 def test_openai_submission_metadata_and_assets() -> None:

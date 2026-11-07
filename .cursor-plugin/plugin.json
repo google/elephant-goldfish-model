@@ -1,7 +1,7 @@
 {
   "name": "egm",
-  "version": "0.1.0",
-  "description": "Draft specs, review designs, and check implementation drift.",
+  "version": "0.1.1",
+  "description": "Develop ideas with context and review documents with fresh eyes.",
   "author": {"name": "Google"},
   "homepage": "https://egm.dev",
   "repository": "https://github.com/google/elephant-goldfish-model",
