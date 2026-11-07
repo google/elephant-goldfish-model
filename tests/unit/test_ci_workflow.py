@@ -31,18 +31,65 @@ def test_ci_waits_for_all_validation_jobs() -> None:
   }
 
 
-def test_release_installs_shared_test_group_before_tag_checkout() -> None:
+def test_release_installs_hashed_wheels_before_tag_checkout() -> None:
   release = yaml.safe_load(
       (ROOT / ".github/workflows/release.yml").read_text())
   release_steps = release["jobs"]["build"]["steps"]
-  install = "python -m pip install --group test"
+  install = ("python -m pip install --require-hashes --only-binary=:all: "
+             "-r .github/requirements-release.txt")
   unit_steps = workflow()["jobs"]["unit"]["steps"]
-  assert install in [step.get("run") for step in unit_steps]
+  assert "python -m pip install --group test" in [step.get("run") for step in unit_steps]
   install_index = next(i for i, step in enumerate(release_steps)
                        if step.get("run") == install)
   tag_index = next(i for i, step in enumerate(release_steps)
                    if step.get("id") == "source")
   assert install_index < tag_index, "Older tags may not define the test group"
+
+
+def test_release_signing_cannot_execute_build_dependencies() -> None:
+  release = yaml.safe_load(
+      (ROOT / ".github/workflows/release.yml").read_text())
+  jobs = release["jobs"]
+  assert release["permissions"] == {}
+  assert jobs["build"]["permissions"] == {"contents": "read"}
+  assert jobs["draft"]["permissions"] == {"actions": "read", "contents": "write"}
+  signer = jobs["attest"]
+  assert signer["needs"] == "build"
+  assert {"build", "attest"} <= set(jobs["draft"]["needs"])
+  assert signer["permissions"] == {
+      "contents": "read", "id-token": "write", "attestations": "write",
+  }
+  allowed_actions = {"actions/download-artifact", "actions/attest"}
+  for step in signer["steps"]:
+    if "uses" in step:
+      action, revision = step["uses"].split("@")
+      assert action in allowed_actions
+      assert len(revision) == 40 and all(c in "0123456789abcdef" for c in revision)
+    else:
+      # Do not execute downloaded scripts or install code in the signing job.
+      assert step["run"] == "cd release && sha256sum -c SHA256SUMS"
+  upload = next(s for s in jobs["build"]["steps"]
+                if s.get("uses", "").startswith("actions/upload-artifact@"))
+  for consumer in (signer, jobs["draft"]):
+    download = next(s for s in consumer["steps"]
+                    if s.get("uses", "").startswith("actions/download-artifact@"))
+    assert download["with"]["name"] == upload["with"]["name"]
+    assert "run-id" not in download["with"]
+
+
+def test_release_lock_pins_direct_and_transitive_dependencies() -> None:
+  import re
+
+  lock = (ROOT / ".github/requirements-release.txt").read_text()
+  requirements = [line for line in lock.splitlines()
+                  if line and not line.startswith("#")]
+  pattern = r"([\w-]+)==([\d.]+) --hash=sha256:[0-9a-f]{64}"
+  assert all(re.fullmatch(pattern, line) for line in requirements)
+  pinned = dict(re.match(pattern, line).groups() for line in requirements)
+  assert set(pinned) == {"pytest", "PyYAML", "iniconfig", "packaging", "pluggy"}
+  project = (ROOT / "pyproject.toml").read_text()
+  for name in ("pytest", "PyYAML"):
+    assert f'"{name.lower()}=={pinned[name]}"' in project.lower()
 
 
 @pytest.mark.parametrize("results,success", [

@@ -40,10 +40,12 @@ Dispatch the workflow manually from `main` with an existing version tag. Resolve
 the tag to a commit and require that commit to be an ancestor of `main`. Check
 out that commit, run offline tests, and prepare its archives.
 
-The build job has `contents: read`, `id-token: write`, and `attestations: write`.
-After building, use a commit-pinned `actions/attest` to sign provenance for both
+The build job has only `contents: read` and installs hash-checked wheels.
+A separate job holds `id-token: write` and `attestations: write`; it downloads
+the same run's archives without installing dependencies or executing repository
+code. Use a commit-pinned `actions/attest` to sign provenance for both
 runtime ZIPs and store it in GitHub. Disable registry storage records; no registry
-or artifact-metadata permission is needed. Attestation failure stops the build.
+or artifact-metadata permission is needed. Attestation failure blocks the draft.
 Local preparation does not create attestations.
 
 The provenance identifies the workflow dispatched from `main`. Its source
@@ -57,7 +59,7 @@ by the build job. Workflow identity alone does not verify that tag mapping.
 A separate draft job receives
 the artifacts, verifies their checksums, rechecks tag identity, and creates a
 draft with contents-write permission. Duplicate release creation fails without
-replacing existing assets. Neither job creates tags or publishes releases.
+replacing existing assets. No job creates tags or publishes releases.
 
 ## Acceptance and release procedure
 
