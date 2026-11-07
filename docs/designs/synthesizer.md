@@ -94,7 +94,8 @@ context:
 ## Inter-Agent Communication Contract
 
 1.  **Input Parameters**:
-    *   `Mode`: `REVIEW` for document audits or `BRAINSTORM` for concept ideation.
+    *   `Mode`: `REVIEW` for document audits or `BRAINSTORM` for concept
+        ideation.
     *   `TargetFile`: Absolute path to target document.
     *   `LineRange`: Target line bounds (or `full file`).
     *   `Reviewers`: Array of reviewer persona shortnames.
