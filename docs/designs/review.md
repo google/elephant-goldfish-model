@@ -81,7 +81,8 @@ flowchart TD
     *   *Target*: `FeatureRange` (High-Level Architecture).
     *   *Personas*: [`design_critic`](../../agents/design_critic.md),
         [`structural`](../../agents/structural.md), [`style`](../../agents/style.md).
-    *   *Standards*: `feature-spec-standard.md`, `heilmeier-standard.md`.
+    *   *Standards*: `feature-spec-standard.md` for `design_critic` and
+        `structural`; `style` gets no standard.
     *   *Focus*: Probes single points of failure (SPOFs), scaling limits,
         failure modes, and edge cases.
 4.  **Step 8: Intermediate Zoom Out Review (Post-Critic Pruning)**:
@@ -96,7 +97,9 @@ flowchart TD
     *   *Target*: `DetailedRange` (`## Detailed Implementation Plan`).
     *   *Personas*: [`implementation_readiness`](../../agents/implementation_readiness.md),
         [`codebase_details`](../../agents/codebase_details.md), [`style`](../../agents/style.md).
-    *   *Standards*: `implementation-readiness-standard.md`, `re-implementation-standard.md`.
+    *   *Standards*: `implementation-readiness-standard.md` for
+        `implementation_readiness` and `codebase_details`; `style` gets no
+        standard.
     *   *Focus*: Verifies that every file touched is listed as an explicit
         repository-relative write boundary with rationale, API signatures match
         current codebase reality, and step-by-step test plans exist.
@@ -118,6 +121,10 @@ All reviewer persona prompts reside under [`agents/`](../../agents/):
 | [`agents/style.md`](../../agents/style.md) | Technical Copy Editor | Strips conversational filler, enforces factual, objective tone, calibrates defensive caveats (`DROP` / `CALIBRATE` / `RELOCATE` / `KEEP`), and ensures adherence to concise technical writing standards. |
 | [`agents/inventive_catalyst.md`](../../agents/inventive_catalyst.md) | Inventive Catalyst | Applies TRIZ principles to identify technical contradictions, false compromises, and pattern-based resolutions. |
 | [`agents/synthesizer.md`](../../agents/synthesizer.md) | Review Synthesizer | Spawns reviewers in parallel, deduplicates findings, formats file links, and writes consolidated report artifacts. |
+
+[`agents/bootstrap_orchestrator.md`](../../agents/bootstrap_orchestrator.md)
+is also under `agents/`. `egm-bootstrap` uses it, and it is not part of the
+review pipeline.
 
 --------------------------------------------------------------------------------
 
@@ -189,10 +196,9 @@ drafting.
 | `skills/egm-resolve/SKILL.md` | Skill Definition | Elephant resolution engine managing `CONTEST` vs `PROPOSE FIX` triage and automated fixes. |
 | `skills/egm-resolve/TEST.md` | Unit Tests | Verification test scenarios validating the finding categorization and resolution loop. |
 | `skills/egm-resolve/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating model resolution and fix proposal accuracy. |
-| `agents/*.md` | Persona Prompts | System prompt instructions for all 8 Goldfish reviewers and the Synthesizer. |
+| `agents/*.md` | Persona Prompts | System prompt instructions for the Goldfish reviewers, the Synthesizer, and the bootstrap orchestrator. |
 | `resources/document_standards/*.md` | Document Standards | Evaluation rubrics and standards for feature specs, implementation readiness, and simplicity. |
 
 ## References
 
 *   Dave Rensin, [Elephants, Goldfish, and the New Golden Age of Software Engineering](https://medium.com/@drensin/elephants-goldfish-and-the-new-golden-age-of-software-engineering-c33641a48874) (Medium, 2026).
-*   DARPA, [The Heilmeier Catechism](https://www.darpa.mil/about/heilmeier-catechism).
