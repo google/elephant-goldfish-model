@@ -149,7 +149,7 @@ def test_claude_reviewers_are_read_only_with_fresh_context(name: str) -> None:
   assert canonical["name"] == config["name"]
   assert "tools" not in canonical
   assert "omitClaudeMd" not in canonical
-  persona = (ROOT / "agents" / f"{name}.md").read_text()
+  persona = (ROOT / "agents" / f"{name}.md").read_text(encoding="utf-8")
   assert "NO tools" not in persona
   assert "even if your tools allow it" in persona
 
