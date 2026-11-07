@@ -59,9 +59,10 @@ If your harness has no subagent tool, run the scout steps inline.
     `mktemp -d`), never a fixed, shared path. If neither exists, skip them.
 4.  **Tool Usage (CRITICAL)**: Use your shell, file-reading, file-writing, and file-editing tools for directory discovery and contract/README
     generation. Adhere to clean Markdown formatting directly during generation
-    (standard headers, tables, and fenced code blocks). If a project markdown
-    formatter (e.g. `npx prettier --write`) is explicitly configured in the
-    repository, it may optionally be invoked.
+    (standard headers, tables, and fenced code blocks). Project formatters can
+    execute repository configuration or plugins. Run them only with explicit
+    user authorization covering the command and any dependency installation;
+    configuration alone is not authorization. Without approval, format by hand.
 5.  **Subagent Delegation**: Spawn sub-orchestrator workers in parallel.
 6.  **Mandatory Safety Gate (CRITICAL)**: If you discover more than 15
     subdirectories, you MUST immediately request user approval (using a structured question tool, if your harness has one, or plain chat) before proceeding with full-tree execution
@@ -322,8 +323,9 @@ If your harness has no subagent tool, run the scout steps inline.
 
     *   **Markdown Formatting**: Immediately after writing or correcting
         `target_filename` in `D`, ensure clean markdown formatting (valid headers,
-        tables, and code fences). If a project markdown formatter (e.g. `npx prettier --write`)
-        is configured in the repository, you may execute it on `target_filename`.
+        tables, and code fences). Apply the formatter authorization rule in
+        Execution Constraints; without approval, including headless runs,
+        format using file edits and continue.
 
 3.  **Worker Reporting**: Once the assigned subtree is fully traversed, compile
     the `subtree_index` array containing the `path`, `summary`, `interface`,
