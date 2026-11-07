@@ -19,7 +19,7 @@ Develop ideas with context and review documents with fresh eyes. EGM is an open-
 
 The built-in draft and design-review workflow targets software specifications. For other documents, choose reviewers and standards with `/egm-review-loop`. Bootstrap and drift reporting apply to software codebases.
 
-https://github.com/user-attachments/assets/2341dd84-f597-494f-bdd7-1f20f19e26fa
+https://github.com/user-attachments/assets/93c799a2-10a3-4266-af02-eb79dd33a9a2
 
 ## Install
 
