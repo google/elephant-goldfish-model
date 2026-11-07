@@ -2,6 +2,16 @@
 
 Frontmatter and link checks run in `pytest tests/unit` (see [TESTING.md](../../TESTING.md)).
 
+## Concurrency Verification
+
+Use a fixture with at least five worker partitions and several source chunks
+per worker. Inspect native launch/completion timestamps: at most two workers
+and two scouts per worker may overlap (four scouts total). Repeat with lower
+host limits and without nested delegation: excess work queues or scouts run
+inline, every chunk is still processed, and no workers wait indefinitely for
+slots they themselves occupy. At the >15-directory gate, verify that known
+scope and concurrency limits are shown and unknown costs remain unknown.
+
 ## Manual Verification Scenarios
 
 1. **Small Tree Execution (Sequential)**:
