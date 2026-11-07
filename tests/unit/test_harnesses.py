@@ -204,6 +204,15 @@ def test_scratch_files_use_private_directories() -> None:
   assert "If neither exists, skip them." in skill
 
 
+def test_bootstrap_caps_parallel_workers_and_scouts() -> None:
+  skill = " ".join((ROOT / "skills/egm-bootstrap/SKILL.md").read_text(
+      encoding="utf-8").split())
+  assert "artificial concurrency limits" not in skill
+  assert "Sub-Orchestrators in parallel, never more than 5." in skill
+  assert "per chunk in parallel, at most 5 at a time" in skill
+  assert "up to 5 parallel workers, and at least one scout" in skill
+
+
 def test_claude_permissions_remain_under_user_control() -> None:
   """Bundled resources must not carry an automatic permission override."""
   manifest = read_json(".claude-plugin/plugin.json")

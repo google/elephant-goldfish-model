@@ -62,10 +62,11 @@ If your harness has no subagent tool, run the scout steps inline.
     (standard headers, tables, and fenced code blocks). If a project markdown
     formatter (e.g. `npx prettier --write`) is explicitly configured in the
     repository, it may optionally be invoked.
-5.  **Subagent Delegation**: Spawn sub-orchestrator workers in parallel.
+5.  **Subagent Delegation**: Spawn sub-orchestrator workers in parallel: at
+    most 5 workers, each running at most 5 scouts at a time.
 6.  **Mandatory Safety Gate (CRITICAL)**: If you discover more than 15
     subdirectories, you MUST immediately request user approval (using a structured question tool, if your harness has one, or plain chat) before proceeding with full-tree execution
-    or unbounded subagent spawning.
+    or spawning workers.
 
 ---
 
@@ -109,14 +110,16 @@ If your harness has no subagent tool, run the scout steps inline.
         `go.mod`, `pyproject.toml`, `Makefile`, `BUILD`) in the discovery map
         to extract verification targets later.
 
-2.  **Safety Gate & Unbounded Spawning Approval (CRITICAL)**: During the BFS
+2.  **Safety Gate & Spawning Approval (CRITICAL)**: During the BFS
     loop, if the total running count of discovered directories exceeds **15**,
     immediately pause discovery and request user approval (using a structured question tool, if your harness has one, or plain chat) to warn the user and request approval
     for full-tree execution:
 
     *   `question`: "The target directory tree contains more than 15
-        subdirectories. This is a large execution scope. Do you want to proceed
-        with full-tree bootstrapping?"
+        subdirectories. This is a large execution scope: up to 5 parallel
+        workers, and at least one scout subagent per code directory (one per
+        ~1,500 lines of source). Do you want to proceed with full-tree
+        bootstrapping?"
     *   `options`: `["Yes, proceed with full tree bootstrapping",
         "No, abort execution"]`
     *   (CRITICAL: After requesting approval, you MUST wait for the user's
@@ -163,7 +166,7 @@ If your harness has no subagent tool, run the scout steps inline.
         Orchestrator as the worker for the entire `path`), and then proceed to
         **Step 5: Root Compilation & Termination**.
 
-2.  **Unbounded Parallel Subagent Swarm Strategy (Directory Count > 5)**:
+2.  **Parallel Subagent Swarm Strategy (Directory Count > 5)**:
 
     *   (CRITICAL: If Directory Count > 15, you MUST verify that you have
         received explicit user approval before proceeding. If not yet approved,
@@ -185,15 +188,14 @@ If your harness has no subagent tool, run the scout steps inline.
         6.  Fallback: If `depth` reaches 3 and count is still < 3, select the
             immediate children of the root (or fall back to sequential
             execution).
-    *   **Spawn Unbounded Sub-Orchestrators**: For each partition subtree root,
+    *   **Spawn Sub-Orchestrators**: For each partition subtree root,
         use your harness's subagent tool to spawn a parallel worker:
         *   Subagent: `egm-bootstrap-orchestrator` (`agents/bootstrap_orchestrator.md`) (or a general-purpose subagent)
         *   `Prompt`: "Run egm-bootstrap with path=`[path]`,
             is_worker=true, sub_tree_root=`[partition_root]`,
             target_filename=`[target_filename]`."
-    *   **Unbounded Execution**: Spawn all Sub-Orchestrators in parallel without
-        artificial concurrency limits (as authorized by the user during the
-        safety gate).
+    *   **Worker Cap**: The partitioning yields at most 5 partitions. Spawn
+        their Sub-Orchestrators in parallel, never more than 5.
     *   Go idle and wait for all worker subagents to return their JSON subtree
         index payloads. Jump to **Step 5: Root Compilation & Termination**.
 
@@ -248,7 +250,8 @@ If your harness has no subagent tool, run the scout steps inline.
             (class/func/def/route/flag lines) with your search tool, cut the
             directory's files into chunks at those boundaries (never mid-body;
             small files share a chunk), spawn one `goldfish-explorer` per
-            chunk in parallel, and merge their JSON. Give each chunk the
+            chunk in parallel, at most 5 at a time (start the next when one
+            returns), and merge their JSON. Give each chunk the
             file's imports and top-level definition list so it can judge
             visibility. Check build-manifest deps and `import` / `#include`
             statements before attributing an RPC service, schema, or message
