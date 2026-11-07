@@ -1,9 +1,9 @@
 # Versioned runtime releases
 
-Status: Draft. Maintainer scope approval and design review are pending.
+Status: Implemented by merged #137; v0.1.0 is published.
 Author: @n3wth. Date: 2026-10-24.
 
-Related issue: #124. Proposed implementation: #137, dependent on #136.
+Related issue: #124 (completed). Implementation: #137, using merged #136.
 
 ## Problem and scope
 
@@ -20,7 +20,7 @@ Use the root plugin version as canonical. Require matching Claude and Codex
 manifest versions. Accept `vMAJOR.MINOR.PATCH` tags without leading zeroes.
 Never reuse a published version for changed artifacts.
 
-The proposed `scripts/prepare_release.py` accepts `--tag`, `--commit`, and
+The implemented `scripts/prepare_release.py` accepts `--tag`, `--commit`, and
 `--output`. Require a full source SHA and a new output directory. Produce:
 
 - `egm-claude-VERSION.zip`
@@ -61,9 +61,9 @@ replacing existing assets. Neither job creates tags or publishes releases.
 
 ## Acceptance and release procedure
 
-1. Obtain scope approval for #124 and merge the reviewed design.
-2. Merge #136 after its design approval and renewed implementation review.
-3. Retarget #137 to `main`, refresh validation, and merge after approval.
+1. Design and implementation #136/#137 are merged, and #124 is complete.
+2. The first published release is [v0.1.0](https://github.com/google/elephant-goldfish-model/releases/tag/v0.1.0).
+3. Keep exact-artifact host verification in #60 open for remaining hosts.
 4. Select the reviewed version and commit. Regenerate packaged content and
    validate all included runtime changes before a maintainer creates the tag.
 5. Dispatch the workflow. Inspect both archives, checksums, and source identity.
