@@ -34,11 +34,35 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-review-loop/SKILL.md"
     turns:
-      - user_input: "Round 3 of the review loop on docs/design.md returned two Nits and one Major that was contested in round 1. Round 2 was clean. What happens next?"
+      - user_input: "Round 3 of the review loop on docs/design.md returned two Nits and one Major that was contested in round 1; the evidence its contest cited is unchanged. Round 2 was clean. What happens next?"
         assertions:
           - type: "required_pattern"
             pattern: "(?i)(converged|two consecutive clean|settled)"
             message: "The loop must treat a re-raised settled finding and Nits as non-blocking and report convergence."
+
+  - scenario_id: "contest_reopens_when_cited_evidence_changes"
+    description: "Verifies a contested finding re-opens when a later edit at a different scope removed the evidence its contest cited."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review-loop/SKILL.md"
+    turns:
+      - user_input: "Round 3 of the review loop on docs/design.md. Settled list: design-1-2 (Major, section 5: 'Section 5 says stale entries are dropped but never says how'), contested in round 1 with this evidence: section 3, sentence 'Stale entries are evicted in LRU order.' Fixes applied in round 2: structural-2-1 shortened section 3, which now reads 'The cache stores up to 10,000 entries in memory.' Round 3 findings: design-3-1 (Major, section 5: 'Section 5 says stale entries are dropped but never says how') and style-3-2 (Nit, section 2). Round 2 was clean. Is round 3 clean, and has the loop converged? End your reply with exactly three lines: 'design-3-1: re-open' or 'design-3-1: settled', then 'round 3: clean' or 'round 3: not clean', then 'converged: yes' or 'converged: no'."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?im)^[ \\t*`_.-]*design-3-1:\\s*re-open[ \\t*`_.-]*\\n[ \\t*`_.-]*round 3:\\s*not clean[ \\t*`_.-]*\\n[ \\t*`_.-]*converged:\\s*no[ \\t*`_.-]*\\s*\\Z"
+            message: "The reply must end with: design-3-1: re-open, round 3: not clean, converged: no."
+
+  - scenario_id: "contest_stays_settled_when_evidence_still_supports_it"
+    description: "Verifies a contested finding stays settled when a later edit reworded its cited evidence but kept its meaning."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review-loop/SKILL.md"
+    turns:
+      - user_input: "Round 3 of the review loop on docs/design.md. Settled list: design-1-2 (Major, section 5: 'Section 5 says stale entries are dropped but never says how'), contested in round 1 with this evidence: section 3, sentence 'Stale entries are evicted in LRU order.' Fixes applied in round 2: structural-2-1 rewrote section 3, which now reads 'The cache stores up to 10,000 entries in memory. Stale entries are evicted least recently used first.' Round 3 findings: design-3-1 (Major, section 5: 'Section 5 says stale entries are dropped but never says how') and style-3-2 (Nit, section 2). Round 2 was clean. All requested reviewers completed in rounds 2 and 3. Is round 3 clean, and has the loop converged? End your reply with exactly three lines: 'design-3-1: re-open' or 'design-3-1: settled', then 'round 3: clean' or 'round 3: not clean', then 'converged: yes' or 'converged: no'."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?im)^[ \\t*`_.-]*design-3-1:\\s*settled[ \\t*`_.-]*\\n[ \\t*`_.-]*round 3:\\s*clean[ \\t*`_.-]*\\n[ \\t*`_.-]*converged:\\s*yes[ \\t*`_.-]*\\s*\\Z"
+            message: "The reply must end with: design-3-1: settled, round 3: clean, converged: yes."
 
   - scenario_id: "missing_reviewer_status_not_clean"
     description: "Verifies a reviewer with no status in the synthesizer summary counts as not run, so a zero-findings round is not clean."
