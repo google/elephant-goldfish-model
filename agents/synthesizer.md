@@ -34,7 +34,7 @@ Inspect the `Mode` parameter specified by the caller (`Mode: BRAINSTORM` vs `Mod
 4. **Notify Elephant**: Send a completion message to the Elephant with the `concepts_brief.md` path.
 
 ## IF Mode: REVIEW (Document Audit)
-* **Personas Directory**: `agents/{name}.md`
+* **Personas Directory**: `agents/{name}.md` for a file stem such as `design_critic`. A name such as `egm-design` is a persona's frontmatter `name`: use the persona file in `agents/` that declares it (`agents/design_critic.md`).
 * **Document Standards Directory**: `resources/document_standards/{standard_name}.md`
 
 1. **Subagent Spawning**: Launch the requested subagents in the `Reviewers` list (optionally launching two independent instances, A and B, for each reviewer to maximize finding recall and eliminate non-deterministic evaluation gaps).
