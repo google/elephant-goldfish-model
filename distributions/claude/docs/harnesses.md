@@ -116,6 +116,31 @@ turns; they do not establish that project or user instructions are excluded.
 Keep stable workspace conventions in instruction files. State review
 assumptions that the Goldfish must challenge as explicit review criteria.
 
+## Reviewer Tools
+
+The Goldfish reviewer personas tell the reviewer not to modify the
+workspace. Some hosts also limit the reviewer's tools. On prompt-only hosts, no
+tool limit from EGM applies, so a reviewer can use whatever tools the session
+allows.
+
+| Harness | Reviewer read-only |
+| --- | --- |
+| Antigravity | Prompt only: the shared personas in `agents/` set no `tools` list |
+| Claude Code | Host-enforced: reviewer adapters allow only `Read`, `Grep`, and `Glob` (see [reviewer isolation](claude.md#reviewer-isolation)) |
+| Claude Cowork | Unverified: Cowork uses the same adapters, but their tool limits are not verified there (see [Claude Cowork](claude.md#claude-cowork)) |
+| Codex | Prompt only: a general-purpose subagent reads the persona |
+| ChatGPT | Prompt only: a general-purpose agent reads the persona |
+| omp | Unverified: the personas register as native `task` agents, but whether omp limits their tools the way the Claude adapters do is unverified ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) |
+| Muse | Prompt only: agent tool projections are unsupported (see the [Muse guide](https://github.com/google/elephant-goldfish-model/blob/main/docs/muse.md#fresh-context-reviewers)) |
+
+For the hosts above, no test records a reviewer write being denied.
+Host-enforced means the adapters' tool lists leave out write and shell tools,
+not that a run has shown a write refused. The experimental Cursor, GitHub
+Copilot, and OpenCode adapters set their own reviewer permissions; see the
+[Cursor](https://github.com/google/elephant-goldfish-model/blob/main/docs/cursor.md),
+[Copilot](https://github.com/google/elephant-goldfish-model/blob/main/docs/copilot.md), and
+[OpenCode](https://github.com/google/elephant-goldfish-model/blob/main/docs/opencode.md) guides.
+
 ## Artifact Directory
 
 Skills write briefs, drafts, and reports to the working directory, or to the
