@@ -1,0 +1,73 @@
+# Copyright 2026 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Metadata triage
+
+on:
+  issues:
+    types: [opened]
+  # zizmor: ignore[dangerous-triggers] - Inspects metadata only; checks out the trusted base SHA, never PR code.
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to preview without writes
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: metadata-triage-${{ github.event.issue.number || github.event.pull_request.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  classify:
+    if: github.run_attempt == 1 && vars.EGM_TRIAGE_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    outputs:
+      plan: ${{ steps.prepare.outputs.plan }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        id: prepare
+        env:
+          GEMINI_API_KEY: ${{ github.event_name != 'pull_request_target' && secrets.GEMINI_API_KEY || '' }}
+          GEMINI_TRIAGE_MODEL: ${{ vars.GEMINI_TRIAGE_MODEL }}
+        with:
+          script: |
+            await require('./.github/scripts/metadata-triage.cjs').prepare({ github, context, core })
+
+  publish:
+    needs: classify
+    if: github.run_attempt == 1 && github.event_name != 'workflow_dispatch' && vars.EGM_TRIAGE_APPLY == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TRIAGE_PLAN: ${{ needs.classify.outputs.plan }}
+        with:
+          script: |
+            await require('./.github/scripts/metadata-triage.cjs').publish(
+              { github, context, core }, JSON.parse(process.env.TRIAGE_PLAN))
