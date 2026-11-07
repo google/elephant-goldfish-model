@@ -12,6 +12,10 @@ interface Props {
   href?: string;
   target?: '_blank' | '_self';
   class?: string;
+  popovertarget?: string;
+  'aria-haspopup'?: 'menu';
+  'aria-expanded'?: 'true' | 'false';
+  'aria-controls'?: string;
   [key: `data-${string}`]: string | undefined;
 }
 
