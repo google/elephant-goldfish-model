@@ -74,8 +74,22 @@ When resolving names in `Reviewers` and `Standards`:
 *   **Standard Shortnames**: Map standard shortname (e.g., `feature-spec-standard`,
     `implementation-readiness-standard`, `zoom-out-standard`, `heilmeier-standard`,
     `re-implementation-standard`) to `resources/document_standards/{name}.md`.
-*   **Custom Paths**: If the name contains a slash (`/`), treat it as an
-    absolute or workspace-relative path and read it directly.
+*   **Resource Boundary**: Resolve the installed plugin root from this skill's
+    location. Resolve relative persona/standard paths against that root,
+    including paths using `\`. Before reading, canonicalize symlinks and require
+    personas to be `.md` files directly in that root's `agents/`, and standards
+    directly in its `resources/document_standards/`. Reject missing resources
+    or paths outside those directories and stop; never load workspace overrides.
+
+Before the first round, resolve links collected from the target relative to
+its folder, dropping fragments and skipping anchor-only or missing targets.
+Only auto-read files whose real paths stay inside the working directory.
+Outside paths and URLs require explicit user approval; caller-supplied context
+is not approval for additional links found inside it. Ask which to include;
+in headless runs omit unapproved links, report omissions, and continue. Apply
+this boundary again before fetching redirects or following further links.
+Pass only approved absolute context and resource paths to the synthesizer and
+each reviewer, and tell them not to expand the reading list on their own.
 
 ## Execution Workflow
 
@@ -127,9 +141,9 @@ file` mode is specified, confirm full-file line bounds).
         requested reviewer.
     *   **Direct Dispatch (Flat Swarm)**: Alternatively, spawn each requested
         reviewer subagent in `Reviewers` directly.
-        Instruct each subagent to first read its persona definition in
-        `agents/{name}.md`, then audit `TargetFile` at the resolved line range
-        against its designated standard in `resources/document_standards/`,
+        Instruct each subagent to first read its validated absolute persona
+        path, then audit `TargetFile` at the resolved line range
+        against its validated absolute standard path,
         supplying `GoldfishContext`.
     *   Each reviewer produces findings with severity (🔴 Blocker, 🟡 Major, 🟢
         Nit), line numbers, discrepancy descriptions, and rationales.
