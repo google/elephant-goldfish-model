@@ -11,6 +11,11 @@ import shutil
 from pack_plugin import build
 
 
+HOST_MANIFESTS = ("plugin.json", ".claude-plugin/plugin.json",
+                  ".codex-plugin/plugin.json", ".cursor-plugin/plugin.json",
+                  ".plugin/plugin.json")
+
+
 def version_for_tag(root: Path, tag: str) -> str:
     """Returns the tag version after validating all shipped manifests.
 
@@ -27,8 +32,7 @@ def version_for_tag(root: Path, tag: str) -> str:
     if not re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", tag):
         raise ValueError("Tag must be vMAJOR.MINOR.PATCH without leading zeroes")
     version = tag[1:]
-    for relative in ("plugin.json", ".claude-plugin/plugin.json",
-                     ".codex-plugin/plugin.json"):
+    for relative in HOST_MANIFESTS:
         manifest = json.loads((root / relative).read_text(encoding="utf-8"))
         if manifest.get("version") != version:
             raise ValueError(f"{relative}: version must match {tag}")
