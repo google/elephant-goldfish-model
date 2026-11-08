@@ -33,21 +33,16 @@
   --md-sys-color-on-primary-container: light-dark(#041e49, #d3e3fd);
 
   /* Brand Semantic Roles: GM3 Primary Tonal Duo (P1-H)
-     Elephant (Primary 50/70) and Goldfish (Orange 60/70) with accessible on-colors.
+     Elephant (Primary 50/70) and Goldfish (Orange 60/70).
      Keep in sync with public/favicon.svg. */
   --egm-color-elephant: light-dark(#1b6ef3, #7cacf8);
-  --egm-color-on-elephant: light-dark(#ffffff, #041e49);
-  --egm-color-elephant-container: light-dark(#d3e3fd, #041e49);
   --egm-color-goldfish: light-dark(#e86e00, #ff8d41);
-  --egm-color-on-goldfish: light-dark(#2c1600, #2c1600);
-  --egm-color-goldfish-container: light-dark(#ffe8d6, #582400);
 
   /* Secondary: focus ring and links */
   --md-sys-color-secondary: light-dark(#0b57d0, #a8c7fa);
   --md-sys-color-on-secondary: light-dark(#ffffff, #062e6f);
   --md-sys-color-secondary-container: light-dark(#f1f3f4, #2b3037);
   --md-sys-color-on-secondary-container: light-dark(#1f1f1f, #e8eaed);
-
 
   /* Type scale: tightened display sizes for the hero, otherwise package defaults */
   --md-sys-typescale-display-lg: 500 clamp(2.625rem, 1rem + 4.8vw, 5rem) / 1.04 var(--md-ref-typeface-brand);
