@@ -13,7 +13,7 @@ import pytest
 
 REFERENCE = (Path(__file__).resolve().parents[2]
              / "skills/egm-bootstrap/references/unsupported-source-check.md")
-FILES = ("src/a.xyz", "src/my file.xyz", "src/b.py", "test/runtests.xyz",
+FILES = ("src/a.xyz", "src/my file.xyz", "src/café.py", "test/runtests.xyz",
          "docs/index.md", "Makefile", ".env", ".github/ci.xyz",
          "node_modules/m/i.xyz", "third_party/v/v.xyz", "out/gen.xyz")
 
@@ -26,7 +26,7 @@ def inventory(root: Path) -> dict[str, int]:
   completed = subprocess.run(
       [shell, "-c", command.replace("<path>", root.as_posix())],
       env={**os.environ, "GIT_CEILING_DIRECTORIES": str(root.parent)},
-      text=True, capture_output=True, timeout=30, check=True,
+      text=True, encoding="utf-8", capture_output=True, timeout=30, check=True,
   )
   counts = {}
   for line in completed.stdout.splitlines():

@@ -10,8 +10,8 @@ The Root Orchestrator runs this check once, before discovery.
 1.  Run this command, replacing `<path>` with the target `path`:
 
     ```sh
-    (cd "<path>" && { git ls-files --cached --others --exclude-standard 2>/dev/null ||
-        find . -type f | sed 's|^\./||'; } |
+    (cd "<path>" && { git ls-files -z --cached --others --exclude-standard 2>/dev/null ||
+        find . -type f -print0; } | tr '\0' '\n' | sed 's|^\./||' |
       grep -Ev '(^|/)(\.|(node_modules|venv|dist|build|third_party)/)' |
       awk -F/ '$NF ~ /\.[^.]+$/ { e = $NF; sub(/.*\./, ".", e); n[e]++
         if (!(e in x)) x[e] = $0 } END { for (e in n) print n[e], e, x[e] }' |
