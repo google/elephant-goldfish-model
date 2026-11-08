@@ -2,19 +2,13 @@
 interface Props {
   variant?: 'split' | 'elephant' | 'goldfish';
   size?: number | string;
-  width?: number | string;
-  height?: number | string;
   class?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
 }
 
 const {
   variant = 'split',
-  size,
-  width = size ?? (variant === 'split' ? 28 : 56),
-  height = size ?? (variant === 'split' ? 28 : 56),
+  size = variant === 'split' ? 28 : 56,
   class: className,
-  'aria-hidden': ariaHidden = true,
 } = Astro.props;
 
 const viewBox =
@@ -27,10 +21,10 @@ const viewBox =
 
 <svg
   viewBox={viewBox}
-  width={width}
-  height={height}
+  width={size}
+  height={size}
   class={className}
-  aria-hidden={ariaHidden ? 'true' : undefined}
+  aria-hidden="true"
 >
   {(variant === 'split' || variant === 'elephant') && (
     <g class="elephant-mark">
