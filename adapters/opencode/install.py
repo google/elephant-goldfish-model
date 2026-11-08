@@ -15,6 +15,7 @@ HOST_VERSION = "1.18.29"
 REVIEWERS = (
     "codebase_details", "comprehension", "design_critic",
     "implementation_readiness", "inventive_catalyst", "structural", "style", "zoom_out",
+    "security",
 )
 
 
@@ -25,6 +26,17 @@ def name(path: Path) -> str:
     if not match:
         raise ValueError(f"Missing canonical name: {path}")
     return match[1]
+
+
+def _check_runtime_source(path: Path) -> None:
+    """Reject symlinked path components and escapes before copying, as pack_plugin.py does."""
+    root = ROOT.resolve()
+    relative = path.relative_to(root)
+    if any((root / Path(*relative.parts[:i])).is_symlink()
+           for i in range(1, len(relative.parts) + 1)):
+        raise ValueError(f"Symlink in runtime path: {relative}")
+    if not path.resolve().is_relative_to(root):
+        raise ValueError(f"Path outside source tree: {relative}")
 
 
 def install(destination: Path) -> Path:
@@ -48,8 +60,10 @@ def install(destination: Path) -> Path:
     bundle = destination / "bundle"
     bundle.mkdir()
     for directory in ("skills", "agents", "resources", "docs"):
+        _check_runtime_source(ROOT / directory)
         shutil.copytree(ROOT / directory, bundle / directory)
     for filename in ("plugin.json", "LICENSE", "README.md", "TESTING.md"):
+        _check_runtime_source(ROOT / filename)
         shutil.copy2(ROOT / filename, bundle / filename)
 
     guide = bundle / "docs/opencode.md"
@@ -140,7 +154,59 @@ def install(destination: Path) -> Path:
     return config
 
 
+def verify(destination: Path) -> int:
+    """Recompute bundle SHA-256 hashes against installation.json; return 0 on match."""
+    destination = destination.expanduser().absolute()
+    record = destination / "installation.json"
+    if record.is_symlink() or not record.is_file():
+        raise FileNotFoundError(record)
+    metadata = json.loads(record.read_text(encoding="utf-8"))
+    expected = metadata.get("sha256")
+    if not isinstance(expected, dict) or not expected:
+        raise ValueError(f"installation.json has no sha256 manifest: {record}")
+    mismatches, missing, unexpected = [], [], []
+    seen = set()
+    for relative, digest in expected.items():
+        path = destination / relative
+        if path.is_symlink() or not path.is_file():
+            missing.append(relative)
+            continue
+        seen.add(relative)
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        if actual != digest:
+            mismatches.append(relative)
+    recorded = destination / "bundle"
+    for path in sorted(recorded.rglob("*")):
+        if not path.is_file() or path.is_symlink():
+            continue
+        relative = path.relative_to(destination).as_posix()
+        if relative not in expected:
+            unexpected.append(relative)
+    if not (mismatches or missing or unexpected):
+        print(f"OK: {len(expected)} files verified ({metadata.get('version')})")
+        return 0
+    for relative in mismatches:
+        print(f"CHANGED: {relative}")
+    for relative in missing:
+        print(f"MISSING: {relative}")
+    for relative in unexpected:
+        print(f"UNEXPECTED: {relative}")
+    return 1
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("destination", type=Path, help="New, fixed installation directory")
-    print(install(parser.parse_args().destination))
+    parser.add_argument(
+        "destination", type=Path, nargs="?",
+        help="Existing installation directory (verify mode) or new directory (install mode)")
+    parser.add_argument(
+        "--verify", action="store_true",
+        help="Verify an existing installation against its recorded SHA-256 manifest")
+    args = parser.parse_args()
+    if args.verify:
+        if not args.destination:
+            parser.error("verify needs a destination")
+        raise SystemExit(verify(args.destination))
+    if not args.destination:
+        parser.error("install needs a destination")
+    print(install(args.destination))

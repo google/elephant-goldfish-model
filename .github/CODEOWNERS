@@ -4,3 +4,8 @@
 # NOTE: To enforce approval before merging, "Require review from Code Owners" must be enabled in Branch Protection Rules.
 
 * @google/egm-maintainers
+
+# Continuously request maintainer review for CI/CD changes that alter
+# privileged build and release machinery, even if the branch-protection rule
+# "Require review from Code Owners" is ever disabled.
+.github/ @google/egm-maintainers

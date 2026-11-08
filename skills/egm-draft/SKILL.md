@@ -309,7 +309,10 @@ strictly:
 4.  **Write doc**: Once finalized, write the contents of `design_draft.md` to
     the designated destination file at `<DESIGN_DIR>/<FEATURE>.md` using your
     file-writing tool. Follow the [template](references/design_doc.md) for final
-    structure if any adjustments are needed.
+    structure if any adjustments are needed. If `<DESIGN_DIR>/<FEATURE>.md`
+    already exists, do not overwrite it silently: choose a non-colliding name
+    (for example `<FEATURE>-2.md`) and confirm it with the user in chat before
+    writing.
 
 5.  **Clean Formatting**: Ensure clean standard Markdown formatting, valid table
     syntax, and proper code block fences.

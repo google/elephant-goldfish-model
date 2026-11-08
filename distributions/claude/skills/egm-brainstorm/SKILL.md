@@ -245,9 +245,15 @@ these into Alternatives Considered and has no other source for them.]
     ```
 
     *   **Option 0: `Publish concepts_brief.md as RFC for team feedback`**:
-        *   Write `concepts_brief.md` to `docs/designs/<feature_name>.md` using
+        *   Determine `docs/designs/<feature_name>.md`. If that exact path
+            already exists (or would replace anything but `concepts_brief.md`
+            itself), do not overwrite it: proposing `<feature_name>-2.md` (or a
+            date-suffixed name) and confirming the choice with the user in chat
+            is mandatory before writing.
+        *   Write `concepts_brief.md` to the confirmed `docs/designs/<feature_name>.md` path using
             your file-writing tool.
-        *   Register the RFC in `docs/designs/SITEMAP.md` if it exists.
+        *   Register the RFC in `docs/designs/SITEMAP.md` if it exists (add a
+            new entry; never modify or remove existing rows).
         *   Notify the user in chat that the RFC has been published and can be
             shared with the team for feedback before formal drafting. Remind the
             user that once feedback is gathered, a detailed design can be

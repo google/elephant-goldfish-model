@@ -30,6 +30,7 @@ concurrency:
 
 jobs:
   site-validation:
+    timeout-minutes: 30
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -62,6 +63,7 @@ jobs:
         run: npm run test:browser -- "$RUNNER_TEMP/egm-without-analytics.html"
 
   unit:
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -79,10 +81,39 @@ jobs:
       - run: python -m pytest tests/unit
         shell: bash
 
+  workflow-lint:
+    name: Workflow lint
+    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Install zizmor (pinned)
+        run: python -m pip install "zizmor==1.32.0"
+      - name: zizmor static analysis
+        run: zizmor --no-progress .github/workflows
+      - name: actionlint (pinned tarball, checksum verified)
+        # SHA-256 matches actionlint_1.7.12_linux_amd64.tar.gz from rhysd/actionlint releases
+        env:
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          set -euo pipefail
+          temp="${RUNNER_TEMP}/actionlint"
+          mkdir -p "$temp"
+          curl -fsSLo "$temp/actionlint.tar.gz" https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          echo "$ACTIONLINT_SHA256  $temp/actionlint.tar.gz" | sha256sum -c
+          tar -xzf "$temp/actionlint.tar.gz" -C "$temp" actionlint
+          "$temp/actionlint" -color
+
   ci:
     name: CI
     if: ${{ always() }}
-    needs: [unit, site-validation]
+    timeout-minutes: 5
+    needs: [unit, site-validation, workflow-lint]
     runs-on: ubuntu-24.04
     steps:
       - name: Require successful validation
