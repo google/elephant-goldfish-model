@@ -138,6 +138,11 @@ project files do not move. Claude Code reads a project `AGENTS.md` only when
 the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
 `.gitignore`.
 
+## Experimental Devin integration
+
+See the [Devin CLI and Desktop guide](devin.md) for building a local runtime,
+installation, delegation, and the outstanding verification checklist.
+
 ## Support Status & Contributing Other Harnesses
 
 **Antigravity CLI**, **Claude Code**, and **Codex** pass automated installation
