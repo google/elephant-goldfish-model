@@ -17,6 +17,14 @@ section points to them.
     and follow the Track 2 steps. Existing design docs are listed in
     [docs/designs/README.md](docs/designs/README.md).
 
+**Example:** If a documentation link is broken, fix the destination on a
+branch, follow the [test setup in TESTING.md](TESTING.md), and run
+`pytest tests/unit/test_link_integrity.py`. Open a Track 1 PR with the
+[PR template](.github/PULL_REQUEST_TEMPLATE.md) and record the result. A
+small fix like this does not need a prior issue or design document.
+
+For usage questions, use [Discussions Q&A](https://github.com/google/elephant-goldfish-model/discussions/categories/q-a).
+
 ## Design Principles
 
 These general principles guide development of the EGM framework:
@@ -73,7 +81,7 @@ follows the EGM Spec-Driven Development process:
     We also recommend running `/egm-review docs/designs/<name>.md` to stress-test
     the proposal.
 
-3.  **Submit a Design Doc PR (`pr-ready`)**:
+3.  **Submit a Design Doc PR and wait for `pr-ready`**:
     Open a dedicated **Design Doc PR** containing `docs/designs/<name>.md`
     and `docs/designs/README.md` (referencing your aligned issue with
     `Refs #<issue>` rather than `Closes #<issue>` so the issue stays open).
