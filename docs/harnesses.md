@@ -135,8 +135,12 @@ writing there. If you decline or no one can confirm, as in a headless run, the
 files go to the working directory. The answer isn't saved, so a new session
 asks again. A path in your prompt needs no confirmation. Design docs and other
 project files do not move. Claude Code reads a project `AGENTS.md` only when
-the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
-`.gitignore`.
+the project has no `CLAUDE.md`.
+
+Commit approved specifications in `docs/designs/` and project rules in
+`AGENTS.md`, so teammates and agents share the same source of truth. Add
+`.dev/docs` to `.gitignore` only to keep scratch drafts out of git before
+approval.
 
 ## Support Status & Contributing Other Harnesses
 
