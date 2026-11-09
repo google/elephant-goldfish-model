@@ -336,8 +336,8 @@ contracts.
 - [State mutations, network calls, disk access, locks, or external side effects]
 
 ## Verification
-- Build: `build //[package_path]...`
-- Test: `test //[package_path]...`
+- Build: `build //[package_path]/...`
+- Test: `test //[package_path]/...`
 ```
 
 #### 📄 Repository Root (Blueprint / Hay) README Template
@@ -364,7 +364,7 @@ Used for root directory nodes that coordinate child sub-trees.
 - [Shared resources, databases, or external integrations affected by this subsystem]
 
 ## System Verification
-- Run: `test //[system_path]...`
+- Run: `test //[system_path]/...`
 ```
 
 #### 📄 Intermediate Blueprint README Template
