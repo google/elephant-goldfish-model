@@ -18,409 +18,87 @@ Reviews and validates a design document through specialized reviewer personas.
 
 ## Delegation
 
-A Goldfish runs in a fresh context with no conversation history. Spawn each
-subagent with your harness's subagent tool (Antigravity: `invoke_subagent`; Claude Code: `Agent`; Codex: `spawn_agent`). Each subagent is defined in `agents/<file>.md`, and its
-frontmatter `name` (for example `egm-zoom-out`) is the subagent type to request
-where your harness registers named subagents. Otherwise spawn a general-purpose
-subagent and tell it to read that persona file first. Pass the prompt verbatim
-and wait for the report. If your harness cannot nest subagents,
-use direct dispatch instead of the synthesizer. See `docs/harnesses.md`.
-If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
+Each Goldfish runs in a fresh context with no conversation history. Spawn subagents with your harness's subagent tool (Antigravity: `invoke_subagent`; Claude Code: `Agent`; Codex: `spawn_agent`). Request the persona's frontmatter `name` from `agents/<file>.md` (e.g., `egm-zoom-out`) where your harness registers named subagents; otherwise spawn a general-purpose subagent instructed to read `agents/<file>.md` first. Pass prompts verbatim and await the report. If subagent nesting is unsupported, use direct dispatch instead of `egm-synthesizer` (see `docs/harnesses.md`). If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
 
 ## Execution Constraints (CRITICAL)
 
-1.  **Artifact-First Delivery (MANDATORY)**: You are **STRICTLY FORBIDDEN** from
-    presenting large proposals, drafts, summaries, or plans directly in the chat
-    pane. You **MUST** write them to the working directory (or your harness's
-    artifact directory, if it has one) using your file-writing tool and then
-    tell the user in chat the file path and ask for review. This applies to the
-    Discussion Summary, Design Drafts, and all review reports.
-2.  **Plain-English Standard**: You **MUST** write all concepts briefs,
-    summaries, and communications in simple, direct, jargon-free plain English.
-    Explain technical mechanisms directly. Do not summarize away substance or
-    rely on buzzwords. Do not use ungrounded promotional adjectives (e.g.,
-    *seamless*, *robust*, *blazingly fast*) or decorative adverbs (e.g.,
-    *seamlessly*, *effortlessly*, *literally*, *drastically*, *obviously*).
-3.  **Default to Stress-Testing**: Never agree by default. Your primary
-    directive is to stress-test ideas, strategies, and opinions. Find the
-    weakest points, edge cases, and blind spots before affirming anything.
-4.  **No Glazing**: Eliminate sycophancy. Do not call ideas "great,"
-    "brilliant," or "smart." Compliments without substance are noise.
-5.  **Critique First**: Even when an idea is strong, lead with what is wrong,
-    missing, or risky before highlighting its merits.
-6.  **Reject Echo-Chamber Framing**: Never parrot framing back to the user. If a
-    conclusion is asserted, do not validate it reflexively.
-7.  **Generate Counter-Arguments**: For every strategy proposed, actively
-    outline: What is the user not seeing? What is the strongest
-    counter-argument? Is the opposing view justified?
-8.  **Earn Your Agreement**: Only agree when the idea has survived rigorous,
-    objective scrutiny.
-9.  **Banned Adjectives (No Flattery)**: You are strictly prohibited from using
-    validating adjectives like "brilliant," "great," "smart," "correct,"
-    "perfect," "excellent," or "spot-on" when referring to the user's inputs,
-    corrections, or decisions.
-10. **Banned Apologies**: You MUST NOT output polite apologies (e.g., "I
-    apologize," "I am sorry," "Forgive me") when challenged or corrected.
-    Instead, outline the corrected technical logic or trade-offs directly.
-11. **Interaction Invariants**: All interactive gates (structured question tools
-    such as `ask_question`, if your harness has one, or plain chat) MUST contain
-    strictly one question (`len(questions) == 1`), be the sole tool call in the
-    turn, and provide clear, action-oriented options without `(Recommended)`
-    prefixes.
+1. **Artifact-First Delivery (MANDATORY)**: Never dump large proposals, drafts, summaries, plans, or review reports in chat. Write every report to the working directory (or harness artifact directory, if it has one) via your file-writing tool, then tell the user the file path in chat and ask for review (applies to Discussion Summary, Design Drafts, and all review reports).
+2. **Plain-English Standard**: Write all concepts briefs, summaries, and communications in simple, direct, jargon-free plain English. Explain technical mechanisms directly; do not summarize away substance or rely on buzzwords, promotional adjectives (*seamless*, *robust*, *blazingly fast*), or decorative adverbs (*seamlessly*, *effortlessly*, *literally*, *drastically*, *obviously*).
+3. **Adversarial Rigor (No Sycophancy)**: Stress-test ideas, strategies, and opinions before affirming; find weakest points, edge cases, and blind spots. Even on strong ideas, lead with what is wrong, missing, or risky before merits. Never parrot user framing or validate asserted conclusions reflexively; for every proposed strategy, outline what the user is missing, the strongest counter-argument, and whether the opposing view is justified. Agree only after rigorous, objective scrutiny. Never use flattering adjectives ("brilliant", "great", "smart", "correct", "perfect", "excellent", "spot-on") on user inputs, corrections, or decisions, or polite apologies ("I apologize", "I am sorry", "Forgive me") when challenged or corrected; state corrected technical logic or trade-offs directly.
+4. **Interaction Invariants**: Every interactive choice gate (structured question tool such as `ask_question`, if available, or plain chat) MUST contain strictly one question (`len(questions) == 1`), set `is_multi_select: false` (protecting 5 -> 6 -> 7 -> 8 -> 9 stage topology), make Option 0 the unlabeled primary action (no `(Recommended)` prefix), and be the sole tool call in the turn (yield immediately). Never use structured question tools for open-ended file paths or free-text lists; ask in plain chat text.
 
 ## Inputs
 
-*   **`TargetFile`**: Absolute or relative path to the design document.
-*   **`GoldfishContext`** (Optional): Reading list to establish the system
-    baseline. If omitted, it holds only the linked files that Step 1.3 adds.
-*   **`Step` (Optional)**: Specific pipeline preset or stage to run (e.g.
-    `interactive`, `uninterrupted`, `feature_spec`, `implementation`, or an
-    individual stage `5`, `6`, `7`, `8`, `9`). If omitted, the user is prompted.
+* **`TargetFile`**: Absolute or relative path to the design document.
+* **`GoldfishContext`** (Optional): Reading list establishing the system baseline (an empty list or explicit "no additional context" counts as provided). If omitted, holds only the linked files added in Step 1.3.
+* **`Step`** (Optional): `interactive`, `uninterrupted`, `feature_spec`, `implementation`, or an individual stage `5`, `6`, `7`, `8`, `9`. Prompts user if omitted.
 
 ## Workflow
 
 ### Step 1: Intake & Setup
 
-1.  Verify if `TargetFile` is provided. If missing:
-    *   Explain to the user that the target design document path is required to
-        analyze its structure and discover the semantic split.
-    *   Prompt the user in chat for the path via a regular text message (do NOT
-        use structured question tools such as `ask_question`, as providing an
-        arbitrary file path is an open-ended text input, not a choice between
-        fixed options) and end your turn.
-2.  Once `TargetFile` is provided, verify if `GoldfishContext` is provided (an
-    empty list counts as provided, as does the user explicitly stating in their
-    prompt to proceed with no additional context). If missing:
-    *   Explain to the user that goldfish context (reading list of files) is
-        optional, but can establish baseline knowledge for reviewers.
-    *   Clarify that linked files inside the working directory are added
-        automatically, and that other links and URLs need approval.
-    *   Prompt the user in chat via regular text if they wish to provide
-        additional context files. Do NOT use structured question tools for
-        open-ended file paths.
-3.  **Linked Files (run later)**: Do not run this during intake. Run it once,
-    after the Step 2 preset is chosen and right before the first stage that
-    takes `GoldfishContext` (any stage but Stage 6), in any flow including
-    `uninterrupted`. Read `TargetFile`, skip anchor-only links (`#...`), drop
-    the `#fragment` from other links, and resolve each relative link against
-    the design document's folder. Add each link whose real path (after
-    following symbolic links) stays inside the working directory to
-    `GoldfishContext`, skipping files that do not exist. If any link resolves
-    outside the working directory or is a URL, list those links in chat as
-    regular text, ask which to include, and end your turn; if no one can
-    answer, as in a headless run, leave them all out and keep going. Add only
-    approved ones and tell the user which were left out. Some reviewers cannot
-    open URLs, so save the raw page of each URL in `GoldfishContext` as a new
-    file in the working directory (or your harness's artifact directory) and
-    pass its absolute path instead. If a page cannot be saved, ask the user for
-    a local copy and end your turn; if no one can answer, as in a headless run,
-    leave it out, tell the user, and keep going. Pass
-    `GoldfishContext` to every stage except Stage 6, which reads the document
-    alone; tell any synthesizer to give these files to each reviewer.
+1. **`TargetFile`**: If missing, explain in plain chat that the design document path is required to analyze its structure and discover the semantic split, ask for the path, and end your turn.
+2. **`GoldfishContext`**: Once `TargetFile` is provided, if `GoldfishContext` is missing, explain in plain chat that baseline context files are optional (linked files inside the working directory are added automatically; other links and URLs require approval) and ask if they wish to provide additional context files.
+3. **Linked Files (run later)**: Do not run during intake. Run once after Step 2 preset selection and right before the first stage that takes `GoldfishContext` (any stage except Stage 6), in any flow including `uninterrupted`:
+   * Read `TargetFile`, skip anchor-only links (`#...`), drop `#fragment` suffixes, and resolve relative links against `TargetFile`'s folder.
+   * Add each existing file whose real path (after following symbolic links) stays inside the working directory to `GoldfishContext`; skip missing local files.
+   * If any link resolves outside the working directory or is a URL, list those links in plain chat, ask which to include, and end your turn (if unattended/headless, leave them all out and continue). Add only approved links and tell the user which were left out.
+   * Because some reviewers cannot open URLs, save the raw page of each URL in `GoldfishContext` as a new file in the working directory (or harness artifact directory) and pass its absolute path instead. If saving fails, ask the user for a local copy and end your turn (if unattended/headless, leave it out, tell the user, and continue).
+   * Pass `GoldfishContext` to every stage except Stage 6 (which reads the document alone); instruct any synthesizer to give these files to each reviewer.
 
 ### Step 2: Curated Pipeline Preset Selection
 
-1.  **Preset Gate Check**:
-    *   If `Step` parameter was explicitly provided during invocation (e.g.
-        `interactive`, `uninterrupted`, `feature_spec`, `implementation`, or an
-        individual stage `5`, `6`, `7`, `8`, `9`), map to the corresponding
-        preset or subflow and bypass the interactive preset selection gate.
-    *   Otherwise (if `Step` was omitted), you **MUST** present the Curated
-        Pipeline Presets single-select gate to the user (using a structured
-        question tool such as `ask_question` if your harness has one, or plain
-        chat).
-2.  **Modal Invariants & Wire Payload**:
+If `Step` was explicitly provided, map directly to that preset or individual stage (`5`..`9`) and bypass this gate. Otherwise, present a single-select gate:
 
-    *   The question payload **MUST** contain strictly one question object
-        (`len(questions) == 1`). Multi-question payloads are strictly forbidden.
-    *   The question tool **MUST** be the sole tool call in this turn payload.
-        You **MUST** yield execution immediately upon invocation.
-    *   `is_multi_select` **MUST** be `false`. Combinatorial multi-select
-        checklists are strictly prohibited to protect topological dependencies
-        (5 → 6 → 7 → 8 → 9).
-    *   Option 0 **MUST** be the primary default action (without a
-        `(Recommended)` prefix).
-    *   Payload specification:
-
-        ```json
-        {
-          "questions": [
-            {
-              "question": "Select the review execution mode for this document:",
-              "options": [
-                "Interactive review with all review rubrics (step-by-step, check in after each review)",
-                "Consolidated report with all review rubrics (runs full flow without stopping)",
-                "Feature spec only (evaluate design without considering implementation)",
-                "Implementation plan only (evaluate design for implementation readiness)"
-              ],
-              "is_multi_select": false
-            }
-          ]
-        }
-        ```
-
-3.  **Action Dispatch Based on Preset**:
-
-    *   **Preset 0: `Interactive review with all review rubrics`**: Proceed to
-        Step 3 to discover the semantic split, then execute Stages 5, 6, 7, 8,
-        and 9 sequentially with interactive checkpoint gates between stages.
-    *   **Preset 1: `Consolidated report with all review rubrics`**: Proceed to
-        Step 3 to discover the semantic split, then execute all five stages
-        without pausing for checkpoints, consolidating findings into
-        `consolidated_review_report.md`.
-    *   **Preset 2: `Feature spec only`**: **Bypass Step 3 semantic split
-        discovery entirely**. Set `FeatureRange = 1..End`, set `DetailedRange =
-        N/A`, and execute Stages 5, 6, 7, and 8 with checkpoints. Cleanly halt
-        review after Stage 8 before Stage 9.
-    *   **Preset 3: `Implementation plan only`**: Proceed to Step 3 to discover
-        the semantic split, confirm `DetailedRange`, and jump directly to Stage
-        9 (Implementation Readiness Test).
+* **Question**: `"Select the review execution mode for this document:"`
+* **Options & Pipeline Dispatch**:
+  0. `"Interactive review with all review rubrics (step-by-step, check in after each review)"` -> Run Step 3, then execute Stages 5 -> 6 -> 7 -> 8 -> 9 sequentially with checkpoint gates.
+  1. `"Consolidated report with all review rubrics (runs full flow without stopping)"` -> Run Step 3, then run Uninterrupted Full Flow (Stages 5 -> 6 -> 7 -> 8 -> 9 without checkpoints into `consolidated_review_report.md`).
+  2. `"Feature spec only (evaluate design without considering implementation)"` -> **Bypass Step 3** (`FeatureRange = 1..End`, `DetailedRange = N/A`), execute Stages 5 -> 6 -> 7 -> 8 with checkpoints, and halt cleanly after Stage 8 before Stage 9.
+  3. `"Implementation plan only (evaluate design for implementation readiness)"` -> Run Step 3 to confirm `DetailedRange`, then jump directly to Stage 9.
 
 ### Step 3: Semantic Split Discovery
 
-1.  **Split Bypass Check**: If Preset 2 (`Feature spec only`) was selected,
-    **skip this step completely**. Set `FeatureRange` to cover the entire
-    document (lines 1 through End) and proceed directly to Step 4.
-2.  **Inspect Document**: Read `TargetFile` to inspect its structure and line
-    count.
-3.  **Discover Split Boundary**: Scan for the primary dividing header `##
-    Detailed Implementation Plan` (or standard synonyms: `## Implementation
-    Plan`, `## Work Breakdown`, `## Implementation Steps`).
-    *   **Standard Layout Detected**: If the boundary header is unambiguously
-        identified at line $L$:
-        *   Automatically assign `FeatureRange = 1..(L-1)`.
-        *   Automatically assign `DetailedRange = L..End`.
-        *   Output a concise confirmation message to the user in chat:
-            `"Discovered semantic boundary at line L. FeatureRange: 1..(L-1),
-            DetailedRange: L..End."`
-        *   Proceed directly to Step 4 without presenting a confirmation modal.
-    *   **Ambiguous Boundary / Multiple Candidate Headers**: If multiple
-        conflicting headers or non-standard structures exist:
-        *   Present a single-select gate (using a structured question tool such
-            as `ask_question` with `len(questions) == 1`, or plain chat)
-            proposing the most likely split line as Option 0, with Option 1
-            allowing custom line ranges via write-in.
-    *   **No Implementation Plan Found**: If the document contains only a
-        high-level feature specification:
-        *   Notify the user in chat that no implementation plan was detected.
-        *   Assign `FeatureRange = 1..End` and `DetailedRange = N/A`.
-        *   Offer to execute Stages 5-8 (Feature Spec gates) and proceed.
+Skip completely if Preset 2 (`Feature spec only`) was selected (`FeatureRange = 1..End`, `DetailedRange = N/A`). Otherwise, read `TargetFile` and scan for `## Detailed Implementation Plan` (or synonyms `## Implementation Plan`, `## Work Breakdown`, `## Implementation Steps`):
 
-### Step 4: Staging Strategy
-
-Once the semantic split and execution preset are confirmed:
-
-1.  **Confirm Review Target**: Verify that `FeatureRange` and `DetailedRange`
-    are bound.
-2.  **Dispatch Execution Pipeline**:
-    *   **Interactive review with all review rubrics**: Execute Stage 5 → Stage
-        6 → Stage 7 → Stage 8 → Stage 9 sequentially.
-    *   **Consolidated report with all review rubrics**: Run Subflow:
-        Uninterrupted Full Flow.
-    *   **Feature spec only**: Execute Stage 5 → Stage 6 → Stage 7 → Stage 8,
-        then cleanly halt.
-    *   **Implementation plan only**: Jump directly to Stage 9 (Implementation
-        Readiness Test).
-
---------------------------------------------------------------------------------
+* **Standard Layout at line `L`**: Assign `FeatureRange = 1..(L-1)` and `DetailedRange = L..End`, post `"Discovered semantic boundary at line L. FeatureRange: 1..(L-1), DetailedRange: L..End."` in chat, and proceed directly without a confirmation gate.
+* **Ambiguous / Multiple Candidate Headers**: Present a single-select gate proposing the most likely split line as Option 0 and custom line ranges (write-in) as Option 1.
+* **No Implementation Plan Found**: Notify the user in chat, assign `FeatureRange = 1..End` and `DetailedRange = N/A`, and offer to execute Stages 5-8 (`Feature spec only`).
 
 ## Subflows
 
-### Subflow Checkpoint Gates & Pause/Resume Protocol
+### Stage Specifications (Stages 5-9)
 
-All interactive review stages conclude with an explicit single-select gate
-(using a structured question tool such as `ask_question` with
-`len(questions) == 1`, `is_multi_select: false`, sole tool call in turn, or
-plain chat):
+Write each stage's report via your file-writing tool and notify the user in chat with its file path (no chat dumps):
 
-1.  **Stage Checkpoint Patterns**:
-    *   **Stages 5, 6, 8 (Altitude & Comprehension Checkpoints)**:
-        *   Option 0: `Proceed to next stage: Stage [N+1] ([Next Stage Name])`
-            (or `Conclude review and begin detailed implementation planning` for
-            Stage 8 terminal).
-        *   Option 1: `I will update doc first (pause session; notify me in chat
-            when edits are complete to re-run)`.
-        *   Option 2: `Pause Review (save progress and exit)`.
-    *   **Stages 7, 9 (Remediation & Readiness Checkpoints)**:
-        *   Option 0: `Proceed to next stage: Stage [N+1] ([Next Stage Name])`
-            (or `Conclude review and finalize document` for Stage 9 terminal).
-        *   Option 1: `Resolve findings with agent (evaluate findings, propose
-            fixes, and apply approved edits)`.
-        *   Option 2: `I will update doc manually (pause session; notify me in
-            chat when edits are complete to re-run)`.
-        *   Option 3: `Pause Review (save progress and exit)`.
-2.  **Resolution Semantics (Option 1 for Stages 7 and 9)**:
-    *   **Hand-off to Resolver**: The agent invokes `egm-resolve` in the primary
-        Elephant context window on the target range (`FeatureRange` or
-        `DetailedRange`), passing the parsed findings from `critic_report.md` or
-        `implementation_readiness_report.md`.
-    *   **Resolution Workflow**: The Elephant classifies each finding (`PROPOSE
-        FIX` vs `CONTEST`), writes `goldfish_review_report.md`, and executes
-        approved edits on `TargetFile` via file editing tools.
-    *   **Convergence**: After applying fixes, re-read `TargetFile` to
-        recalculate line bounds, and either advance to the next stage or re-run
-        the stage audit (enforcing max 1 re-audit limit).
-3.  **Pause & Resume Semantics (Manual Doc Updates)**:
-    *   **Turn Yield**: The agent confirms in chat that the review is paused for
-        manual document edits, and yields execution immediately.
-    *   **Resume Notification**: When the author replies in chat indicating
-        edits are complete:
-        *   Re-read `TargetFile` to recalculate line shifts.
-        *   If Step 1.3 has run, apply its rules to links added since then.
-        *   Re-run the current stage subflow.
-        *   **1-Audit Convergence Cap**: Each stage allows a maximum of 1
-            re-audit. If manual doc updates are requested again after a
-            re-audit, inform the author that the cap is reached, document
-            residual findings as accepted trade-offs, auto-bind Option 0, and
-            advance to the next stage.
-4.  **Graceful Halt Semantics (`Pause Review`)**:
-    *   Halt execution immediately with zero tools, preserving all report
-        artifacts.
+| Stage | Target & Context | Delegation & Standards | Report File & Delivery Rules |
+| :--- | :--- | :--- | :--- |
+| **5: Initial Zoom Out Review** | `full file` + `GoldfishContext` | Spawn `egm-synthesizer` (or direct) running `egm-zoom-out` (`agents/zoom_out.md`, standard `resources/document_standards/zoom-out-standard.md`) and `egm-inventive-catalyst` in parallel | Write both into `zoom_out_report.md`. |
+| **6: Comprehension Test** | `FeatureRange` & `DetailedRange` (no `GoldfishContext`) | Spawn `egm-comprehension` (`agents/comprehension.md`) **directly** (never `egm-synthesizer`; synthesizer keeps only findings and drops the paraphrase) with **no document standard** (tests self-containment; do not apply `re-implementation-standard.md`, which asks for code-level detail forbidden in `FeatureRange` by the Zoom Out standard) | Write complete result to `comprehension_report.md`: two paraphrase headings verbatim first, then findings (keep paraphrase even when there are no findings). |
+| **7: Critic Review** | `FeatureRange` + `GoldfishContext` | Interactive: invoke `egm-review-loop` in-thread; Uninterrupted: spawn `egm-synthesizer` (or direct subagents). Reviewers `[egm-design, egm-structural, egm-style]`, standards `{"egm-design": "feature-spec-standard", "egm-structural": "feature-spec-standard"}` | Write `critic_report.md`. |
+| **8: Intermediate Zoom Out** | `full file` + `GoldfishContext` | Spawn `egm-synthesizer` (or direct `egm-zoom-out` at `agents/zoom_out.md`) applying `resources/document_standards/zoom-out-standard.md`; include `zoom_out_report.md` path in context and focus on additions/mitigations from Comprehension and Critic stages | Write `intermediate_zoom_out_report.md`. |
+| **9: Implementation Readiness Test** | `DetailedRange` + `GoldfishContext` | Interactive: invoke `egm-review-loop` in-thread; Uninterrupted: spawn `egm-synthesizer` (or direct subagents). Reviewers `[egm-implementation-readiness, egm-codebase-details, egm-style]`, standards `{"egm-implementation-readiness": "implementation-readiness-standard", "egm-codebase-details": "implementation-readiness-standard"}` | Write `implementation_readiness_report.md`. |
 
 ### Subflow: Uninterrupted Full Flow
 
-1.  **Uninterrupted Stage Execution**: Execute all five review stages in
-    sequence without interactive checkpoint pauses between steps. For each
-    stage, write the individual report file to the working directory (or your
-    harness's artifact directory, if it has one). Pass `GoldfishContext` to
-    every step except Step 6.
-    *   **Step 5 (Initial Zoom Out)**: Spawn `egm-synthesizer` (or direct
-        subagent) with `Reviewers: [egm-zoom-out, egm-inventive-catalyst]` on
-        `full file` → write `zoom_out_report.md`.
-    *   **Step 6 (Comprehension Test)**: Spawn the `egm-comprehension`
-        subagent directly (not the synthesizer) on `FeatureRange` &
-        `DetailedRange` → write its complete result to
-        `comprehension_report.md`.
-    *   **Step 7 (Critic Review)**: Spawn `egm-synthesizer` (or direct
-        subagents) with `Reviewers: [egm-design, egm-structural, egm-style]` on
-        `FeatureRange` → write `critic_report.md`.
-    *   **Step 8 (Intermediate Zoom Out)**: Spawn `egm-synthesizer` (or direct
-        subagent) with `Reviewers: [egm-zoom-out]` on `full file` → write
-        `intermediate_zoom_out_report.md`.
-    *   **Step 9 (Implementation Readiness Test)**: Spawn `egm-synthesizer` (or
-        direct subagents) with `Reviewers: [egm-implementation-readiness,
-        egm-codebase-details, egm-style]` on `DetailedRange` → write
-        `implementation_readiness_report.md`.
-2.  **Cross-Stage Synthesis & Deduplication**:
-    *   Collect all findings across the 5 stage reports.
-    *   Consolidate observations into actionable tasks by priority (🔴 Blocker, 🟡
-        Major, 🟢 Nit).
-    *   Build a Traceability Matrix mapping raw findings to consolidated action
-        items.
-3.  **Deliverable Delivery**: Write to `consolidated_review_report.md` using
-    your file-writing tool.
-4.  **Notify User**: Output a concise chat notification pointing to
-    `consolidated_review_report.md` (give its path).
+1. Execute Stages 5 -> 6 -> 7 -> 8 -> 9 in sequence without interactive checkpoint pauses, writing each individual stage report file.
+2. Collect findings across all 5 stage reports, consolidate into prioritized tasks (🔴 Blocker, 🟡 Major, 🟢 Nit), and build a Traceability Matrix mapping raw findings to consolidated action items.
+3. Write `consolidated_review_report.md` via your file-writing tool and notify the user with its path.
 
-### Subflow: Zoom Out Review
+### Interactive Checkpoint Gates & Pause/Resume Protocol
 
-1.  **Delegate to Synthesizer Subagent**: Spawn `egm-synthesizer` (or the
-    specialized `egm-zoom-out` subagent at `agents/zoom_out.md`) on `full file`
-    applying `resources/document_standards/zoom-out-standard.md`. When running
-    as Step 8 (Intermediate Zoom Out), include `zoom_out_report.md` path in
-    context and focus on additions/mitigations from Comprehension and Critic
-    stages. When running as Step 5, also
-    spawn `egm-inventive-catalyst` in parallel and write both into
-    `zoom_out_report.md`.
-    In both Stage 5 and Stage 8, pass `GoldfishContext`.
-2.  **Delivery**: Write findings to `zoom_out_report.md` (Stage 5) or
-    `intermediate_zoom_out_report.md` (Stage 8) using your file-writing tool.
-3.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
-    the report file (give its path).
-4.  **Checkpoint Gate**: Present the tri-state gate following the Checkpoint
-    Gate Protocol:
-    *   **Stage 5**: Question: `"Stage 5 (Initial Zoom Out Review) completed.
-        Findings written to zoom_out_report.md. How would you like to
-        proceed?"`, Option 0: `"Proceed to next stage: Stage 6 (Comprehension
-        Test)"`.
-    *   **Stage 8 (Feature Spec Gates Only)**: Question: `"Stage 8 (Intermediate
-        Zoom Out) completed. High-level architecture verified. How would you
-        like to proceed?"`, Option 0: `"Conclude review and begin detailed
-        implementation planning"`.
-    *   **Stage 8 (Interactive Full Flow)**: Question: `"Stage 8 (Intermediate
-        Zoom Out) completed. Findings written to
-        intermediate_zoom_out_report.md. How would you like to proceed?"`,
-        Option 0: `"Proceed to next stage: Stage 9 (Implementation Readiness
-        Test)"`.
-    *   All cases provide Option 1: `"I will update doc first (pause session;
-        notify me in chat when edits are complete to re-run)"` and Option 2:
-        `"Pause Review (save progress and exit)"`.
+Conclude each interactive stage by notifying the user of the report path and presenting the single-select gate:
 
-### Subflow: Comprehension Test
-
-1.  **Spawn the Reviewer Directly**: Spawn the `egm-comprehension` subagent
-    at `agents/comprehension.md` on `FeatureRange` & `DetailedRange` with no
-    document standard. Do not use the synthesizer: its report keeps only
-    findings, and the author must see the paraphrase. The test is self-containment,
-    not detail. Do not apply `re-implementation-standard.md`: it asks for
-    code-level detail, which the Zoom Out standard forbids in `FeatureRange`.
-2.  **Delivery**: Write the complete reviewer result to
-    `comprehension_report.md` using your file-writing tool. Start with the two
-    paraphrase headings verbatim, then the findings. Keep the paraphrase when
-    there are no findings.
-3.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
-    `comprehension_report.md` (give its path).
-4.  **Checkpoint Gate**: Present the Stage 6 tri-state gate:
-    *   Question: `"Stage 6 (Comprehension Test) completed. Findings written to
-        comprehension_report.md. How would you like to proceed?"`
-    *   Option 0: `"Proceed to next stage: Stage 7 (Critic Review)"`
-    *   Option 1: `"I will update doc first (pause session; notify me in chat
-        when edits are complete to re-run)"`
-    *   Option 2: `"Pause Review (save progress and exit)"`
-
-### Subflow: Critic Review
-
-1.  **Invoke Antagonistic Review Loop**: Invoke `egm-review-loop` in-thread on
-    `FeatureRange` with reviewers `[egm-design, egm-structural, egm-style]`,
-    standards `{"egm-design": "feature-spec-standard", "egm-structural":
-    "feature-spec-standard"}`, and `GoldfishContext`.
-2.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
-    `critic_report.md` (give its path).
-3.  **Checkpoint Gate**: Present the Stage 7 gate:
-    *   Question: `"Stage 7 (Critic Review) completed. Findings written to
-        critic_report.md. How would you like to proceed?"`
-    *   Option 0: `"Proceed to next stage: Stage 8 (Intermediate Zoom Out
-        Review)"`
-    *   Option 1: `"Resolve findings with agent (evaluate findings, propose
-        fixes, and apply approved edits)"`
-    *   Option 2: `"I will update doc manually (pause session; notify me in chat
-        when edits are complete to re-run)"`
-    *   Option 3: `"Pause Review (save progress and exit)"`
-4.  **Remediation & Resolution (Option 1)**:
-    *   Invoke `egm-resolve` in the primary Elephant context on `FeatureRange`,
-        passing findings from `critic_report.md` (or
-        `goldfish_review_report.md`).
-    *   Execute approved fixes directly on `TargetFile` using file editing
-        tools.
-    *   After fixes are applied, re-read `TargetFile` to recalculate line
-        bounds, and advance to Stage 8 (or re-run Stage 7, max 1 re-audit).
-
-### Subflow: Implementation Readiness Test
-
-1.  **Invoke Antagonistic Review Loop**: Invoke `egm-review-loop` in-thread on
-    `DetailedRange` with reviewers `[egm-implementation-readiness,
-    egm-codebase-details, egm-style]` and standards
-    `{"egm-implementation-readiness": "implementation-readiness-standard",
-    "egm-codebase-details": "implementation-readiness-standard"}`, and
-    `GoldfishContext`.
-2.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
-    `implementation_readiness_report.md` (give its path).
-3.  **Terminal Checkpoint Gate**: Present the Stage 9 terminal gate:
-    *   Question: `"Stage 9 (Implementation Readiness Test) completed. Report
-        written to implementation_readiness_report.md. How would you like to
-        proceed?"`
-    *   Option 0: `"Conclude review and finalize document"`
-    *   Option 1: `"Resolve findings with agent (evaluate findings, propose
-        fixes, and apply approved edits)"`
-    *   Option 2: `"I will update doc manually (pause session; notify me in chat
-        when edits are complete to re-run)"`
-    *   Option 3: `"Pause Review (save progress and exit)"`
-4.  **Remediation & Resolution (Option 1)**:
-    *   Invoke `egm-resolve` in the primary Elephant context on `DetailedRange`,
-        passing findings from `implementation_readiness_report.md` (or
-        `goldfish_review_report.md`).
-    *   Execute approved fixes directly on `TargetFile` using file editing
-        tools.
-    *   After fixes are applied, re-read `TargetFile` to recalculate line
-        bounds, and conclude the review session (or re-run Stage 9, max 1
-        re-audit).
+* **Per-Stage Question & Option 0**:
+  * **Stage 5**: Question `"Stage 5 (Initial Zoom Out Review) completed. Findings written to zoom_out_report.md. How would you like to proceed?"`; Option 0 `"Proceed to next stage: Stage 6 (Comprehension Test)"`.
+  * **Stage 6**: Question `"Stage 6 (Comprehension Test) completed. Findings written to comprehension_report.md. How would you like to proceed?"`; Option 0 `"Proceed to next stage: Stage 7 (Critic Review)"`.
+  * **Stage 7**: Question `"Stage 7 (Critic Review) completed. Findings written to critic_report.md. How would you like to proceed?"`; Option 0 `"Proceed to next stage: Stage 8 (Intermediate Zoom Out Review)"`.
+  * **Stage 8 (`Feature spec only`)**: Question `"Stage 8 (Intermediate Zoom Out) completed. High-level architecture verified. How would you like to proceed?"`; Option 0 `"Conclude review and begin detailed implementation planning"`.
+  * **Stage 8 (`Interactive`)**: Question `"Stage 8 (Intermediate Zoom Out) completed. Findings written to intermediate_zoom_out_report.md. How would you like to proceed?"`; Option 0 `"Proceed to next stage: Stage 9 (Implementation Readiness Test)"`.
+  * **Stage 9**: Question `"Stage 9 (Implementation Readiness Test) completed. Report written to implementation_readiness_report.md. How would you like to proceed?"`; Option 0 `"Conclude review and finalize document"`.
+* **Remaining Gate Options**:
+  * **Stages 5, 6, 8**: Option 1 `"I will update doc first (pause session; notify me in chat when edits are complete to re-run)"`; Option 2 `"Pause Review (save progress and exit)"`.
+  * **Stages 7, 9**: Option 1 `"Resolve findings with agent (evaluate findings, propose fixes, and apply approved edits)"`; Option 2 `"I will update doc manually (pause session; notify me in chat when edits are complete to re-run)"`; Option 3 `"Pause Review (save progress and exit)"`.
+* **Resolution Semantics (Option 1 in Stages 7 & 9)**: Invoke `egm-resolve` in the primary Elephant context on `FeatureRange` (Stage 7, passing findings from `critic_report.md` or `goldfish_review_report.md`) or `DetailedRange` (Stage 9, passing findings from `implementation_readiness_report.md` or `goldfish_review_report.md`) to classify findings (`PROPOSE FIX` vs `CONTEST`), write `goldfish_review_report.md`, and execute approved edits on `TargetFile`. Re-read `TargetFile` to recalculate line bounds, then advance (or re-run the stage, max 1 re-audit).
+* **Pause & Resume (Manual Doc Updates)**: Confirm in chat that the review is paused for manual edits and yield immediately. When the author replies that edits are complete, re-read `TargetFile` to recalculate line shifts, apply Step 1.3 rules to any links added since Step 1.3 ran, and re-run the current stage. **1-Audit Convergence Cap**: Max 1 re-audit per stage; if manual updates are requested again, inform the author the cap is reached, document residual findings as accepted trade-offs, auto-bind Option 0, and advance.
+* **Graceful Halt (`Pause Review`)**: Halt immediately with zero tools, preserving all report artifacts.
