@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "egm",
-      "source": "./",
+      "source": "./distributions/claude",
       "description": "Develop ideas with context and review documents with fresh eyes."
     }
   ]
