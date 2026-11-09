@@ -235,6 +235,56 @@ def test_rejects_escaping_or_missing_scalar_agent_references(
   assert not output.exists()
 
 
+@pytest.mark.parametrize("value", [5, True, None, 1.5, {"path": "x"}, ["x"]])
+def test_rejects_non_string_agent_list_entries(
+    source: Path, tmp_path: Path, value: object,
+) -> None:
+  path = source / ".claude-plugin/plugin.json"
+  manifest = json.loads(path.read_text())
+  manifest["agents"] = ["./.claude-plugin/agents/style.md", value]
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError) as error:
+    build(source, "claude", output)
+  assert str(error.value) == f"Invalid manifest reference: {value!r}"
+  assert not output.exists()
+
+
+@pytest.mark.parametrize("target", ["claude", "openai"])
+@pytest.mark.parametrize("value", [5, ["x"], {"path": "x"}])
+def test_rejects_non_string_icon_references(
+    source: Path, tmp_path: Path, target: str, value: object,
+) -> None:
+  if target == "claude":
+    path = source / ".claude-plugin/plugin.json"
+    manifest = json.loads(path.read_text())
+    manifest["icon"] = value
+  else:
+    path = source / "plugin.json"
+    manifest = json.loads(path.read_text())
+    manifest["extensions"]["com.openai"]["interface"]["logo"] = value
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError) as error:
+    build(source, target, output)
+  assert str(error.value) == f"Invalid manifest reference: {value!r}"
+  assert not output.exists()
+
+
+@pytest.mark.parametrize("key", ["composerIcon", "logo"])
+def test_rejects_non_string_codex_manifest_icons(
+    source: Path, tmp_path: Path, key: str,
+) -> None:
+  path = source / ".codex-plugin/plugin.json"
+  manifest = json.loads(path.read_text())
+  manifest["interface"][key] = 5
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError, match="^Invalid manifest reference: 5$"):
+    build(source, "openai", output)
+  assert not output.exists()
+
+
 @pytest.mark.parametrize("key", ["composerIcon", "logo"])
 def test_rejects_missing_openai_interface_icons(
     source: Path, tmp_path: Path, key: str,
