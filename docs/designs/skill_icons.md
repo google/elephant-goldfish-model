@@ -1,12 +1,11 @@
 # Shared skill icons
 
-Status: Draft implementation proposal. Maintainer scope approval is pending.
+Status: Implemented. Canonical artwork is shared by plugins, README, and website.
 Author: @n3wth. Date: 2026-10-25.
 
 ## Purpose and scope
 
-Use the same skill marks in plugin pickers and the README, with egm.dev
-integration in a separate follow-up PR.
+Use the same skill marks in plugin pickers, the README, and egm.dev.
 The approved artwork uses familiar silhouettes with two color facets. This
 change replaces the existing skill artwork; it does not change skill behavior,
 reviewer permissions, installation, or the Elephant-Goldfish logo.
@@ -40,9 +39,8 @@ artwork; do not normalize individual bounding boxes or stroke widths.
   reviewer color keywords and the plugin-level logo stay unchanged.
 - The root README references the canonical paths directly. These relative
   paths also resolve inside generated runtime packages.
-- The website follow-up will import these SVGs at build time, keep circles
-  in the presentation layer, and use adjacent labels for accessible names.
-  Website layout, copy, deployment triggers, and captures belong to that PR.
+- The website's `site/src/components/SkillIcon.astro` imports these SVGs at
+  build time and marks them decorative beside adjacent labels.
 
 ## Verification and rollout
 
@@ -50,6 +48,5 @@ Check metadata colors and SVG structure, runtime byte equality, and README
 image inclusion. Website integration receives its own build and visual checks.
 Every mark must remain legible beside its label.
 
-This proposal builds on runtime-packaging PR #136. Its draft status does not
-claim an approved issue, a merged design, or a completed native-host workflow
-test. Obtain maintainer agreement on the contribution track before merge.
+The shared artwork and runtime-packaging PR #136 are merged. Artwork and
+metadata checks do not establish native-host workflow support.

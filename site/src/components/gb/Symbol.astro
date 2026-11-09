@@ -1,0 +1,9 @@
+---
+interface Props { name: string; class?: string; }
+const symbols = import.meta.glob<string>('../../assets/symbols/*.svg', { eager:true, query:'?raw', import:'default' });
+const source = symbols[`../../assets/symbols/${Astro.props.name}.svg`];
+if (!source) throw new Error(`Unknown Material Symbol: ${Astro.props.name}`);
+const viewBox = source.match(/viewBox="([^"]+)"/)?.[1];
+const paths = source.replace(/<svg[^>]*>|<\/svg>/g, '').replace(/fill="[^"]*"/g, 'fill="currentColor"');
+---
+<svg class={Astro.props.class} viewBox={viewBox} width="24" height="24" fill="currentColor" aria-hidden="true" set:html={paths} />
