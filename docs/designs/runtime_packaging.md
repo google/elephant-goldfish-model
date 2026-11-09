@@ -51,7 +51,8 @@ Check relative Markdown links in both generated runtimes. A development-only
 document edit must not require regenerating runtime content.
 
 Reject symlinks, paths outside the source tree, missing required files,
-unbundled manifest references, hooks, and unsupported MCP or app dependencies.
+unbundled or non-string manifest references, hooks, and unsupported MCP or app
+dependencies.
 Refuse an existing output folder or archive. A failed build can leave partial
 output; diagnose the failure and use a new destination for the next attempt.
 

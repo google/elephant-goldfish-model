@@ -48,6 +48,11 @@ def test_copilot_profiles_use_canonical_read_only_reviewers(repo_root: Path) -> 
     assert frontmatter(entry)["tools"] == ["read", "search", "edit", "agent"]
     assert "<EGM_ROOT>/docs/copilot.md" in entry.read_text(encoding="utf-8")
     assert "<EGM_ROOT>/skills/egm-brainstorm/SKILL.md" in entry.read_text(encoding="utf-8")
+    words = ("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+    assert (
+        f"Use the {words[len(REVIEWERS) - 1]} registered EGM reviewer profiles"
+        in entry.read_text(encoding="utf-8")
+    )
 
 
 @pytest.mark.parametrize("persona", [*REVIEWERS, None])

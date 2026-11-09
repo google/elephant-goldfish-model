@@ -44,7 +44,7 @@ const cliPaths = [
         <button
           type="button"
           class="copybox copybox-prompt focus-ring-outer"
-          aria-label={promptPath.copyLabel}
+          aria-label={`${promptPath.copyLabel}: ${promptPath.text}`}
           data-copy={promptPath.text}
         >
           <span class="prompt-text">{promptPath.text}</span>
@@ -83,7 +83,7 @@ const cliPaths = [
               <button
                 type="button"
                 class="copybox copybox-cli focus-ring-outer"
-                aria-label={path.copyLabel}
+                aria-label={`${path.copyLabel}: ${path.text}`}
                 data-copy={path.text}
               >
                 <code class="command">{path.text}</code>
@@ -125,7 +125,7 @@ const cliPaths = [
       const prev = timers.get(button);
       if (prev) window.clearTimeout(prev);
       button.classList.add('copied');
-      button.setAttribute('aria-label', 'Copied');
+      button.setAttribute('aria-label', `Copied: ${button.dataset.copy ?? ''}`);
       const timer = window.setTimeout(() => {
         button.classList.remove('copied');
         button.setAttribute('aria-label', label);
