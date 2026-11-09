@@ -20,7 +20,8 @@ The first version command stopped at a locked macOS keychain.
 The launcher's per-command `AGENT_CLI_CREDENTIAL_STORE=file` setting allowed
 help and version inspection. No account configuration changed.
 
-The native manifest is `.cursor-plugin/plugin.json`. It selects shared
+The native manifest is `.cursor-plugin/plugin.json`, paired with the catalog
+descriptor `.cursor-plugin/marketplace.json`. It selects shared
 `skills/`, Cursor adapters in `.cursor-plugin/agents/`, and the Cursor rule in
 `.cursor-plugin/rules/`. The explicit agent path excludes raw shared personas.
 Each reviewer declares `readonly: true`, `permissionMode: readonly`,
