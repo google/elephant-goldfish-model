@@ -164,6 +164,8 @@ control is verified here for Codex or Antigravity.
 
 **Muse** (1.4.14) has a working installation path. `muse plugins validate` reports the plugin valid with all seven skills and all ten agent adapters supported; every agent tool projection is unsupported, so Claude tool allowlists do not restrict Muse reviewers. Install from a local path; `marketplace add` on this repository discovers zero plugins because Muse reads the Codex catalog first. End-to-end workflow fixtures passed on 2026-10-30 (brainstorm, draft, and uninterrupted review with 15 fresh-context reviewers); named `egm/egm-*` agents cannot be spawned in this runtime, so reviewers used the general-purpose fallback reading the installed persona first. See the [Muse guide](https://github.com/google/elephant-goldfish-model/blob/main/docs/muse.md). No skill routes a Muse session to that guide yet ([#252](https://github.com/google/elephant-goldfish-model/issues/252)), so point the session at it.
 
+**Windsurf** ([#376](https://github.com/google/elephant-goldfish-model/issues/376)) has experimental workspace routing under `.windsurf/rules/egm.md` and `.windsurf/workflows/egm-*.md` that resolves the shared `skills/*/SKILL.md`, `agents/*.md`, and `resources/document_standards/*.md` files directly without copied skill text and halts Goldfish reviews when fresh-context read-only subagent delegation is unavailable. Live Windsurf workflow execution and reviewer isolation remain unverified.
+
 See the [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record) for tested surfaces and limits.
 
 We welcome contributors who want to help verify and expand harness support.
