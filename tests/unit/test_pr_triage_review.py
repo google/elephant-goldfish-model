@@ -27,6 +27,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / ".github" / "scripts" / "review_pr.py"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "pr-triage-review.yml"
 CODEOWNERS_PATH = ROOT / ".github" / "CODEOWNERS"
+CONFIG_PATH = ROOT / ".gemini" / "config.yaml"
 
 _SPEC = importlib.util.spec_from_file_location("egm_review_pr", SCRIPT_PATH)
 assert _SPEC and _SPEC.loader
@@ -35,12 +36,14 @@ sys.modules["egm_review_pr"] = review_pr
 _SPEC.loader.exec_module(review_pr)
 
 
-def test_workflow_enforces_zizmor_and_two_job_security_boundary() -> None:
+def test_workflow_enforces_zizmor_default_model_and_two_job_boundary() -> None:
   raw = WORKFLOW_PATH.read_text(encoding="utf-8")
   data = yaml.safe_load(raw)
 
   assert data["permissions"] == {}
   assert "zizmor: ignore[dangerous-triggers]" in raw
+  assert "gemini-3.8-flash" in raw
+  assert review_pr.DEFAULT_MODEL == "gemini-3.8-flash"
 
   review_job = data["jobs"]["review"]
   assert review_job["permissions"] == {
@@ -78,7 +81,17 @@ def test_codeowners_scopes_auto_review_to_workflow_paths_only() -> None:
   assert ".github/** @google/egm-maintainers" in lines
 
 
-def test_evaluate_sweep_gate_guardrails() -> None:
+def test_config_loader_matches_stdlib_fallback() -> None:
+  repo_cfg = review_pr.load_repo_config(CONFIG_PATH)
+  stdlib_cfg = review_pr._parse_config_stdlib(CONFIG_PATH.read_text(encoding="utf-8"))
+  assert repo_cfg == stdlib_cfg
+  assert repo_cfg.max_review_comments == 5
+  assert review_pr.is_ignored_path("site/package-lock.json", repo_cfg.ignore_patterns)
+  assert review_pr.is_ignored_path("site/public/og.png", repo_cfg.ignore_patterns)
+  assert not review_pr.is_ignored_path(".github/scripts/review_pr.py", repo_cfg.ignore_patterns)
+
+
+def test_evaluate_sweep_gate_uses_author_association_dynamically() -> None:
   draft = review_pr.evaluate_sweep_gate(
       {"state": "open", "draft": True, "user": {"login": "alice"}},
       reviews=[],
@@ -89,27 +102,56 @@ def test_evaluate_sweep_gate_guardrails() -> None:
   assert draft.reason == "SKIP_DRAFT"
 
   bot = review_pr.evaluate_sweep_gate(
-      {"state": "open", "draft": False, "user": {"login": "dependabot[bot]"}},
+      {"state": "open", "draft": False, "user": {"login": "custom-ci", "type": "Bot"}},
       reviews=[],
       issue_comments=[],
       files=[],
   )
   assert not bot.should_review
-  assert bot.reason == "SKIP_BOT_AUTHOR:dependabot[bot]"
+  assert bot.reason == "SKIP_BOT_AUTHOR:custom-ci"
 
-  maintainer = review_pr.evaluate_sweep_gate(
+  human_member = review_pr.evaluate_sweep_gate(
       {
           "state": "open",
           "draft": False,
           "user": {"login": "alice"},
           "head": {"sha": "1111111"},
       },
-      reviews=[{"user": {"login": "quinnjim"}, "body": "LGTM"}],
+      reviews=[{
+          "user": {"login": "any-maintainer", "type": "User"},
+          "author_association": "MEMBER",
+          "body": "Looking now",
+      }],
       issue_comments=[],
       files=[{"filename": "README.md", "changes": 4}],
   )
-  assert not maintainer.should_review
-  assert maintainer.reason == "SKIP_ALREADY_REVIEWED_BY_MAINTAINER:quinnjim"
+  assert not human_member.should_review
+  assert human_member.reason == "SKIP_ALREADY_REVIEWED_BY_HUMAN:any-maintainer"
+
+  # Non-trusted contributor reviews and bot reviews do not block Stage-1 triage.
+  external_commenter = review_pr.evaluate_sweep_gate(
+      {
+          "state": "open",
+          "draft": False,
+          "user": {"login": "alice"},
+          "head": {"sha": "2222222"},
+      },
+      reviews=[
+          {
+              "user": {"login": "external-fan", "type": "User"},
+              "author_association": "CONTRIBUTOR",
+              "body": "Nice!",
+          },
+          {
+              "user": {"login": "github-actions[bot]", "type": "Bot"},
+              "author_association": "NONE",
+              "body": "<!-- egm-triage-review:sha=1111111 -->\nOld SHA",
+          },
+      ],
+      issue_comments=[],
+      files=[{"filename": "README.md", "changes": 4}],
+  )
+  assert external_commenter.should_review
 
   same_sha = review_pr.evaluate_sweep_gate(
       {
@@ -119,7 +161,8 @@ def test_evaluate_sweep_gate_guardrails() -> None:
           "head": {"sha": "deadbeef"},
       },
       reviews=[{
-          "user": {"login": "github-actions[bot]"},
+          "user": {"login": "github-actions[bot]", "type": "Bot"},
+          "author_association": "NONE",
           "body": "<!-- egm-triage-review:sha=deadbeef -->\nClean pass.",
       }],
       issue_comments=[],
@@ -127,34 +170,6 @@ def test_evaluate_sweep_gate_guardrails() -> None:
   )
   assert not same_sha.should_review
   assert same_sha.reason == "SKIP_SHA_ALREADY_REVIEWED:deadbeef"
-
-  low_delta = review_pr.evaluate_sweep_gate(
-      {
-          "state": "open",
-          "draft": False,
-          "user": {"login": "alice"},
-          "head": {"sha": "feedface"},
-      },
-      reviews=[],
-      issue_comments=[],
-      files=[{"filename": "scripts/pack_plugin.py", "changes": 8}],
-      unresolved_bot_threads=1,
-      changed_lines_since_last_review=8,
-  )
-  assert not low_delta.should_review
-  assert low_delta.reason == "SKIP_UNRESOLVED_THREADS_LOW_DELTA:8"
-
-
-def test_classify_review_depth() -> None:
-  assert review_pr.classify_review_depth(
-      [{"filename": "README.md", "changes": 10}]
-  ) == "lite"
-  assert review_pr.classify_review_depth(
-      [{"filename": "scripts/pack_plugin.py", "changes": 12}]
-  ) == "focused"
-  assert review_pr.classify_review_depth(
-      [{"filename": "skills/egm-draft/SKILL.md", "changes": 5}]
-  ) == "full"
 
 
 def test_parse_valid_right_lines_and_anchor_filtering() -> None:
@@ -208,38 +223,7 @@ def test_parse_valid_right_lines_and_anchor_filtering() -> None:
   assert "untouched/other.py" not in payload["body"]
 
 
-def test_build_clean_handoff_plan_respects_existing_assignment() -> None:
-  plan = review_pr.build_clean_handoff_plan(
-      42,
-      {"user": {"login": "alice"}, "requested_reviewers": [], "requested_teams": []},
-      reviews=[],
-      head_sha="cafebabe",
-  )
-  assert plan["action"] == "clean_handoff"
-  assert plan["add_labels"] == ["triage: passed"]
-  assert plan["team_reviewers"] == ["egm-maintainers"]
-  assert "<!-- egm-triage-review:sha=cafebabe -->" in plan["review_payload"]["body"]
-
-  already_assigned = review_pr.build_clean_handoff_plan(
-      42,
-      {
-          "user": {"login": "alice"},
-          "requested_reviewers": [{"login": "briansuchy"}],
-          "requested_teams": [],
-      },
-      reviews=[],
-      head_sha="cafebabe",
-  )
-  assert already_assigned["team_reviewers"] == []
-
-
-def test_is_ignored_path_excludes_lockfiles_and_images() -> None:
-  assert review_pr.is_ignored_path("site/package-lock.json")
-  assert review_pr.is_ignored_path("site/public/og.png")
-  assert not review_pr.is_ignored_path(".github/scripts/review_pr.py")
-
-
-def test_plan_pr_review_clean_handoff_and_findings_flow(
+def test_plan_pr_review_runs_single_call_when_clean_and_two_calls_to_disprove(
     tmp_path: pathlib.Path, monkeypatch
 ) -> None:
   styleguide = tmp_path / "styleguide.md"
@@ -267,21 +251,21 @@ def test_plan_pr_review_clean_handoff_and_findings_flow(
       "patch": "@@ -1,2 +1,4 @@\n def ok():\n+  x = 1\n+  return x\n   pass\n",
   }]
 
-  def fake_get(url: str, token: str, *, method: str = "GET", payload=None):
-    del token, method, payload
-    if url.endswith("/pulls/501"):
-      return pr_payload, {}
-    return {}, {}
+  monkeypatch.setattr(
+      review_pr,
+      "_github_request_json",
+      lambda url, token, **_kw: (
+          (pr_payload, {}) if url.endswith("/pulls/501") else ({}, {})
+      ),
+  )
+  monkeypatch.setattr(
+      review_pr,
+      "_github_paginate",
+      lambda endpoint, token, **_kw: files_payload if endpoint.endswith("/files") else [],
+  )
 
-  def fake_paginate(endpoint: str, token: str, max_pages: int = 5):
-    del token, max_pages
-    if endpoint.endswith("/files"):
-      return files_payload
-    return []
-
-  monkeypatch.setattr(review_pr, "_github_request_json", fake_get)
-  monkeypatch.setattr(review_pr, "_github_paginate", fake_paginate)
-
+  # Clean Pass 1 short-circuits without paying for a Pass 2 disproof call.
+  clean_calls: list[str] = []
   clean_plan = review_pr.plan_pr_review(
       repo="google/elephant-goldfish-model",
       pr_number=501,
@@ -289,11 +273,61 @@ def test_plan_pr_review_clean_handoff_and_findings_flow(
       github_token="tok",
       gemini_api_key="key",
       styleguide_path=styleguide,
-      llm_caller=lambda _prompt: {"findings": [], "dropped_findings": []},
+      config_path=CONFIG_PATH,
+      llm_caller=lambda prompt: clean_calls.append(prompt) or {"findings": []},
   )
+  assert len(clean_calls) == 1
   assert clean_plan["action"] == "clean_handoff"
   assert clean_plan["add_labels"] == ["triage: passed"]
   assert clean_plan["team_reviewers"] == ["egm-maintainers"]
+
+  # Candidate findings trigger an independent stateless Pass 2 disproof call.
+  disproved_calls = 0
+
+  def disprove_all(_prompt: str):
+    nonlocal disproved_calls
+    disproved_calls += 1
+    if disproved_calls == 1:
+      return {
+          "findings": [{
+              "severity": "Major",
+              "path": "scripts/check.py",
+              "line": 2,
+              "summary": "False positive nit",
+              "fix": "Ignore",
+          }]
+      }
+    return {"findings": [], "dropped_reasons": ["False positive in Pass 2"]}
+
+  disproved_plan = review_pr.plan_pr_review(
+      repo="google/elephant-goldfish-model",
+      pr_number=501,
+      head_sha="abc12345",
+      github_token="tok",
+      gemini_api_key="key",
+      styleguide_path=styleguide,
+      config_path=CONFIG_PATH,
+      llm_caller=disprove_all,
+  )
+  assert disproved_calls == 2
+  assert disproved_plan["action"] == "clean_handoff"
+
+  # Verified surviving finding transitions to post_findings and strips stale label.
+  surviving_calls = 0
+
+  def keep_one(_prompt: str):
+    nonlocal surviving_calls
+    surviving_calls += 1
+    return {
+        "findings": [{
+            "severity": "Blocker",
+            "path": "scripts/check.py",
+            "line": 2,
+            "summary": "Unused assignment returns wrong constant",
+            "fix": "Validate value before returning",
+            "suggestion": "",
+        }]
+    }
 
   findings_plan = review_pr.plan_pr_review(
       repo="google/elephant-goldfish-model",
@@ -302,17 +336,10 @@ def test_plan_pr_review_clean_handoff_and_findings_flow(
       github_token="tok",
       gemini_api_key="key",
       styleguide_path=styleguide,
-      llm_caller=lambda _prompt: {
-          "findings": [{
-              "severity": "Blocker",
-              "path": "scripts/check.py",
-              "line": 2,
-              "summary": "Unused assignment returns wrong constant",
-              "fix": "Validate value before returning",
-              "suggestion": "",
-          }]
-      },
+      config_path=CONFIG_PATH,
+      llm_caller=keep_one,
   )
+  assert surviving_calls == 2
   assert findings_plan["action"] == "post_findings"
   assert findings_plan["remove_labels"] == ["triage: passed"]
   assert findings_plan["team_reviewers"] == []
