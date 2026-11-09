@@ -22,10 +22,13 @@ home registered every packaged skill and agent. The installed tree matched the
 generated tree byte for byte. Strict validation reported only the logo hint on
 both trees; adding a top-level `logo` to a copy of `plugin.json` cleared that
 hint. A later Antigravity CLI 1.5.1 check on a disposable runtime with that logo
-passed strict validation and registered all packaged skills and agents. The
-repository root still warns about `AGENTS.md`, as reported in #272. These
-results predate #336's logo change; strict validation of a runtime built from
-the current `main` has not yet been recorded.
+passed strict validation and registered all packaged skills and agents. On
+2026-11-09, Antigravity CLI 1.5.3 validated a fresh OpenAI runtime built from
+current `main` with `agy plugin validate --strict` and installed it from the
+generated directory. Validation passed on both the generated and installed
+trees; the install registered 7 skills and 10 agents. The scratch plugin was
+uninstalled after verification. The repository root still warns about
+`AGENTS.md`, as reported in #272. App logo rendering remains unverified.
 
 Use the existing allowlisted OpenAI runtime output as the Antigravity install
 source and update all documented Antigravity install paths to use the generated
@@ -144,11 +147,10 @@ may:
    contents, metadata references, logo-path rejection, and existing host
    manifests.
 4. Run `agy plugin validate --strict` and install the generated OpenAI runtime
-   using a recorded CLI version. Strict validation and installation passed on
-   1.4.12 before #336; validation passed on a disposable logo-enabled runtime
-   on 1.5.1. Repeat both against the implementation output and verify the logo
-   renders in the App. If native tests cannot run, mark them not run and do not
-   claim #272 is fully resolved.
+   using a recorded CLI version. Prototype validation and installation passed
+   on `agy` 1.5.3 on 2026-11-09; repeat both against the implementation PR's
+   final output and verify the logo renders in the App. If native tests cannot
+   run, mark them not run and do not claim #272 is fully resolved.
 5. Run the required Antigravity brainstorm, draft, and review workflows before
    changing support status.
 
