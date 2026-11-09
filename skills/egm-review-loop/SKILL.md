@@ -31,17 +31,9 @@ unconditionally re-parses target line ranges before every iteration, spawns
 concurrent specialized Goldfish auditors based on configuration, and coordinates
 with the Elephant context to resolve findings.
 
-## Delegation
+## Execution Constraints & Delegation
 
-A Goldfish runs in a fresh context with no conversation history. Spawn each
-subagent with your harness's subagent tool (Antigravity: `invoke_subagent`; Claude Code: `Agent`; Codex: `spawn_agent`). Each subagent is defined in `agents/<file>.md`, and its
-frontmatter `name` (for example `egm-zoom-out`) is the subagent type to request
-where your harness registers named subagents. Otherwise spawn a general-purpose
-subagent and tell it to read that persona file first. Pass the prompt verbatim
-and wait for the report. If your harness cannot nest subagents,
-use direct dispatch instead of the synthesizer. See `docs/harnesses.md`.
-If your harness has no subagent tool, stop and tell the user: a review in the same
-context is not a Goldfish review.
+Read and apply `resources/execution_instructions.md` (Shared Execution Constraints and Subagent Delegation). If your harness cannot nest subagents, use direct dispatch instead of `egm-synthesizer` (see `docs/harnesses.md`). If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
 
 ## Inputs
 

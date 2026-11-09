@@ -16,16 +16,11 @@ In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
 
 Reviews and validates a design document through specialized reviewer personas.
 
-## Delegation
+## Execution Constraints & Delegation (CRITICAL)
 
-Each Goldfish runs in a fresh context with no conversation history. Spawn subagents with your harness's subagent tool (Antigravity: `invoke_subagent`; Claude Code: `Agent`; Codex: `spawn_agent`). Request the persona's frontmatter `name` from `agents/<file>.md` (e.g., `egm-zoom-out`) where your harness registers named subagents; otherwise spawn a general-purpose subagent instructed to read `agents/<file>.md` first. Pass prompts verbatim and await the report. If subagent nesting is unsupported, use direct dispatch instead of `egm-synthesizer` (see `docs/harnesses.md`). If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
-
-## Execution Constraints (CRITICAL)
-
-1. **Artifact-First Delivery (MANDATORY)**: Never dump large proposals, drafts, summaries, plans, or review reports in chat. Write every report to the working directory (or harness artifact directory, if it has one) via your file-writing tool, then tell the user the file path in chat and ask for review (applies to Discussion Summary, Design Drafts, and all review reports).
-2. **Plain-English Standard**: Write all concepts briefs, summaries, and communications in simple, direct, jargon-free plain English. Explain technical mechanisms directly; do not summarize away substance or rely on buzzwords, promotional adjectives (*seamless*, *robust*, *blazingly fast*), or decorative adverbs (*seamlessly*, *effortlessly*, *literally*, *drastically*, *obviously*).
-3. **Adversarial Rigor (No Sycophancy)**: Stress-test ideas, strategies, and opinions before affirming; find weakest points, edge cases, and blind spots. Even on strong ideas, lead with what is wrong, missing, or risky before merits. Never parrot user framing or validate asserted conclusions reflexively; for every proposed strategy, outline what the user is missing, the strongest counter-argument, and whether the opposing view is justified. Agree only after rigorous, objective scrutiny. Never use flattering adjectives ("brilliant", "great", "smart", "correct", "perfect", "excellent", "spot-on") on user inputs, corrections, or decisions, or polite apologies ("I apologize", "I am sorry", "Forgive me") when challenged or corrected; state corrected technical logic or trade-offs directly.
-4. **Interaction Invariants**: Every interactive choice gate (structured question tool such as `ask_question`, if available, or plain chat) MUST contain strictly one question (`len(questions) == 1`), set `is_multi_select: false` (protecting 5 -> 6 -> 7 -> 8 -> 9 stage topology), make Option 0 the unlabeled primary action (no `(Recommended)` prefix), and be the final tool call in the turn (after any preparatory read or report write required before that gate, then yield immediately). Never use structured question tools for open-ended file paths or free-text lists; ask in plain chat text.
+1. Read and apply `resources/execution_instructions.md` (Shared Execution Constraints and Subagent Delegation). If subagent nesting is unsupported, use direct dispatch instead of `egm-synthesizer` (see `docs/harnesses.md`). If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
+2. **Artifact-First & Style**: Never dump drafts or reports in chat; write every report to the working or artifact directory, share its path, and apply direct plain English with adversarial scrutiny (no flattering adjectives or apologies).
+3. **Interaction Invariants**: Every modal gate MUST contain one question (`len(questions) == 1`), set `is_multi_select: false` (preserving 5 -> 6 -> 7 -> 8 -> 9 topology), make Option 0 the unlabeled primary action (no `(Recommended)` prefix), and be the final tool call in the turn (after preparatory report writes). Ask for open-ended paths or free-text lists in plain chat text.
 
 ## Inputs
 
