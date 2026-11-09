@@ -5,7 +5,7 @@ disable-model-invocation: true
 description: >-
   The Elephant resolution skill. Ingests flat deficiency reports from
   concurrent Goldfish reviewers, applies automated fixes for PROPOSE FIX
-  items via UI multiple-choice gates, and presents interactive
+  items via interactive resolution gates, and presents interactive
   negotiation/re-sync checkpoints.
 ---
 
@@ -13,7 +13,7 @@ description: >-
 
 When running in Codex or ChatGPT Work, first read [Codex integration](../../docs/codex.md).
 In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
-Read and apply `resources/execution_instructions.md` (Shared Execution Constraints).
+Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, proceed inline). Step 4 and `Interactive breakdown` below intentionally use zero-tool plain-chat prompts rather than structured question tools.
 
 ## Overview
 
