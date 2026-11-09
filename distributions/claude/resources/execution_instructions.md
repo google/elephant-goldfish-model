@@ -32,7 +32,7 @@ All Elephant-Goldfish Model (EGM) skills MUST enforce these shared rules unless 
     spawn a general-purpose subagent instructed to read `agents/<file>.md`
     first. Pass prompts verbatim and await the report. If your harness cannot
     nest subagents, use direct parallel dispatch instead of `egm-synthesizer`
-    (see `docs/harnesses.md`). If your harness has no subagent tool, stop and
+    (see [harnesses.md](../docs/harnesses.md)). If your harness has no subagent tool, stop and
     tell the user for review/brainstorming flows (a review in the same context
     is not a Goldfish review), or fall back to inline sequential steps where a
     skill permits it (`egm-bootstrap`).
@@ -41,10 +41,14 @@ All Elephant-Goldfish Model (EGM) skills MUST enforce these shared rules unless 
     or plain chat) MUST ask strictly one question (`len(questions) == 1`), set
     `is_multi_select: false`, provide action-oriented options without
     `(Recommended)` prefixes (unless a skill's gate template explicitly defines
-    one, such as `egm-bootstrap` Step 5.5), and be the final tool call in the
-    turn (allowing immediate preparatory file reads or writes needed for that
-    gate, then yield). Never use structured question tools for free-text
-    paths/lists or during open-ended discovery; ask those in plain chat text.
+    one, such as `egm-bootstrap` Step 5.5), never emit a structured question
+    tool call with empty response text (always explain context or trade-offs in
+    chat first), and be the sole tool call in its model response step (finish
+    any preparatory file reads or writes in an earlier step within the same
+    user turn and await their results first; then output visible chat text and
+    invoke the gate alone to yield). Never use structured question tools for
+    free-text paths/lists or during open-ended discovery; ask those in plain
+    chat text.
 *   **No Functional Code Changes & VCS Isolation**: Unless the user explicitly
     exits the EGM workflow, do not modify functional implementation code or run
     VCS commits (`git add`, `git commit`). Use clean Markdown formatting (valid

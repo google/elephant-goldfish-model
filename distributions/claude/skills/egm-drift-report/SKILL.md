@@ -13,7 +13,7 @@ description: >-
 
 When running in Codex or ChatGPT Work, first read [Codex integration](../../docs/codex.md).
 In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
-Read and apply `resources/execution_instructions.md` (Shared Execution Constraints).
+Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, proceed inline).
 
 When the user asks to detect drift across all designs or a set of READMEs, the
 goal is to identify all instances where the codebase has diverged or failed to

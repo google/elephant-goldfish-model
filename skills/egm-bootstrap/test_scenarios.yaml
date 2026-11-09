@@ -21,6 +21,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-bootstrap/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Please bootstrap Peanuts documentation for small directory tree with 2 packages: pkg1 and pkg2."
         assertions:
@@ -33,6 +35,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-bootstrap/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run egm-bootstrap on a large directory containing 20 packages."
         assertions:
@@ -45,6 +49,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-bootstrap/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Bootstrap a README for directory refund_service/. It contains one file, string_utils.py, defining a single pure helper. Show the generated Interface and Invariants sections."
         assertions:
@@ -63,6 +69,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-bootstrap/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Bootstrap READMEs for a Bazel repository with BUILD.bazel files in pkg/a and pkg/b. Show the Verification section generated for pkg/a."
         assertions:

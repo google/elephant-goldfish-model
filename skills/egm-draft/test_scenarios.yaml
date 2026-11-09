@@ -21,6 +21,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Draft the design document based on our brainstorming session."
         assertions:
@@ -33,6 +35,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Draft the Overview & Goals section for our design document."
         assertions:
@@ -51,6 +55,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "We are in Step 3 (Technical Plan) of drafting a design doc for rate limiting the ingress API. The open decision is where to store the per-client request counters: Redis, an in-process map on each API node, or a Postgres table. Pick the best option."
         assertions:
@@ -72,6 +78,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "All sections are approved. Finalize the document and save to the repository."
         assertions:
@@ -84,6 +92,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Draft an initial design doc for adding rate limiting to the ingress API."
         assertions:
@@ -99,6 +109,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Generate the design document for telemetry service."
         assertions:
@@ -111,6 +123,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Draft documentation linking child subsystem at ./sub/README.md and sibling at ../sibling/README.md."
         assertions:
@@ -126,6 +140,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "All sections are approved. concepts_brief.md chose PostgreSQL; the draft uses Spanner. Finalize the document."
         assertions:
@@ -141,6 +157,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Draft a design document. Problem: the ingress API has no per-client rate limit. Goal: return 429 above 100 requests a minute. No predecessor brief exists, neither git user.name nor GIT_AUTHOR_NAME is configured, and I approve starting the draft."
         assertions:
@@ -156,6 +174,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-draft/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Draft the Alternatives Considered section. We rejected Alternative A (in-memory counters) because it fails under horizontal scaling across multiple pods."
         assertions:

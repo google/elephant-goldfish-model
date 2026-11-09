@@ -22,6 +22,7 @@ import yaml
 
 def test_all_skills_have_co_located_test_scenarios(
     discovered_skills: List[pathlib.Path],
+    repo_root: pathlib.Path,
 ) -> None:
   """Verifies every discovered skill package contains test_scenarios.yaml."""
   for skill_path in discovered_skills:
@@ -51,3 +52,20 @@ def test_all_skills_have_co_located_test_scenarios(
       assert "turns" in sc and sc["turns"], (
           f"Scenario in {scenarios_file} missing non-empty 'turns'"
       )
+      system_prompt = sc.get("system_prompt")
+      if isinstance(system_prompt, dict):
+        skill_file = system_prompt.get("skill_file")
+        assert skill_file and (repo_root / skill_file).is_file(), (
+            f"Scenario '{sc['scenario_id']}' in {scenarios_file} missing valid "
+            f"system_prompt.skill_file: {skill_file!r}"
+        )
+        rules = system_prompt.get("rules", [])
+        assert "resources/execution_instructions.md" in rules, (
+            f"Scenario '{sc['scenario_id']}' in {scenarios_file} must include "
+            "'resources/execution_instructions.md' in system_prompt.rules"
+        )
+        for rule_path in rules:
+          assert (repo_root / rule_path).is_file(), (
+              f"Scenario '{sc['scenario_id']}' in {scenarios_file} references "
+              f"missing rule file '{rule_path}'"
+          )

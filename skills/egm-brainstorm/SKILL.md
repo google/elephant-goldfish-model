@@ -19,10 +19,10 @@ Turns rough ideas into stress-tested hypotheses by combining multi-turn clarifyi
 
 ## Execution Constraints (CRITICAL)
 
-1.  Read and apply `resources/execution_instructions.md` (Shared Execution Constraints and Subagent Delegation; write briefs to `./concepts_brief.md` or the artifact directory rather than chat, use direct plain English, critique weaknesses before merits without flattering adjectives or apologies, and stop if no subagent tool exists because same-context review is not a Goldfish review).
+1.  Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, apply inline rules below): write briefs to `./concepts_brief.md` or the artifact directory rather than chat, use direct plain English, critique weaknesses before merits (never `"brilliant"`, `"great"`, `"smart"`, `"correct"`, `"perfect"`, `"excellent"`, `"spot-on"`, or apologies), and stop if no subagent tool exists (same-context review is not a Goldfish review).
 2.  **Multi-Turn Open-Ended Discovery**: Drill down via open-ended plain-text questions across turns until problem, users, and constraints are clear. Never use `ask_question` or offer multiple-choice menus/options during discovery, and never spawn subagents before the Step 1 Readiness Gate confirms readiness.
 3.  **Parallel Goldfish Reviews**: Evaluate the concept simultaneously across all 7 lenses below.
-4.  **Interaction Invariants**: Every modal gate MUST contain one question (`len(questions) == 1`), set `is_multi_select: false`, use no `(Recommended)` prefixes, and be the final tool call in the turn.
+4.  **Interaction Invariants**: Every modal gate MUST contain one question (`len(questions) == 1`), set `is_multi_select: false`, use no `(Recommended)` prefixes, output non-empty visible chat text before invoking the gate, and be the sole tool call in its model response step (finish preparatory file writes or commands in an earlier step within the same user turn first).
 
 ## The Goldfish Brainstorming Lenses
 
@@ -57,7 +57,7 @@ Turns rough ideas into stress-tested hypotheses by combining multi-turn clarifyi
 ### Step 2: Goldfish Review & Synthesis
 
 1.  **Spawn `egm-synthesizer`** (`agents/synthesizer.md`, or dispatch the 7 parallel lens subagents directly if nesting is unsupported) with prompt:
-    `Conduct multi-lens brainstorm for feature concept: [AnchoredFeatureHypothesis]. Mode: BRAINSTORM. Reviewers: [egm-design, egm-codebase-details, egm-zoom-out, egm-comprehension, egm-implementation-readiness, egm-structural, egm-inventive-catalyst].`
+    `Conduct multi-lens brainstorm for feature concept: [AnchoredFeatureHypothesis]. Mode: BRAINSTORM. Reviewers: [egm-design (agents/design_critic.md), egm-codebase-details (agents/codebase_details.md), egm-zoom-out (agents/zoom_out.md), egm-comprehension (agents/comprehension.md), egm-implementation-readiness (agents/implementation_readiness.md), egm-structural (agents/structural.md), egm-inventive-catalyst (agents/inventive_catalyst.md)].`
 2.  **Synthesize & Write Artifact**: Deduplicate findings (keep `"No false compromise detected"` and do not invent catalog patterns if `egm-inventive-catalyst` reports no contradiction) and write `concepts_brief.md` in the working or artifact directory:
 
 ```markdown
@@ -98,7 +98,7 @@ Notify the user of `concepts_brief.md`'s path in chat (never dump the brief body
 2.  Present the single-select Handoff Gate (`len(questions) == 1`, `is_multi_select: false`, no `(Recommended)`):
     *   `question`: `"Brainstorming complete. concepts_brief.md is finalized. Select next step:"`
     *   `options`:
-        0. `"Publish concepts_brief.md as RFC for team feedback"` -> Write `docs/designs/<feature_name>.md` (and register in `docs/designs/SITEMAP.md` if present); instruct user to start `egm-draft` on it using the host's command form (`/egm:egm-draft docs/designs/<feature_name>.md` in Claude Code/agy CLI, or skill picker in Codex).
+        0. `"Publish concepts_brief.md as RFC for team feedback"` -> Write `docs/designs/<feature_name>.md` (and register in `docs/designs/SITEMAP.md` if present), then notify the user in chat that the RFC is published and can be shared with the team for feedback before formal drafting; note that once feedback is gathered, they can start `egm-draft` on `docs/designs/<feature_name>.md` using the host's command form (`/egm:egm-draft docs/designs/<feature_name>.md` in Claude Code/agy CLI, or skill picker in Codex).
         1. `"Proceed to egm-draft (Initialize formal design document)"` -> Confirm `concepts_brief.md` is saved and tell user to start `egm-draft` using the host's command form (`/egm:egm-draft` in Claude Code/agy CLI, or skill picker in Codex), which ingests `concepts_brief.md` as Priority 1 context.
         2. `"Continue refining concepts_brief.md in ideation mode"` -> Return to Step 3.
         3. `"Conclude brainstorming and keep brief for later"` -> Wrap up cleanly, noting where `concepts_brief.md` is saved.

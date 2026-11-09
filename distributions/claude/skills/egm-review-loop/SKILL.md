@@ -33,7 +33,7 @@ with the Elephant context to resolve findings.
 
 ## Execution Constraints & Delegation
 
-Read and apply `resources/execution_instructions.md` (Shared Execution Constraints and Subagent Delegation). If your harness cannot nest subagents, use direct dispatch instead of `egm-synthesizer` (see `docs/harnesses.md`). If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
+Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, proceed inline). If your harness cannot nest subagents, use direct dispatch instead of `egm-synthesizer` (see [harnesses.md](../../docs/harnesses.md)). If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
 
 ## Inputs
 
