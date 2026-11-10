@@ -26,6 +26,8 @@ You are assisting development in the EGM repository.
   GitHub stack (`gh stack submit` or `gh stack link`), with the implementation PR as a
   draft. Give each PR one purpose and about 200 to 400 changed lines. Use `Refs #<issue>`
   on lower PRs and `Closes #<issue>` on the top PR.
+  GitHub stacks require upstream branch access. Fork contributors prepare the
+  stack locally and open the implementation PR after the design merges.
 * **No Artificial PR Splitting**: Never split a cohesive feature or refactoring across
   multiple smaller pull requests to evade the 100-line scope threshold.
 * **PR Description Template**: Every pull request description must be the filled-in

@@ -104,7 +104,9 @@ follows the EGM Spec-Driven Development process:
     The Design Doc PR targets `main`. The implementation PR targets the design
     branch and stays a draft until the design merges. Use `gh stack submit`,
     or `gh stack link <PR> <PR>` for open PRs. GitHub does not auto-merge a
-    stacked PR.
+    stacked PR. This requires branches in the upstream repository. Fork
+    contributors can prepare the stack locally, then open the implementation
+    PR after the Design Doc PR merges.
 *   **Size**: Give each PR one purpose. Aim for about 200 changed lines that a
     reviewer must read, and split above about 400 (see Google's
     [small changes](https://google.github.io/eng-practices/review/developer/small-cls.html)
