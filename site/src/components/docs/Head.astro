@@ -1,10 +1,12 @@
 ---
 import Head from '@astrojs/starlight/components/Head.astro';
 import { Font } from 'astro:assets';
+import Analytics from '../Analytics.astro';
 const path = Astro.url.pathname.replace(/\/$/, '');
 const isDocument = Astro.locals.starlightRoute.entry.id !== '404';
 ---
 <Head />
+<Analytics pageTitle={Astro.locals.starlightRoute.entry.data.title} />
 <Font cssVariable="--font-display" preload />
 <Font cssVariable="--font-mono" />
 {isDocument && <link rel="alternate" type="text/markdown" href={`${path}.md`} />}
