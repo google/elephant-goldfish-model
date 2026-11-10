@@ -55,7 +55,7 @@ Start a new session after installation. For **Claude Cowork** and **ChatGPT Work
 
 ## Try a 60-second review on existing code
 
-Already have a design doc, README, or PR plan? Review it and check it against the live code without writing a new specification. The commands below use the `/egm:` prefix for Antigravity (agy CLI) and Claude Code. In Codex, select the corresponding EGM skill from the skill picker.
+Review an existing design document, README, or PR plan against the live code. You do not need to write a new specification. The commands below use the `/egm:` prefix for Antigravity (agy CLI) and Claude Code. In Codex, select the corresponding EGM skill from the skill picker.
 
 <img src="skills/egm-review/assets/icon.svg" width="20" height="20" align="top" alt=""> **Review an existing document**
 

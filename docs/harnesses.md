@@ -138,7 +138,7 @@ project files do not move. Claude Code reads a project `AGENTS.md` only when
 the project has no `CLAUDE.md`.
 
 Commit approved specifications in `docs/designs/` and project rules in
-`AGENTS.md`, so teammates and agents share the same source of truth. Add
+`AGENTS.md`. Teammates and agents then use the same committed files. Add
 `.dev/docs` to `.gitignore` only to keep scratch drafts out of git before
 approval.
 
