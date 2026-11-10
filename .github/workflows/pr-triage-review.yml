@@ -15,7 +15,7 @@
 name: PR Triage Review
 
 on:
-  # zizmor: ignore[dangerous-triggers] - Runs from trusted main after Tests completes; never downloads Tests artifacts, never checks out PR head code, and splits read-only review from checkout-free posting.
+  # zizmor: ignore[dangerous-triggers] - Runs from the trusted default branch after Tests completes; never downloads Tests artifacts, never checks out PR head code, and splits read-only review from checkout-free posting.
   workflow_run:
     workflows: ["Tests"]
     types: [completed]
@@ -32,7 +32,7 @@ on:
         type: boolean
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.inputs.pr_number || github.event.workflow_run.head_sha || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.inputs.pr_number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.head_sha || github.run_id }}
   cancel-in-progress: true
 
 permissions: {}
@@ -53,10 +53,10 @@ jobs:
       has_action: ${{ steps.plan.outputs.has_action }}
       action: ${{ steps.plan.outputs.action }}
     steps:
-      - name: "Checkout trusted base branch"
+      - name: "Checkout trusted default branch"
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: main
+          ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
       - name: "Set up Python 3.12"
@@ -70,6 +70,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          MAINTAINERS_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
           PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.workflow_run.pull_requests[0].number || '' }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha || '' }}
           REVIEW_MODEL: ${{ vars.EGM_REVIEW_MODEL || 'gemini-3.8-flash' }}
@@ -77,7 +79,13 @@ jobs:
           PLAN_OUT: ${{ runner.temp }}/review-plan.json
         run: |
           set -euo pipefail
-          ARGS=(--repo "$REPO" --model "$REVIEW_MODEL" --out "$PLAN_OUT")
+          ARGS=(
+            --repo "$REPO"
+            --default-branch "$DEFAULT_BRANCH"
+            --maintainers-team "$MAINTAINERS_TEAM"
+            --model "$REVIEW_MODEL"
+            --out "$PLAN_OUT"
+          )
           if [[ -n "$PR_NUMBER" ]]; then
             ARGS+=(--pr "$PR_NUMBER")
           fi
@@ -118,7 +126,9 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PLAN_PATH: ${{ runner.temp }}/plan/review-plan.json
+          ALLOWED_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
         with:
+          github-token: ${{ secrets.EGM_TRIAGE_BOT_TOKEN || github.token }}
           script: |
             const fs = require("node:fs");
             const plan = JSON.parse(fs.readFileSync(process.env.PLAN_PATH, "utf8"));
@@ -148,6 +158,16 @@ jobs:
               return;
             }
 
+            const formatFallbackBullet = comment => {
+              const normalized = String(comment.body || "")
+                .replace(/```suggestion\b/g, "```")
+                .split("\n")
+                .map((line, idx) => (idx === 0 ? line : `  ${line}`))
+                .join("\n");
+              const anchor = comment.line ? `${comment.path}:${comment.line}` : comment.path;
+              return `- \`${anchor}\` ${normalized}`;
+            };
+
             const payload = plan.review_payload || {};
             if (payload.body) {
               const reviewRequest = {
@@ -164,7 +184,7 @@ jobs:
               } catch (error) {
                 if (error.status === 422 && reviewRequest.comments.length > 0) {
                   core.warning(`Inline review anchors rejected (422); retrying as summary comment: ${error.message}`);
-                  const fallbackLines = reviewRequest.comments.map(c => `- \`${c.path}:${c.line}\` ${c.body}`);
+                  const fallbackLines = reviewRequest.comments.map(formatFallbackBullet);
                   await github.rest.pulls.createReview({
                     ...reviewRequest,
                     body: `${reviewRequest.body}\n${fallbackLines.join("\n")}`,
@@ -199,13 +219,20 @@ jobs:
               });
             }
 
-            const allowedTeams = new Set(["egm-maintainers"]);
+            const allowedTeams = new Set([process.env.ALLOWED_TEAM || "egm-maintainers"].filter(Boolean));
             const teamReviewers = (plan.team_reviewers || []).filter(team => allowedTeams.has(team));
             if (teamReviewers.length > 0) {
-              await github.rest.pulls.requestReviewers({
-                owner,
-                repo,
-                pull_number: prNumber,
-                team_reviewers: teamReviewers
-              });
+              try {
+                await github.rest.pulls.requestReviewers({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  team_reviewers: teamReviewers
+                });
+              } catch (error) {
+                core.warning(
+                  `Could not request team reviewers (${teamReviewers.join(", ")}): ${error.message}. ` +
+                  "Configure secrets.EGM_TRIAGE_BOT_TOKEN with org Members: Read-only and Pull requests: Read/Write to enable team review delegation."
+                );
+              }
             }
