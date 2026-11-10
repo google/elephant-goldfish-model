@@ -10,11 +10,12 @@ not establish support for Copilot in VS Code or the cloud agent.
 
 The offline reference version is GitHub Copilot CLI **1.0.82**.
 Use the existing Agent Plugins 1.0 root `plugin.json`. Copilot-specific profiles
-live in `com.github.copilot/agents/`. For experimental VS Code GitHub Copilot
-workspace discovery ([issue #375](https://github.com/google/elephant-goldfish-model/issues/375)),
-`.vscode/settings.json` uses the deprecated compatibility setting
-`chat.agentSkillsLocations` to map `skills` and
-`chat.agentFilesLocations` to `com.github.copilot/agents`. The shared skills,
+live in `com.github.copilot/agents/`. Issue
+[#375](https://github.com/google/elephant-goldfish-model/issues/375) tracks
+experimental workspace discovery for GitHub Copilot in VS Code.
+`.vscode/settings.json` uses two deprecated compatibility settings.
+`chat.agentSkillsLocations` maps `skills`.
+`chat.agentFilesLocations` maps `com.github.copilot/agents`. The shared skills,
 personas, and standards remain in `skills/`, `agents/`, and `resources/`.
 
 Use a complete checkout at a fixed candidate commit. Keep that checkout while
