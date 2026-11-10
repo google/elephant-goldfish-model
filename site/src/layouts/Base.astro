@@ -33,6 +33,7 @@ const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID ?? '';
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="96x96" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
@@ -144,10 +145,10 @@ const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID ?? '';
             };
             let consentBar;
             window.glueCookieNotificationBarLoaded = (event) => {
-              // CNB defaults to ACCEPTED when no banner is required, including
-              // configuration fetch failure. That is not affirmative consent.
+              // Standard Glue 2A behavior: regions that require consent wait for an
+              // explicit choice, and other regions report ACCEPTED without a banner.
               const instance = window.glue?.CookieNotificationBar?.instance;
-              if (event?.detail?.required !== true || !instance || consentBar) return;
+              if (!event?.detail || !instance || consentBar) return;
               consentBar = instance;
               instance.listen('statuschange', (change) => applyConsent(change.detail?.status));
               applyConsent(event.detail.status);

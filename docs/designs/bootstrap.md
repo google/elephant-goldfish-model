@@ -278,8 +278,10 @@ selected, we enforce the following rules during directory discovery:
     in Phase A.
     *   *Source Code Files*: Defined as files containing executable code,
         schemas, and contracts (e.g., `.c`, `.cc`, `.cpp`, `.cxx`, `.h`, `.hh`,
-        `.hpp`, `.rs`, `.go`, `.zig`, `.lean`, `.java`, `.kt`, `.scala`, `.cs`, `.fs`,
-        `.py`, `.rb`, `.php`, `.lua`, `.sh`, `.bash`, `.ts`, `.tsx`, `.js`,
+        `.hpp`, `.rs`, `.go`, `.zig`, `.lean`, `.f`, `.f90`, `.f95`, `.f03`,
+        `.f08`, `.hs`, `.java`, `.kt`, `.scala`, `.cs`, `.fs`, `.vb`, `.py`,
+        `.rb`, `.php`, `.lua`, `.sh`, `.bash`, `.ps1`, `.psm1`, `.psd1`, `.r`,
+        `.R`, `.ex`, `.exs`, `.ts`, `.tsx`, `.js`,
         `.jsx`, `.mjs`, `.cjs`, `.swift`, `.m`, `.dart`, `.sql`, `.proto`,
         `.graphql`, `.gql`, `.thrift`, `.prisma`, `.tf`, `.hcl`, `.cue`).
         Excludes build manifests, lockfiles, test fixtures, documentation, and
