@@ -803,7 +803,40 @@ def test_template_gate_skips_nonconformant_prs_until_edited() -> None:
 
 def test_deterministic_claude_bundle_parity_catches_drift_and_ignores_design_docs(
     monkeypatch,
+    tmp_path: pathlib.Path,
 ) -> None:
+  # Build a mock repo root containing distributions/claude to verify parity enforcement.
+  mock_root = tmp_path / "repo"
+  (mock_root / "scripts").mkdir(parents=True)
+  (mock_root / "scripts" / "pack_plugin.py").symlink_to(
+      ROOT / "scripts" / "pack_plugin.py"
+  )
+  (mock_root / "skills" / "egm-bootstrap").mkdir(parents=True)
+  (mock_root / "skills" / "egm-bootstrap" / "SKILL.md").symlink_to(
+      ROOT / "skills" / "egm-bootstrap" / "SKILL.md"
+  )
+  (mock_root / "skills" / "egm-review").mkdir(parents=True)
+  (mock_root / "skills" / "egm-review" / "SKILL.md").symlink_to(
+      ROOT / "skills" / "egm-review" / "SKILL.md"
+  )
+  (mock_root / "distributions" / "claude" / "skills" / "egm-bootstrap").mkdir(
+      parents=True
+  )
+  (
+      mock_root
+      / "distributions"
+      / "claude"
+      / "skills"
+      / "egm-bootstrap"
+      / "SKILL.md"
+  ).write_text("old context\n-old\n+old\n")
+  (mock_root / "distributions" / "claude" / "skills" / "egm-review").mkdir(
+      parents=True
+  )
+  (
+      mock_root / "distributions" / "claude" / "skills" / "egm-review" / "SKILL.md"
+  ).symlink_to(ROOT / "skills" / "egm-review" / "SKILL.md")
+
   # Regression for PR #409: modifying skills/egm-bootstrap/SKILL.md without
   # syncing distributions/claude/ short-circuits with 0 LLM calls.
   pr_409_payload = {
@@ -858,7 +891,7 @@ def test_deterministic_claude_bundle_parity_catches_drift_and_ignores_design_doc
       gemini_api_key="key",
       styleguide_path=ROOT / ".gemini" / "styleguide.md",
       config_path=CONFIG_PATH,
-      repo_root=ROOT,
+      repo_root=mock_root,
       llm_caller=should_not_be_called,
   )
   assert llm_calls == 0
@@ -885,7 +918,7 @@ def test_deterministic_claude_bundle_parity_catches_drift_and_ignores_design_doc
               "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           },
       ],
-      ROOT,
+      mock_root,
   )
   assert synced_checked
   assert synced_findings == []
@@ -898,7 +931,7 @@ def test_deterministic_claude_bundle_parity_catches_drift_and_ignores_design_doc
           "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
           "patch": "@@ -0,0 +1,1 @@\n+# Not bundled\n",
       }],
-      ROOT,
+      mock_root,
   )
   assert len(unbundled_findings) == 1
   assert unbundled_findings[0]["path"] == "distributions/claude/docs/designs/extra.md"
