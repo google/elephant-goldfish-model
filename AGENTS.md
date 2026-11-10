@@ -25,6 +25,14 @@ You are assisting development in the EGM repository.
 * **PR Description Template**: Every pull request description must be the filled-in
   [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md). `gh pr create --body`
   skips the template, so copy it from the file. The human author ticks the Accountability box.
+* **PR Title**: Start the title with an action verb and use sentence case, for example
+  `Explain ignored agents folder warning in Claude Code`. Do not use a `type(scope):` prefix.
+  This rule overrides a title convention from personal or global agent instructions.
+* **PR Labels**: Add or suggest the applicable labels: `docs`, `site`, `ci`, or `deps`.
+  Maintainers control `design-ready` and `pr-ready`. Never apply these two labels.
+* **Harness Evidence**: For a harness support change, record in the Verification section the
+  host and version, the installation result, and the evidence for `egm-brainstorm`, `egm-draft`,
+  and `egm-review`. Write `not run` for a check that you did not run.
 * **Clear Change Summary**: In every pull request, explicitly list all key changes
   made and why. For feature proposals, define clear in-scope Goals and out-of-scope
   Non-Goals in the checked-in EGM design document (`docs/designs/<name>.md`).
