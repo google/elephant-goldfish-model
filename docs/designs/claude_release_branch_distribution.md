@@ -292,22 +292,6 @@ request still fails through
     Every merge to `main` becomes a scanned version.
 *   **Reason for Rejection**: It changes what the directory reviews and lists.
 
-### Alternative G: Keep the committed copy until Phases 2 to 5 finish
-
-*   **Pros**: Marketplace installs keep the allowlisted runtime. The rollout
-    keeps one order.
-*   **Cons**: Each change to a packaged source file still needs a manual
-    regeneration, and the freshness test still fails pull requests that omit it
-    (see Problem Statement). Phases 2 to 5 have no schedule and depend on Open
-    Question 1 and on a maintainer's settings changes.
-*   **Reason for Rejection**: The cost continues for an unknown time. The
-    deletion does not depend on the publisher when no submission exists.
-
-Alternative C rejects the repository root for the directory, because the
-directory reviews and lists what it scans. The marketplace catalog is a
-different channel: it copies files to the user's plugin cache and lists
-nothing. The catalog used the repository root before [#347](https://github.com/google/elephant-goldfish-model/pull/347).
-
 ### Alternative D: Upload the release ZIP, or track a tag
 
 *   **Pros**: The ZIPs already exist and are attested.
@@ -335,6 +319,22 @@ nothing. The catalog used the repository root before [#347](https://github.com/g
     rejected push would have no test on Ubuntu and Windows.
 *   **Reason for Rejection**: The script has unit tests that run on both
     operating systems and a rehearsal on a fork. YAML shell has neither.
+
+### Alternative G: Keep the committed copy until Phases 2 to 5 finish
+
+*   **Pros**: Marketplace installs keep the allowlisted runtime. The rollout
+    keeps one order.
+*   **Cons**: Each change to a packaged source file still needs a manual
+    regeneration, and the freshness test still fails pull requests that omit it
+    (see Problem Statement). Phases 2 to 5 have no schedule and depend on Open
+    Question 1 and on a maintainer's settings changes.
+*   **Reason for Rejection**: The cost continues for an unknown time. The
+    deletion does not depend on the publisher when no submission exists.
+
+Alternative C rejects the repository root for the directory, because the
+directory reviews and lists what it scans. The marketplace catalog is a
+different channel: it copies files to the user's plugin cache and lists
+nothing. The catalog used the repository root before [#347](https://github.com/google/elephant-goldfish-model/pull/347).
 
 ## Risks & Mitigations
 
