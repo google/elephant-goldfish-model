@@ -30,7 +30,7 @@ This proposal has a separate scope. Issue #7 and the worked-example issue #58 re
 
 - Publish `/guide`, `/install`, `/getting-started`, `/workflow`, and `/skills`.
 - Publish one `/skills/<skill-name>` page for each of the seven existing skills.
-- Read skill instructions from `skills/*/SKILL.md` at build time.
+- Write each skill page for a reader in `docs/site/skills/`. Link each page to its canonical `SKILL.md`.
 - Keep website guide text in `docs/site/`, outside presentation components.
 - Share the header and footer between the homepage and documentation.
 - Use the existing Material Web gBreeze styles, fonts, marks, and skill icons.
@@ -107,9 +107,10 @@ This proposal has a separate scope. Issue #7 and the worked-example issue #58 re
 ### Static content pipeline
 
 Astro keeps static output. Starlight supplies documentation layout, navigation, contents, search integration, and code rendering.
-The Astro content loader reads `docs/site/*.md` and `skills/*/SKILL.md` directly.
-The loader maps website filenames to short routes and skill names to `/skills/<name>`.
-Website titles remain presentation metadata. Canonical skill instructions remain unchanged.
+The Astro content loader reads `docs/site/**/*.md` directly.
+The loader maps website filenames to short routes, and `docs/site/skills/<name>.md` to `/skills/<name>`.
+A `SKILL.md` file gives instructions to an AI assistant. The website does not render those files.
+Canonical skill instructions remain unchanged.
 
 The Markdown transform removes a redundant leading skill title.
 It resolves relative repository references to canonical GitHub URLs.
@@ -134,9 +135,9 @@ Preserve these resolutions in `package-lock.json`. Use `npm ci` for validation a
 The candidate passes Astro checks, static builds, and documentation checks with these versions.
 
 Define the `docs` collection with `defineCollection` and the Astro `glob` loader from `astro/loaders`.
-Use repository root `..` as its base, with patterns `docs/site/*.md` and `skills/*/SKILL.md`.
+Use repository root `..` as its base, with pattern `docs/site/**/*.md`.
 Use `generateId` for the route mapping above.
-Preprocess frontmatter with `z.preprocess` from `astro/zod`, then check it with Starlight `docsSchema()(context)`.
+Check frontmatter with Starlight `docsSchema()`.
 Preserve an explicit title. Otherwise, supply the fixed page title for the skill's canonical `name`.
 Reject a missing title or invalid Starlight metadata through schema validation.
 Read canonical descriptions and instruction bodies without edits.
@@ -309,8 +310,8 @@ Until earlier PRs merge, later upstream diffs include preceding commits. Their d
 
 | Interface | Contract |
 | --- | --- |
-| Content loader | Website IDs equal the filename without `.md`. Skill IDs equal `skills/` plus the frontmatter `name`. |
-| Content metadata | Define page titles for all seven commands. Preserve canonical names, descriptions, and instruction bodies. |
+| Content loader | Website IDs equal the path below `docs/site/` without `.md`. |
+| Content metadata | Each page defines its title and description in frontmatter. |
 | `repositoryLink(url, file)` | Return a resolved URL string. Keep schemes, root-relative URLs, and anchors unchanged. Resolve other paths against the source file in the repository. |
 | `transformRepositoryMarkdown(tree, file)` | Mutate the tree. Remove only the first level-one heading in a skill file. Rewrite `link`, `image`, and `definition` URLs. Leave code nodes unchanged. |
 | Markdown endpoint | Return one static path per collection entry with its entry as props. Serialize the page title, description, and transformed body. Use `text/markdown; charset=utf-8`. |
