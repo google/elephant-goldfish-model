@@ -266,7 +266,6 @@ when the user asks for it.
 | `scripts/pack_plugin.py` | Modify | Add `egm-ask` to the skill list. |
 | `tests/unit/test_harnesses.py` | Modify | Add `egm-ask` to `EXPECTED_SKILLS`. |
 | `tests/unit/test_packaging.py` | Modify | Add `skills/egm-ask/SKILL.md` to the expected packaged files. |
-| `distributions/claude/` | Modify | Regenerate with `scripts/pack_plugin.py`. |
 | `README.md` | Modify | List `/egm-ask` with the other commands. |
 | `docs/designs/architecture.md` | Modify | Add `egm-ask` to the Skills Layer list. |
 | `docs/designs/skill_icons.md` | Modify | Update the skill count. |
