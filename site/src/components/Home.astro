@@ -30,10 +30,10 @@ const applications = [
   </div>
   <figure class="handoff">
     <ol>
-      <li><Mark variant="elephant" size={40} /><div><h3>Drafting assistant</h3><p>Knows your goal, the background, and the whole conversation.</p></div></li>
-      <li class="minor"><span class="node"></span><div><h3>Your written plan</h3><p>The only thing the reviewers read.</p></div></li>
-      <li><Mark variant="goldfish" size={40} /><div><h3>Fresh reviewers</h3><p>Start from zero and report what is missing or unclear.</p></div></li>
-      <li class="minor"><span class="node"></span><div><h3>The findings</h3><p>You check them and decide what to change.</p></div></li>
+      <li><Mark variant="elephant" size={40} /><div><h2>Drafting assistant</h2><p>Knows your goal, the background, and the whole conversation.</p></div></li>
+      <li class="minor"><span class="node"></span><div><h2>Your written plan</h2><p>The only thing the reviewers read.</p></div></li>
+      <li><Mark variant="goldfish" size={40} /><div><h2>Fresh reviewers</h2><p>Start from zero and report what is missing or unclear.</p></div></li>
+      <li class="minor"><span class="node"></span><div><h2>The findings</h2><p>You check them and decide what to change.</p></div></li>
     </ol>
   </figure>
 </section>
@@ -126,7 +126,7 @@ const applications = [
   .node { justify-self:center; width:9px; height:9px; margin-top:14px; border-radius:50%; background:var(--md-sys-color-outline); }
   .handoff .minor::before { inset-block-start:32px; }
   .handoff li:last-child { padding-bottom:0; }
-  .handoff h3 { margin-top:6px; }
+  .handoff h2 { margin:6px 0 0; font-size:1.125rem; line-height:1.4; letter-spacing:0; }
   .handoff li p { margin-top:4px; max-width:36ch; line-height:1.6; }
 
   .example { padding-block:56px 64px; }
