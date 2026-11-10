@@ -60,8 +60,11 @@ If your harness has no subagent tool, run the scout steps inline.
 4.  **Tool Usage (CRITICAL)**: Use your shell, file-reading, file-writing, and file-editing tools for directory discovery and contract/README
     generation. Adhere to clean Markdown formatting directly during generation
     (standard headers, tables, and fenced code blocks). If a project markdown
-    formatter (e.g. `npx prettier --write`) is explicitly configured in the
+    formatter (e.g. npx prettier --write) is explicitly configured in the
     repository, it may optionally be invoked.
+5.  **Secret & Credential Hygiene**: Never read, quote, summarize, or document
+    credential or secret material; read only file names of such files, never open
+    them, and treat incidental secrets in other files as warnings, not README content.
 5.  **Subagent Delegation**: Spawn sub-orchestrator workers in parallel.
 6.  **Mandatory Safety Gate (CRITICAL)**: If you discover more than 15
     subdirectories, you MUST immediately request user approval (using a structured question tool, if your harness has one, or plain chat) before proceeding with full-tree execution

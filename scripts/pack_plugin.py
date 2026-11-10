@@ -44,7 +44,7 @@ REQUIRED_SHARED = (
     f"agents/{name}.md" for name in (
         "bootstrap_orchestrator", "codebase_details", "comprehension",
         "design_critic", "implementation_readiness", "inventive_catalyst",
-        "structural", "style", "synthesizer", "zoom_out",
+        "structural", "style", "synthesizer", "security", "zoom_out",
     )
 ) + tuple(
     f"resources/document_standards/{name}-standard.md" for name in (

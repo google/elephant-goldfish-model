@@ -5,6 +5,11 @@ const assert = require('node:assert/strict')
 const { readFileSync } = require('node:fs')
 const { test } = require('node:test')
 
+// DANGER: fd 0 (stdin) content is executed as script code via AsyncFunction,
+// which is semantically eval. The only sanctioned caller is
+// test_scope_advisory.py, which parses the inline script out of the checked-in
+// pr-scope-advisory.yml workflow and pipes exactly that content here. Never
+// pipe anything else into this harness.
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
 const evaluate = new AsyncFunction('github', 'context', 'core', readFileSync(0, 'utf8'))
 const signature = '<!-- egm-scope-advisory -->'

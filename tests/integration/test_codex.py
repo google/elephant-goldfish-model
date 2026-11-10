@@ -20,6 +20,29 @@ import pytest
 
 InstalledPlugin = tuple[str, str, pathlib.Path, pathlib.Path]
 
+# Defence in depth for release-ZIP handling: reject arcnames that leave the
+# extraction root and cap total uncompressed size, instead of relying only on
+# the standard library's implicit stripping behaviour.
+MAX_TOTAL_UNCOMPRESSED = 512 * 1024 * 1024
+
+
+def safe_relative(arcname: str) -> None:
+    member = pathlib.PurePosixPath(arcname)
+    if member.is_absolute() or ".." in member.parts or not member.parts or member.drive:
+        raise ValueError(f"Unsafe release-ZIP path: {arcname}")
+
+
+def extract_sanitized(bundle: zipfile.ZipFile, destination: pathlib.Path) -> None:
+    total = 0
+    for info in bundle.infolist():
+        if info.is_dir():
+            continue
+        safe_relative(info.filename)
+        total += info.file_size
+        if total > MAX_TOTAL_UNCOMPRESSED:
+            raise ValueError("Release ZIP exceeds uncompressed size cap")
+    bundle.extractall(destination)
+
 
 pytestmark = pytest.mark.skipif(
     os.environ.get("EGM_CODEX_LIVE") != "1",
@@ -46,7 +69,7 @@ def installed_plugin(
     if release_zip:
         with zipfile.ZipFile(release_zip) as bundle:
             assert bundle.testzip() is None, "Release ZIP is corrupt"
-            bundle.extractall(source)
+            extract_sanitized(bundle, source)
     else:
         shutil.copytree(
             repo_root, source, dirs_exist_ok=True,
@@ -70,6 +93,7 @@ def installed_plugin(
         if release_zip:
             with zipfile.ZipFile(release_zip) as bundle:
                 for relative in bundle.namelist():
+                    safe_relative(relative)
                     installed = root / relative
                     assert installed.is_file(), (
                         f"Release file missing from installation: {relative}"
