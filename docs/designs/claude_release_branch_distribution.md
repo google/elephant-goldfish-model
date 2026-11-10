@@ -342,7 +342,18 @@ request still fails through
 | 6 | One pull request deletes `distributions/claude` and the freshness test, and edits the documents listed in the Detailed Implementation Plan. | Unit tests pass, and adding the pull request branch as a marketplace followed by `claude plugin install egm@egm` succeeds. After the next release, `release/claude` gains that release's commit. |
 
 Phase 4 selects the layout; Phase 5 preserves that choice. Phase 6 must not start
-until the actual submission has been verified on the generated branch. Keeping
+until the actual submission has been verified on the generated branch.
+
+**Amendment, 2026-11-09: Phase 6 runs first when no submission exists.** #347
+pointed the marketplace catalog at `distributions/claude`. It attributes the Cowork
+synchronization failure in #322 to the second, nested Claude manifest in that
+folder. Delete the folder and restore `"source": "./"`. The repository root then
+holds one Claude manifest, and no generated copy can drift. Phase 6 does not wait
+for Phases 2 to 5. This order is safe only while no directory submission tracks
+`distributions/claude` on `main`. Answer Open Question 1 before the deletion
+merges. If such a submission exists, complete Phases 2 to 5 first. Verify the
+marketplace in Cowork after the deletion merges; #347 did not rerun that check.
+Keeping
 the same `distributions/claude` prefix on that branch permits deleting the
 generated copy from `main`; it does not change the submission's plugin path.
 Rollback for Phases 1 to 4 is to disable the workflow,
@@ -471,11 +482,11 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
         `docs/designs/runtime_packaging.md`, `docs/designs/skill_icons.md`,
         `tests/unit/test_packaging.py`, and `distributions/claude/docs/releases.md`.
         There are none after.
-    *   Not changed: `.claude-plugin/marketplace.json` has `"source": "./"`, which
-        points at the repository root, where `.claude-plugin/plugin.json` exists.
-        Installs through `claude plugin marketplace add
-        google/elephant-goldfish-model` do not read `distributions/claude`. The
-        Phase 6 gate checks this.
+    *   `.claude-plugin/marketplace.json`: restore `"source": "./"`, which points
+        at the repository root, where `.claude-plugin/plugin.json` exists. #347
+        changed it to `./distributions/claude` after this design was written.
+        `tests/unit/test_harnesses.py` checks that the root holds exactly one
+        Claude manifest. The Phase 6 gate checks the install.
 
 ### Verification Plan
 
