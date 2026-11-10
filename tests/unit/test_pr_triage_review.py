@@ -50,8 +50,14 @@ def test_workflow_enforces_zizmor_ready_for_review_and_two_job_boundary() -> Non
 
   assert data["permissions"] == {}
   assert "zizmor: ignore[dangerous-triggers]" in raw
-  assert "gemini-3.8-flash" in raw
-  assert review_pr.DEFAULT_MODEL == "gemini-3.8-flash"
+  assert "gemini-4-argon" in raw
+  assert "gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite" in raw
+  assert review_pr.DEFAULT_MODEL == "gemini-4-argon"
+  assert review_pr.DEFAULT_FALLBACK_MODELS == (
+      "gemini-3.8-flash",
+      "gemini-3.6-flash",
+      "gemini-3.5-flash-lite",
+  )
 
   # Tests workflow must fire on ready_for_review so Draft->Ready PRs trigger triage.
   tests_wf = yaml.safe_load(TESTS_WORKFLOW_PATH.read_text(encoding="utf-8"))
@@ -538,3 +544,186 @@ def test_plan_pr_review_guards_missing_key_stale_sha_and_two_pass_flow(
   assert findings_plan["remove_labels"] == ["triage: passed"]
   assert findings_plan["team_reviewers"] == []
   assert len(findings_plan["review_payload"]["comments"]) == 1
+
+
+def test_call_gemini_with_fallback_handles_pool_errors_timeouts_and_auth_fast_fail(
+    monkeypatch,
+) -> None:
+  assert review_pr.parse_fallback_models(
+      " gemini-3.8-flash , , gemini-3.6-flash "
+  ) == ("gemini-3.8-flash", "gemini-3.6-flash")
+  assert review_pr.build_model_chain(
+      "gemini-3.6-flash",
+      ("gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"),
+  ) == ("gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite")
+
+  class _FakeResp:
+    def __init__(self, payload: dict) -> None:
+      self._raw = json.dumps(payload).encode("utf-8")
+      self.headers = {"Content-Type": "application/json"}
+
+    def read(self) -> bytes:
+      return self._raw
+
+    def __enter__(self):
+      return self
+
+    def __exit__(self, *_args):
+      return False
+
+  seen_calls: list[tuple[str, int]] = []
+
+  def fake_failover_urlopen(req, timeout=0):
+    model_id = req.full_url.split("/models/", 1)[1].split(":", 1)[0]
+    seen_calls.append((model_id, timeout))
+    if model_id == "gemini-4-argon":
+      raise urllib.error.HTTPError(
+          req.full_url,
+          503,
+          "Service Unavailable",
+          Message(),
+          io.BytesIO(b"pool busy"),
+      )
+    if model_id == "gemini-3.8-flash":
+      raise TimeoutError("Request deadline exceeded before prefill finished")
+    if model_id == "gemini-3.6-flash":
+      raise urllib.error.HTTPError(
+          req.full_url,
+          404,
+          "Not Found",
+          Message(),
+          io.BytesIO(b"model retired"),
+      )
+    return _FakeResp({
+        "candidates": [{
+            "content": {"parts": [{"text": '{"findings": []}'}]}
+        }]
+    })
+
+  monkeypatch.setattr(urllib.request, "urlopen", fake_failover_urlopen)
+  sleeps: list[float] = []
+  parsed, used_model = review_pr.call_gemini_with_fallback(
+      "review diff",
+      "fake-key",
+      sleep_fn=sleeps.append,
+  )
+  assert parsed == {"findings": []}
+  assert used_model == "gemini-3.5-flash-lite"
+  assert sleeps == []
+  assert seen_calls == [
+      ("gemini-4-argon", 60),
+      ("gemini-3.8-flash", 30),
+      ("gemini-3.6-flash", 30),
+      ("gemini-3.5-flash-lite", 90),
+  ]
+
+  # Invalid API key (HTTP 400) fails immediately without iterating fallbacks.
+  bad_key_calls: list[str] = []
+
+  def fake_bad_key_urlopen(req, timeout=0):
+    del timeout
+    model_id = req.full_url.split("/models/", 1)[1].split(":", 1)[0]
+    bad_key_calls.append(model_id)
+    raise urllib.error.HTTPError(
+        req.full_url,
+        400,
+        "Bad Request",
+        Message(),
+        io.BytesIO(b"API_KEY_INVALID"),
+    )
+
+  monkeypatch.setattr(urllib.request, "urlopen", fake_bad_key_urlopen)
+  with pytest.raises(RuntimeError, match="HTTP 400"):
+    review_pr.call_gemini_with_fallback("review diff", "invalid-key")
+  assert bad_key_calls == ["gemini-4-argon"]
+
+
+def test_plan_pr_review_promotes_working_fallback_model_for_pass_2(
+    tmp_path: pathlib.Path, monkeypatch
+) -> None:
+  styleguide = tmp_path / "styleguide.md"
+  styleguide.write_text("# Style\nKeep checks crisp.\n", encoding="utf-8")
+
+  pr_payload = {
+      "number": 502,
+      "state": "open",
+      "draft": False,
+      "title": "Add helper script",
+      "body": "## Summary\nSmall addition.",
+      "user": {"login": "contributor"},
+      "base": {"ref": "main"},
+      "head": {"sha": "beef1234"},
+      "requested_reviewers": [],
+      "requested_teams": [],
+      "labels": [],
+  }
+  files_payload = [{
+      "filename": "scripts/check.py",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0,
+      "changes": 2,
+      "patch": "@@ -1,2 +1,4 @@\n def ok():\n+  x = 1\n+  return x\n   pass\n",
+  }]
+
+  monkeypatch.setattr(
+      review_pr,
+      "_github_request_json",
+      lambda url, token, **_kw: (
+          (pr_payload, {}) if url.endswith("/pulls/502") else ({}, {})
+      ),
+  )
+  monkeypatch.setattr(
+      review_pr,
+      "_github_paginate",
+      lambda endpoint, token, **_kw: (
+          files_payload if endpoint.endswith("/files") else []
+      ),
+  )
+
+  model_sequences_seen: list[tuple[str, ...]] = []
+
+  def fake_fallback_caller(prompt: str, api_key: str, *, models, **_kw):
+    del prompt, api_key
+    chain = tuple(models)
+    model_sequences_seen.append(chain)
+    if len(model_sequences_seen) == 1:
+      # Simulate Pass 1 failing over from gemini-4-argon to gemini-3.8-flash.
+      return (
+          {
+              "findings": [{
+                  "severity": "Major",
+                  "path": "scripts/check.py",
+                  "line": 2,
+                  "summary": "Candidate issue",
+                  "fix": "Verify before returning",
+              }]
+          },
+          "gemini-3.8-flash",
+      )
+    return ({"findings": []}, chain[0])
+
+  monkeypatch.setattr(
+      review_pr, "call_gemini_with_fallback", fake_fallback_caller
+  )
+
+  plan = review_pr.plan_pr_review(
+      repo="google/elephant-goldfish-model",
+      pr_number=502,
+      head_sha="beef1234",
+      github_token="tok",
+      gemini_api_key="key",
+      styleguide_path=styleguide,
+      config_path=CONFIG_PATH,
+  )
+  assert plan["action"] == "clean_handoff"
+  assert plan["model"] == "gemini-3.8-flash"
+  assert model_sequences_seen == [
+      (
+          "gemini-4-argon",
+          "gemini-3.8-flash",
+          "gemini-3.6-flash",
+          "gemini-3.5-flash-lite",
+      ),
+      ("gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"),
+  ]

@@ -75,7 +75,8 @@ jobs:
           MAINTAINERS_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
           PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.workflow_run.pull_requests[0].number || '' }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha || '' }}
-          REVIEW_MODEL: ${{ vars.EGM_REVIEW_MODEL || 'gemini-3.8-flash' }}
+          REVIEW_MODEL: ${{ vars.EGM_REVIEW_MODEL || 'gemini-4-argon' }}
+          FALLBACK_MODELS: ${{ vars.EGM_FALLBACK_MODELS || 'gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite' }}
           FORCE_MANUAL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_manual || 'false' }}
           PLAN_OUT: ${{ runner.temp }}/review-plan.json
         run: |
@@ -85,6 +86,7 @@ jobs:
             --default-branch "$DEFAULT_BRANCH"
             --maintainers-team "$MAINTAINERS_TEAM"
             --model "$REVIEW_MODEL"
+            --fallback-models "$FALLBACK_MODELS"
             --out "$PLAN_OUT"
           )
           if [[ -n "$PR_NUMBER" ]]; then

@@ -30,6 +30,7 @@ import os
 import pathlib
 import re
 import secrets
+import sys
 import time
 from typing import Any
 import urllib.error
@@ -38,7 +39,12 @@ import urllib.request
 
 DEFAULT_REPO = "google/elephant-goldfish-model"
 DEFAULT_BRANCH = "main"
-DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_MODEL = "gemini-4-argon"
+DEFAULT_FALLBACK_MODELS: tuple[str, ...] = (
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+)
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 GITHUB_API_BASE = "https://api.github.com"
 
@@ -49,6 +55,15 @@ CLEAN_PASS_LABEL = "triage: passed"
 MAINTAINERS_TEAM_SLUG = "egm-maintainers"
 
 RETRYABLE_HTTP_STATUSES: frozenset[int] = frozenset({429, 500, 502, 503, 504})
+FALLBACK_GEMINI_HTTP_STATUSES: frozenset[int] = frozenset({
+    403,
+    404,
+    429,
+    500,
+    502,
+    503,
+    504,
+})
 
 REVIEW_MARKER_PREFIX = "egm-triage-review"
 SHA_MARKER_RE = re.compile(
@@ -807,13 +822,14 @@ def _urlopen_json_with_retry(
       raise RuntimeError(
           f"HTTP {exc.code} from {req.get_method()} {req.full_url}: {detail}"
       ) from exc
-    except urllib.error.URLError as exc:
+    except (urllib.error.URLError, TimeoutError) as exc:
       last_exc = exc
       if attempt + 1 < max_attempts:
         sleep_fn(_retry_delay_seconds(attempt))
         continue
+      reason = getattr(exc, "reason", exc)
       raise RuntimeError(
-          f"Network error calling {req.full_url}: {exc.reason}"
+          f"Network error calling {req.full_url}: {reason}"
       ) from exc
   raise RuntimeError(f"Request failed after {max_attempts} attempts: {last_exc}")
 
@@ -882,11 +898,60 @@ def resolve_pr_number(
   return None
 
 
+def parse_fallback_models(raw: str) -> tuple[str, ...]:
+  """Parses a comma-separated fallback model list into stripped model IDs."""
+  return tuple(item.strip() for item in raw.split(",") if item.strip())
+
+
+def build_model_chain(
+    primary_model: str = DEFAULT_MODEL,
+    fallback_models: Sequence[str] = DEFAULT_FALLBACK_MODELS,
+) -> tuple[str, ...]:
+  """Builds an ordered, deduplicated Gemini model chain."""
+  ordered: list[str] = []
+  for candidate in (primary_model, *fallback_models):
+    cleaned = str(candidate).strip()
+    if cleaned and cleaned not in ordered:
+      ordered.append(cleaned)
+  return tuple(ordered) or (DEFAULT_MODEL,)
+
+
+def _model_timeout_seconds(model_name: str, *, is_final: bool) -> int:
+  """Returns bounded per-attempt timeout in seconds for a Gemini model."""
+  if is_final:
+    return 90
+  lowered = model_name.lower()
+  if "gemini-4" in lowered or "pro" in lowered:
+    return 60
+  return 30
+
+
+def _is_fallback_eligible_gemini_error(exc: Exception) -> bool:
+  """Returns True when a Gemini error should fail over to the next model."""
+  if isinstance(exc, json.JSONDecodeError):
+    return True
+  cause = exc.__cause__
+  if isinstance(cause, urllib.error.HTTPError):
+    return cause.code in FALLBACK_GEMINI_HTTP_STATUSES
+  if isinstance(cause, (urllib.error.URLError, TimeoutError)):
+    return True
+  if isinstance(exc, RuntimeError):
+    msg = str(exc)
+    if (
+        "Gemini returned zero candidates" in msg
+        or "Expected JSON object from Gemini" in msg
+    ):
+      return True
+  return False
+
+
 def call_gemini_json(
     prompt: str,
     api_key: str,
     *,
     model: str = DEFAULT_MODEL,
+    timeout: int = 90,
+    max_attempts: int = 3,
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> dict[str, Any]:
   """Calls Gemini REST generateContent with structured JSON output."""
@@ -905,7 +970,9 @@ def call_gemini_json(
       headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
       method="POST",
   )
-  raw, _ = _urlopen_json_with_retry(req, timeout=120, sleep_fn=sleep_fn)
+  raw, _ = _urlopen_json_with_retry(
+      req, timeout=timeout, max_attempts=max_attempts, sleep_fn=sleep_fn
+  )
   candidates = raw.get("candidates") or []
   if not candidates:
     raise RuntimeError(f"Gemini returned zero candidates: {raw}")
@@ -925,6 +992,41 @@ def call_gemini_json(
   return parsed
 
 
+def call_gemini_with_fallback(
+    prompt: str,
+    api_key: str,
+    *,
+    models: Sequence[str] = (DEFAULT_MODEL, *DEFAULT_FALLBACK_MODELS),
+    sleep_fn: Callable[[float], None] = time.sleep,
+) -> tuple[dict[str, Any], str]:
+  """Calls Gemini across an ordered model chain, failing over on pool errors."""
+  chain = build_model_chain(
+      models[0] if models else DEFAULT_MODEL,
+      models[1:] if len(models) > 1 else (),
+  )
+  for idx, candidate in enumerate(chain):
+    is_final = idx == len(chain) - 1
+    try:
+      parsed = call_gemini_json(
+          prompt,
+          api_key,
+          model=candidate,
+          timeout=_model_timeout_seconds(candidate, is_final=is_final),
+          max_attempts=2 if is_final else 1,
+          sleep_fn=sleep_fn,
+      )
+      return parsed, candidate
+    except Exception as exc:  # noqa: BLE001
+      if is_final or not _is_fallback_eligible_gemini_error(exc):
+        raise
+      next_model = chain[idx + 1]
+      sys.stderr.write(
+          f"Warning: Gemini model {candidate} failed ({exc}); "
+          f"falling back to {next_model}\n"
+      )
+  raise RuntimeError("Exhausted Gemini model chain without a response")
+
+
 def plan_pr_review(
     repo: str,
     pr_number: int | None,
@@ -937,6 +1039,7 @@ def plan_pr_review(
     default_branch: str = DEFAULT_BRANCH,
     maintainers_team: str = MAINTAINERS_TEAM_SLUG,
     model: str = DEFAULT_MODEL,
+    fallback_models: Sequence[str] = DEFAULT_FALLBACK_MODELS,
     force_manual: bool = False,
     llm_caller: Callable[[str], Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
@@ -1030,10 +1133,21 @@ def plan_pr_review(
       and str(item.get("body") or "").strip()
   ]
 
+  remaining_models = list(build_model_chain(model, fallback_models))
+  selected_model = remaining_models[0]
+
   def invoke_model(prompt: str) -> Mapping[str, Any]:
+    nonlocal selected_model
     if llm_caller is not None:
       return llm_caller(prompt)
-    return call_gemini_json(prompt, gemini_api_key, model=model)
+    parsed, used_model = call_gemini_with_fallback(
+        prompt, gemini_api_key, models=remaining_models
+    )
+    if used_model in remaining_models:
+      used_idx = remaining_models.index(used_model)
+      remaining_models[:] = remaining_models[used_idx:]
+    selected_model = used_model
+    return parsed
 
   pass1_prompt = build_pass1_prompt(
       pr_data,
@@ -1085,6 +1199,7 @@ def plan_pr_review(
         team_slug=maintainers_team,
     )
     handoff["depth"] = decision.depth
+    handoff["model"] = selected_model
     return handoff
 
   existing_labels = {
@@ -1094,6 +1209,7 @@ def plan_pr_review(
       "action": "post_findings",
       "reason": "FINDINGS_SURVIVED_PASS_2",
       "depth": decision.depth,
+      "model": selected_model,
       "pr_number": resolved_pr,
       "head_sha": current_head_sha,
       "add_labels": [],
@@ -1122,6 +1238,10 @@ def main(argv: Sequence[str] | None = None) -> int:
   parser.add_argument("--pr", type=int, default=0)
   parser.add_argument("--head-sha", default="")
   parser.add_argument("--model", default=DEFAULT_MODEL)
+  parser.add_argument(
+      "--fallback-models",
+      default=",".join(DEFAULT_FALLBACK_MODELS),
+  )
   parser.add_argument(
       "--styleguide",
       type=pathlib.Path,
@@ -1156,6 +1276,7 @@ def main(argv: Sequence[str] | None = None) -> int:
       default_branch=(args.default_branch.strip() or DEFAULT_BRANCH),
       maintainers_team=args.maintainers_team.strip(),
       model=(args.model.strip() or DEFAULT_MODEL),
+      fallback_models=parse_fallback_models(args.fallback_models),
       force_manual=args.force_manual,
   )
   args.out.write_text(json.dumps(plan, indent=2), encoding="utf-8")
@@ -1171,6 +1292,7 @@ def main(argv: Sequence[str] | None = None) -> int:
           "action": plan["action"],
           "reason": plan.get("reason"),
           "depth": plan.get("depth"),
+          "model": plan.get("model"),
           "pr_number": plan.get("pr_number"),
           "head_sha": plan.get("head_sha"),
       })
