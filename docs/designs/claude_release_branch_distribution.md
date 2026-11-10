@@ -88,6 +88,10 @@ depends on, is not measured (see Open Questions).
     organizations. Before Phase 6a merges, a maintainer with the Directory
     permission in the Google organization checks the developer portal and the
     earlier Console form, and records the result in [#387](https://github.com/google/elephant-goldfish-model/issues/387).
+    **Answer for Phase 6a (2026-11-09, @n3wth):** the plugin has not been submitted
+    to the directory. People can have installed it from the marketplace catalog.
+    Those installs keep their cached copy until the version changes (see Risks).
+    This answer is from the owner's knowledge. Do the portal check before Phase 4.
 2.  **Portal scan timing**: How soon after a push does the directory scan the new
     commit? The portal documents a scheduled check and an optional push webhook
     but no interval, so release-to-listing latency is unquantified.
