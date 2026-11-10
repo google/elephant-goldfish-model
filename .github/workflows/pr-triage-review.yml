@@ -41,7 +41,8 @@ jobs:
   review:
     name: "Run Stage-1 Goldfish PR Review"
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
       (github.event.workflow_run.event == 'pull_request' &&
        github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-24.04
@@ -127,6 +128,7 @@ jobs:
         env:
           PLAN_PATH: ${{ runner.temp }}/plan/review-plan.json
           ALLOWED_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
+          FALLBACK_TOKEN: ${{ github.token }}
         with:
           github-token: ${{ secrets.EGM_TRIAGE_BOT_TOKEN || github.token }}
           script: |
@@ -144,11 +146,29 @@ jobs:
               return;
             }
 
-            const { data: pr } = await github.rest.pulls.get({
-              owner,
-              repo,
-              pull_number: prNumber
-            });
+            let client = github;
+            let pr;
+            try {
+              ({ data: pr } = await client.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber
+              }));
+            } catch (error) {
+              if (error.status === 401 && process.env.FALLBACK_TOKEN && typeof getOctokit === "function") {
+                core.warning(
+                  "EGM_TRIAGE_BOT_TOKEN returned HTTP 401 (expired or revoked); falling back to GITHUB_TOKEN."
+                );
+                client = getOctokit(process.env.FALLBACK_TOKEN);
+                ({ data: pr } = await client.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: prNumber
+                }));
+              } else {
+                throw error;
+              }
+            }
             if (pr.state !== "open") {
               core.info(`Skipping PR #${prNumber}: state is ${pr.state}`);
               return;
@@ -180,12 +200,12 @@ jobs:
                 comments: Array.isArray(payload.comments) ? payload.comments : []
               };
               try {
-                await github.rest.pulls.createReview(reviewRequest);
+                await client.rest.pulls.createReview(reviewRequest);
               } catch (error) {
                 if (error.status === 422 && reviewRequest.comments.length > 0) {
                   core.warning(`Inline review anchors rejected (422); retrying as summary comment: ${error.message}`);
                   const fallbackLines = reviewRequest.comments.map(formatFallbackBullet);
-                  await github.rest.pulls.createReview({
+                  await client.rest.pulls.createReview({
                     ...reviewRequest,
                     body: `${reviewRequest.body}\n${fallbackLines.join("\n")}`,
                     comments: []
@@ -199,7 +219,7 @@ jobs:
             const allowedLabels = new Set(["triage: passed"]);
             const addLabels = (plan.add_labels || []).filter(label => allowedLabels.has(label));
             if (addLabels.length > 0) {
-              await github.rest.issues.addLabels({
+              await client.rest.issues.addLabels({
                 owner,
                 repo,
                 issue_number: prNumber,
@@ -209,7 +229,7 @@ jobs:
 
             const removeLabels = (plan.remove_labels || []).filter(label => allowedLabels.has(label));
             for (const label of removeLabels) {
-              await github.rest.issues.removeLabel({
+              await client.rest.issues.removeLabel({
                 owner,
                 repo,
                 issue_number: prNumber,
@@ -223,7 +243,7 @@ jobs:
             const teamReviewers = (plan.team_reviewers || []).filter(team => allowedTeams.has(team));
             if (teamReviewers.length > 0) {
               try {
-                await github.rest.pulls.requestReviewers({
+                await client.rest.pulls.requestReviewers({
                   owner,
                   repo,
                   pull_number: prNumber,
@@ -232,7 +252,7 @@ jobs:
               } catch (error) {
                 core.warning(
                   `Could not request team reviewers (${teamReviewers.join(", ")}): ${error.message}. ` +
-                  "Configure secrets.EGM_TRIAGE_BOT_TOKEN with org Members: Read-only and Pull requests: Read/Write to enable team review delegation."
+                  "Configure or rotate secrets.EGM_TRIAGE_BOT_TOKEN with Pull requests: Read/Write to enable team review delegation."
                 );
               }
             }

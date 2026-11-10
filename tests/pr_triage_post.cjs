@@ -9,7 +9,14 @@ const { test } = require('node:test')
 
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
 const scriptBody = readFileSync(0, 'utf8')
-const executePost = new AsyncFunction('github', 'context', 'core', 'require', scriptBody)
+const executePost = new AsyncFunction(
+  'github',
+  'context',
+  'core',
+  'require',
+  'getOctokit',
+  scriptBody,
+)
 
 function createHarness(overrides = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'egm-post-test-'))
@@ -25,14 +32,21 @@ function createHarness(overrides = {}) {
     prHeadSha: overrides.prHeadSha || 'abc12345',
     rejectInline422: Boolean(overrides.rejectInline422),
     rejectTeam422: Boolean(overrides.rejectTeam422),
+    rejectPrimary401: Boolean(overrides.rejectPrimary401),
+    usedFallbackClient: false,
   }
 
-  const github = {
+  const makeClient = isPrimary => ({
     rest: {
       pulls: {
-        get: async () => ({
-          data: { state: state.prState, head: { sha: state.prHeadSha } },
-        }),
+        get: async () => {
+          if (isPrimary && state.rejectPrimary401) {
+            throw Object.assign(new Error('Bad credentials'), { status: 401 })
+          }
+          return {
+            data: { state: state.prState, head: { sha: state.prHeadSha } },
+          }
+        },
         createReview: async req => {
           if (state.rejectInline422 && req.comments && req.comments.length > 0) {
             throw Object.assign(new Error('Unprocessable Entity'), { status: 422 })
@@ -40,7 +54,7 @@ function createHarness(overrides = {}) {
           state.reviews.push(req)
         },
         requestReviewers: async ({ team_reviewers }) => {
-          if (state.rejectTeam422) {
+          if (state.rejectTeam422 || !isPrimary) {
             throw Object.assign(
               new Error('Could not resolve to a node with the global id'),
               { status: 422 },
@@ -58,6 +72,13 @@ function createHarness(overrides = {}) {
         },
       },
     },
+  })
+
+  const github = makeClient(true)
+  const getOctokit = token => {
+    assert.equal(token, 'fallback-gh-token')
+    state.usedFallbackClient = true
+    return makeClient(false)
   }
 
   const core = {
@@ -72,20 +93,25 @@ function createHarness(overrides = {}) {
     writeFileSync(planPath, JSON.stringify(plan), 'utf8')
     const prevPlan = process.env.PLAN_PATH
     const prevTeam = process.env.ALLOWED_TEAM
+    const prevFallback = process.env.FALLBACK_TOKEN
     process.env.PLAN_PATH = planPath
     process.env.ALLOWED_TEAM = allowedTeam
+    process.env.FALLBACK_TOKEN = 'fallback-gh-token'
     try {
       await executePost(
         github,
         { repo: { owner: 'google', repo: 'elephant-goldfish-model' } },
         core,
         require,
+        getOctokit,
       )
     } finally {
       if (prevPlan === undefined) delete process.env.PLAN_PATH
       else process.env.PLAN_PATH = prevPlan
       if (prevTeam === undefined) delete process.env.ALLOWED_TEAM
       else process.env.ALLOWED_TEAM = prevTeam
+      if (prevFallback === undefined) delete process.env.FALLBACK_TOKEN
+      else process.env.FALLBACK_TOKEN = prevFallback
       rmSync(dir, { recursive: true, force: true })
     }
   }
@@ -161,4 +187,26 @@ test('stale head_sha or closed PR skips all mutations', async () => {
   })
   assert.equal(stale.reviews.length, 0)
   assert.equal(stale.labels.size, 0)
+})
+
+test('expired EGM_TRIAGE_BOT_TOKEN (HTTP 401) falls back to GITHUB_TOKEN via getOctokit', async () => {
+  const state = createHarness({ rejectPrimary401: true })
+  await state.run({
+    action: 'clean_handoff',
+    pr_number: 42,
+    head_sha: 'abc12345',
+    add_labels: ['triage: passed'],
+    remove_labels: [],
+    team_reviewers: ['egm-maintainers'],
+    review_payload: {
+      commit_id: 'abc12345',
+      body: '<!-- egm-triage-review:sha=abc12345 -->\nClean pass.',
+      comments: [],
+    },
+  })
+  assert.equal(state.failed, null)
+  assert.equal(state.usedFallbackClient, true)
+  assert.equal(state.reviews.length, 1)
+  assert.deepEqual([...state.labels], ['triage: passed'])
+  assert.ok(state.warnings.some(msg => /HTTP 401/.test(msg)))
 })

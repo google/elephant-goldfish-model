@@ -60,6 +60,7 @@ def test_workflow_enforces_zizmor_ready_for_review_and_two_job_boundary() -> Non
   assert {"opened", "synchronize", "reopened", "ready_for_review"} <= set(pr_types)
 
   review_job = data["jobs"]["review"]
+  assert "github.event.repository.default_branch" in review_job["if"]
   assert review_job["permissions"] == {
       "contents": "read",
       "pull-requests": "read",
