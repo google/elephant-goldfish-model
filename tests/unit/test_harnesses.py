@@ -17,6 +17,7 @@ NAME_RE = r"(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?"
 COMPATIBILITY_MANIFESTS = (
     ".claude-plugin/plugin.json",
     ".codex-plugin/plugin.json",
+    ".plugin/plugin.json",
 )
 MARKETPLACES = (
     ".agents/plugins/marketplace.json",
@@ -124,7 +125,19 @@ def test_marketplace_resolves_shared_package(path: str) -> None:
   assert len(marketplace["plugins"]) == 1
   entry = marketplace["plugins"][0]
   assert entry["name"] == canonical["name"]
-  assert (ROOT / entry["source"]).resolve() == ROOT
+  package = (ROOT / entry["source"]).resolve()
+  expected = ROOT / "distributions/claude" if path == ".claude-plugin/marketplace.json" else ROOT
+  assert package == expected
+  if path == ".claude-plugin/marketplace.json":
+    # Cowork rejects a plugin root with a second, nested Claude manifest.
+    assert list(package.rglob(".claude-plugin/plugin.json")) == [
+        package / ".claude-plugin/plugin.json",
+    ]
+    manifest = json.loads((package / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
+    assert manifest["name"] == entry["name"]
+    assert manifest["version"] == canonical["version"]
+    for adapter in manifest["agents"]:
+      assert (package / adapter).is_file()
   if "description" in entry:
     assert entry["description"] == canonical["description"]
   if path == ".agents/plugins/marketplace.json":

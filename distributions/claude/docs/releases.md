@@ -13,10 +13,10 @@ paths, and report formats. Do not change published artifacts under the same tag.
 
 ## Prepare a candidate
 
-1. Update `plugin.json`, `.claude-plugin/plugin.json`, and
-   `.codex-plugin/plugin.json` in a reviewed PR. Also update any other versioned
-   host manifests present, including `.cursor-plugin/plugin.json`, to the same
-   version.
+1. Update `plugin.json` and every host manifest (`.claude-plugin/plugin.json`,
+   `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and
+   `.plugin/plugin.json`) to the same version in a reviewed PR.
+   `scripts/prepare_release.py` rejects a tag when any of them differs.
 2. Regenerate `distributions/claude` using the runtime builder and run
    `pytest tests/unit`. Include any migration notes in the PR.
 3. After merge, a maintainer creates and pushes an annotated `vMAJOR.MINOR.PATCH`

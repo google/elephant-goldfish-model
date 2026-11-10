@@ -1,9 +1,9 @@
 # Runtime packaging
 
-Status: Draft. Maintainer scope approval and design review are pending.
+Status: Implemented by merged #136; native host evidence remains separate.
 Author: @n3wth. Date: 2026-10-24.
 
-Related issues: #121 and #122. Proposed implementation: #136.
+Related issues: #121 and #122. Implementation: #136.
 
 ## Problem and scope
 
@@ -17,7 +17,7 @@ or runtime support.
 
 ## Package contract
 
-Use `scripts/pack_plugin.py`, proposed in #136, as the single builder.
+Use `scripts/pack_plugin.py`, merged in #136, as the single builder.
 `--target claude|openai` selects the host. `--output` selects a new destination.
 Produce an `egm-TARGET` folder and an `egm-TARGET.zip` archive.
 
@@ -33,7 +33,7 @@ The target inventory is explicit:
   `resources/*.md`, and `resources/document_standards/*.md`.
 - Shared guides: `docs/index.md`, `docs/getting_started.md`, `docs/harnesses.md`,
   `docs/claude.md`, `docs/codex.md`, `docs/faq.md`, and `docs/privacy.md`.
-  Include `docs/releases.md` when release preparation adds that guide.
+  Include `docs/releases.md`, added by release preparation.
 - Shared images: SVG and PNG files under `assets/` and `docs/assets/`.
 - Claude: `.claude-plugin/plugin.json`, `.claude-plugin/icon.png`, and
   `.claude-plugin/agents/*.md`.
@@ -51,7 +51,8 @@ Check relative Markdown links in both generated runtimes. A development-only
 document edit must not require regenerating runtime content.
 
 Reject symlinks, paths outside the source tree, missing required files,
-unbundled manifest references, hooks, and unsupported MCP or app dependencies.
+unbundled or non-string manifest references, hooks, and unsupported MCP or app
+dependencies.
 Refuse an existing output folder or archive. A failed build can leave partial
 output; diagnose the failure and use a new destination for the next attempt.
 
@@ -88,7 +89,7 @@ OpenAI packaging does not establish support for every ChatGPT mode.
 - Preserve the cloud workflow and isolation gaps in
   [Cowork #105](https://github.com/google/elephant-goldfish-model/issues/105)
   and [ChatGPT Work #106](https://github.com/google/elephant-goldfish-model/issues/106).
-- Obtain scope approval and merge this design before merging #136.
+- Design and implementation #136 are merged; retain exact-artifact host checks.
 - Coordinate tagged artifacts through the [release design](releases.md).
 
 Directory publication in #121 and #122 remains separate. Confirm the owning
@@ -101,6 +102,5 @@ Separate hand-maintained packages would drift. A full repository ZIP includes
 unneeded development content. A shared allowlist keeps package boundaries
 explicit and reviewable.
 
-Maintainers must confirm whether #121/#122 provide the packaging approval path
-or identify another aligned issue. This draft does not imply that approval or
-an EGM design-review run has occurred.
+Packaging implementation #136 is merged. Directory approval in #121/#122 and
+exact-artifact host verification remain separate from that implementation.
