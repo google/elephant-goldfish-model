@@ -247,7 +247,8 @@ these into Alternatives Considered and has no other source for them.]
     *   **Option 0: `Publish concepts_brief.md as RFC for team feedback`**:
         *   Write `concepts_brief.md` to `docs/designs/<feature_name>.md` using
             your file-writing tool.
-        *   Register the RFC in `docs/designs/SITEMAP.md` if it exists.
+        *   Register the RFC in the design index: `docs/designs/SITEMAP.md`
+            if it exists, otherwise `docs/designs/README.md` if it exists.
         *   Notify the user in chat that the RFC has been published and can be
             shared with the team for feedback before formal drafting. Remind the
             user that once feedback is gathered, a detailed design can be
