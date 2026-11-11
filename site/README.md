@@ -1,6 +1,6 @@
 # egm.dev
 
-Landing site for the Elephant-Goldfish Model, served at https://egm.dev from
+Website and documentation for the Elephant-Goldfish Model, served at https://egm.dev from
 GitHub Pages.
 
 | Light | Dark |
@@ -22,11 +22,13 @@ GitHub Pages.
 
 ## Stack
 
-- [Astro](https://astro.build) static output, one page, no client framework.
+- [Astro](https://astro.build) static output with a custom homepage and
+  [Starlight](https://starlight.astro.build) documentation. Starlight provides
+  local Pagefind search, a responsive sidebar, and a page contents panel.
 - [gBreeze](https://www.npmjs.com/package/@material/web) (`@material/web`
   `labs/gb`) in its native-element form: the page emits the package's own
   class names (`btn`, `icon-btn`, `list-item`, `badge`, `divider`) and imports the
-  package stylesheets. No custom elements, no Lit runtime.
+  package stylesheets. The gBreeze controls use native HTML without a Lit runtime.
 - Google Sans Flex and Google Sans Code, self-hosted under
   `src/assets/fonts/` (OFL).
 
@@ -36,8 +38,8 @@ GitHub Pages.
   components' documented custom properties. Do not restyle component boxes.
 - Keep skill names and commands identical to the repository README.
 - **Cookies and analytics (`egm.dev` only)**: The EGM plugin itself collects zero
-  telemetry. On the canonical `https://egm.dev` site only (when
-  `PUBLIC_GA_MEASUREMENT_ID` is set at build time and
+  telemetry. On the canonical `https://egm.dev` site only (when the build sets
+  `PUBLIC_GA_MEASUREMENT_ID` and
   `window.location.hostname === 'egm.dev'`), the page loads Google Cookie
   Notification Bar (`cookienotificationbar.min.js`). Google Analytics 4
   (`gtag.js`) loads only after the bar reports an affirmative accepted choice
@@ -47,8 +49,8 @@ GitHub Pages.
   Consent Mode v2. Revocation sets GA's measurement disable flag before queuing
   denied consent and blocks later event/config calls. CNB uses a separate data
   layer so its defaults cannot enable analytics or advertising. Google Signals
-  and advertising storage/personalization stay disabled. URLs and referrers are
-  scrubbed before configuration. External forks, preview domains, local builds,
+  and advertising storage/personalization stay disabled. The script scrubs URLs
+  and referrers before configuration. External forks, preview domains, local builds,
   and builds without a measurement ID make zero requests to Google hosts.
 
 ### Consent integration contract
@@ -65,25 +67,23 @@ consent commands. The browser fixtures model these source contracts.
 
 Google's [programmatic Analytics opt-out documentation](https://developers.google.com/tag-platform/security/guides/privacy#turn_off_google_analytics)
 states that the tag checks `ga-disable-MEASUREMENT_ID` before setting cookies
-or sending data. This check grounds revocation after the library has loaded,
+or sending data. This check grounds revocation after the library loads,
 including automatic events that do not use the page's `gtag` wrapper.
-The flag is set before denied consent is queued.
+Revocation sets the flag before it queues denied consent.
 
-Browser checks intercept every network response. They verify pending and
+Browser checks intercept every network response. They check pending and
 rejected consent, grant, revocation before and after script execution, regrant,
-and disabled builds. Their GA fixture implements the documented disable flag;
-these are integration regression checks, not a live Google library audit.
+and disabled builds. Their GA fixture implements the documented disable flag.
+These are integration regression checks, not a live Google library audit.
 
 ## Skill icons
 
 `src/components/SkillIcon.astro` imports the canonical
-`../skills/egm_*/assets/icon.svg` files with `?url`. The website and plugin packages
-use these same assets; do not copy them into `public/` or redraw them in components.
+`../skills/egm-*/assets/icon.svg` files with `?url`. The website and plugin packages
+use these same assets. Do not copy them into `public/` or redraw them in components.
 Each decorative glyph is 28px inside a 40px circle using the existing surface
 tokens, with an adjacent skill name or command providing its accessible label.
-The workflow and skill catalog share this component. The workflow shows
-Brainstorm, Draft, and Review, followed by a short handoff to the coding agent and
-a separate Check for drift follow-up after implementation.
+Documentation page titles use this component beside each skill name.
 
 ## Develop
 
@@ -92,22 +92,40 @@ npm install
 npm run dev      # http://localhost:4321
 npm run check    # astro check
 npm run build    # writes dist/
+npm run check:docs # validates built documentation and Markdown exports
 npm run capture  # rebuilds, then regenerates public/og.png and screenshots/*.png
 ```
 
-`npm run capture` needs a local Chrome (set `CHROME_PATH` if it is not found).
-The social image comes from `scripts/og.html`; edit that file, not the PNG.
+`npm run capture` needs a local Chrome (set `CHROME_PATH` when Chrome is not on `PATH`).
+The social image comes from `scripts/og.html`. Edit that file, not the PNG.
 Run `npm run capture` after any visible change so the committed images stay in sync.
 
 ## Search metadata
 
 The homepage declares the site name as JSON-LD and links both the adaptive SVG
 favicon and a 96px PNG fallback. The PNG uses the SVG's light-theme colors;
-regenerate it when `public/favicon.svg` changes. Add new indexable pages to
-`public/sitemap.xml` when the documentation site ships (#303).
+regenerate it when `public/favicon.svg` changes. The build generates
+`sitemap-index.xml` for the homepage and every documentation page.
+
+## Documentation
+
+The docs collection loads `docs/site/**/*.md` from the repository. The loader
+maps these files to `/guide`, `/install`, `/getting-started`, `/workflow`,
+`/skills`, and `/skills/<command>`. Each skill page in `docs/site/skills/`
+describes one skill for a reader and links to its canonical `SKILL.md`.
+
+Each documentation page has a matching `.md` URL and an alternate link in its
+HTML. `starlight-llms-txt` generates `/llms.txt`, `/llms-full.txt`, and
+`/llms-small.txt`. These are static files with no AI service or API key.
+
+Copy page appears below the desktop contents list and near the mobile title.
+Both the homepage and docs use the shared header, footer, grid, and gBreeze controls.
+The build fetches the GitHub star count once and omits it when GitHub is unavailable.
+The header rounds counts above 1,000 stars to the nearest thousand.
 
 ## Deploy
 
 `.github/workflows/deploy-site.yml` builds and publishes `dist/` on every push
-to `main` that touches `site/`, and on manual dispatch. `public/CNAME` pins the
-custom domain.
+to `main` that touches `site/`, `docs/site/`, or a skill icon. A daily
+scheduled build refreshes the star count. The workflow also supports manual dispatch.
+`public/CNAME` pins the custom domain.

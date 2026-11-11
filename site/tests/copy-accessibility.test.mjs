@@ -4,7 +4,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 import ts from 'typescript';
 
-const source = readFileSync(new URL('../src/components/Install.astro', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../src/components/Home.astro', import.meta.url), 'utf8');
 const script = ts.transpile(source.match(/<script>([\s\S]*?)<\/script>/)[1]);
 
 for (const denied of [false, true]) {
