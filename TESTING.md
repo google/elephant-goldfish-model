@@ -56,6 +56,12 @@ Shell scripts use LF line endings through `.gitattributes`, including when
 Git's `core.autocrlf` is enabled. CI runs this offline suite on Ubuntu and
 Windows; this does not establish native host workflow support.
 
+The site-page tests (`tests/unit/test_site_skill_pages.py`) compare each
+website skill page in `docs/site/skills/` with its skill: the page must link
+to the skill, invoke it in the example, and name the skill's documented
+output file names. They fail when a `SKILL.md` changes a name without the
+page following.
+
 The `CI` check waits for both unit jobs and fails if validation fails, is
 cancelled, or is skipped. Workflows that include site validation must list it
 as a `CI` dependency too. A new push cancels older runs for the same pull
@@ -71,6 +77,7 @@ pytest tests/unit -v
 # Run a specific unit test module
 pytest tests/unit/test_frontmatter.py -v
 pytest tests/unit/test_link_integrity.py -v
+pytest tests/unit/test_site_skill_pages.py -v
 ```
 
 ---
