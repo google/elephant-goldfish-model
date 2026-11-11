@@ -15,7 +15,11 @@
 name: PR Triage Review
 
 on:
-  # zizmor: ignore[dangerous-triggers] - Runs from the trusted default branch after Tests completes; never downloads Tests artifacts, never checks out PR head code, and splits read-only review from checkout-free posting.
+  # zizmor: ignore[dangerous-triggers] - Runs from the trusted default branch only; never checks out or executes PR head code, and splits read-only review planning from checkout-free posting.
+  pull_request_target:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  # zizmor: ignore[dangerous-triggers] - Retains post-Tests fallback while pull_request_target event policy activates; SHA deduplication prevents duplicate reviews.
   workflow_run:
     workflows: ["Tests"]
     types: [completed]
@@ -32,7 +36,7 @@ on:
         type: boolean
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.inputs.pr_number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.head_sha || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.head_sha || github.run_id }}
   cancel-in-progress: true
 
 permissions: {}
@@ -43,7 +47,10 @@ jobs:
     if: >-
       (github.event_name == 'workflow_dispatch' &&
        github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
-      (github.event.workflow_run.event == 'pull_request' &&
+      (github.event_name == 'pull_request_target' &&
+       github.event.pull_request.draft == false) ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'pull_request' &&
        github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -73,8 +80,8 @@ jobs:
           REPO: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           MAINTAINERS_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
-          PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.workflow_run.pull_requests[0].number || '' }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha || '' }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || '' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha || '' }}
           REVIEW_MODEL: ${{ vars.EGM_REVIEW_MODEL || 'gemini-4-argon' }}
           FALLBACK_MODELS: ${{ vars.EGM_FALLBACK_MODELS || 'gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite' }}
           FORCE_MANUAL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_manual || 'false' }}
@@ -178,6 +185,16 @@ jobs:
             if (plan.head_sha && pr.head.sha !== plan.head_sha) {
               core.info(`Skipping stale plan for ${plan.head_sha}; PR head is now ${pr.head.sha}`);
               return;
+            }
+            if (!plan.force_manual && /^[0-9a-f]{7,40}$/i.test(String(plan.head_sha || "")) && typeof client.rest.pulls.listReviews === "function") {
+              const existingReviews = typeof client.paginate === "function"
+                ? await client.paginate(client.rest.pulls.listReviews, { owner, repo, pull_number: prNumber, per_page: 100 })
+                : (await client.rest.pulls.listReviews({ owner, repo, pull_number: prNumber, per_page: 100 })).data;
+              const shaMarkerRe = new RegExp(`<!--\\s*(?:egm-triage-review|egm-triage-bot):sha=${plan.head_sha}\\s*-->`);
+              if (existingReviews.some(r => shaMarkerRe.test(String(r.body || "")))) {
+                core.info(`Skipping duplicate post for ${plan.head_sha}: SHA review marker already present.`);
+                return;
+              }
             }
 
             const formatFallbackBullet = comment => {
