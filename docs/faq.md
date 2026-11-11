@@ -47,51 +47,62 @@ the EGM workflow alone does not demonstrate a productivity improvement.
 
 #### Q: What does a review cost, and how long does it take?
 
-**A**: It depends on how many reviewers run, how many stages run, and how long
-the design is. Each reviewer is a fresh subagent that reads the design from the
-start, and most also read a document standard.
+**A**: Each reviewer is a fresh subagent that reads the design, and most also
+read a document standard. The cost grows with these factors:
 
-*   **Reviewers and stages**: A full `/egm-review` runs five stages, one after
-    another. Reviewers in the same stage can run in parallel. The
-    `Consolidated report with all review rubrics` preset runs each stage once:
-    10 reviewer subagents. The other presets pause after each stage and run
-    Stage 7 or Stage 9, when they include it, through `egm-review-loop`. Each
-    round of that loop starts the stage's 3 reviewers again; it asks you before
-    each new round, finishes after two clean rounds in a row, and asks again at
-    5 rounds. Each stage can also run once more after the design changes. An
-    interactive review therefore usually starts more than 10 reviewers, and the
-    number depends on your choices. `Feature spec only` runs Stages 5 to 8 (7
-    reviewers in one pass), and `Implementation plan only` runs Stage 9 (3
-    reviewers per round). Hosts that nest reviewers under `egm-synthesizer`
-    also start a synthesizer subagent in each stage or round that uses one;
-    Stage 6 does not.
-*   **Document size**: Every reviewer reads the design, so a longer design
-    costs more in each one.
+*   **Reviewers and stages**: A review runs five stages, one after another.
+    Reviewers in the same stage can run in parallel. For a design with an
+    implementation plan, the `Consolidated report with all review rubrics`
+    preset (uninterrupted mode) runs each stage once: 10 reviewer subagents. A
+    design with no implementation plan gets Stages 5 to 8 only: 7 reviewers.
+    The other presets pause after each stage and run Stages 7 and 9, when they
+    include them, through `egm-review-loop`. Each round of that loop starts the
+    stage's 3 reviewers again; it asks you before each new round, finishes after
+    two clean rounds in a row, and asks again at 5 rounds, where you can choose
+    to continue. Stages 5, 6, and 8 can run once more after the design changes,
+    and Stages 7 and 9 can run their whole loop once more. An interactive review
+    can therefore start many more than 10 reviewers, and the number depends on
+    your choices.
+*   **Extra subagents**: When a run nests reviewers under `egm-synthesizer`
+    (Claude Cowork cannot), each stage or loop round that uses it adds a
+    synthesizer, and the synthesizer may start two copies of each reviewer. A
+    reviewer that fails is started once more. The counts above are minimums.
+*   **Design and context size**: Every reviewer reads the design, so a longer
+    design costs more in each one. Reviewers also read the files you pass as
+    `GoldfishContext` and the files the design links to inside the working
+    directory, and some reviewers search the code.
+*   **Your own session**: The main session runs `egm-resolve` after each loop
+    round and writes every report. An interactive review also waits for your
+    answer at each checkpoint.
 
 One measured run: on 2026-10-22, Antigravity CLI 1.4.5 ran brainstorm, draft,
-and review on a small test design, a tool that counts nonblank lines, with
-approvals given in advance and the review in uninterrupted mode, one pass per
-stage. The session used the CLI's default model. The whole run took 1,398.7
-seconds and reported 309,915 tokens. The five review stages took 17 minutes 56
-seconds, from the first Stage 5 reviewer start to the last Stage 9 reviewer
-finish. Its review stages ran 9 reviewers; Stage 5 has since added
+and review on a test design for a tool that counts nonblank lines. Approvals
+were given in advance, and the review ran in uninterrupted mode, one pass per
+stage, with reviewers dispatched directly. The session used the CLI's default
+model. The whole run, brainstorm and draft included, took 1,398.7 seconds and
+reported 309,915 tokens. The five review stages took 17 minutes 56 seconds,
+from the first Stage 5 reviewer start to the last Stage 9 reviewer finish. Its
+review stages ran 9 reviewers; Stage 5 has since added
 `egm-inventive-catalyst`. See the
 [run report](https://github.com/google/elephant-goldfish-model/pull/103#issuecomment-6350669488).
 This is one run, not an average.
 
-These measurements do not exist: the model name and the size of the test
-design in that run, whether its token count includes the reviewers' own
-sessions, a recorded token count for any other run, any measurement of an
-interactive review or of `egm-review-loop`, and a cost in money.
+The run report does not record the model name, the size of the test design, or
+whether its token count includes the reviewers' own sessions, and it gives no
+token count for the review alone. No other recorded run gives a token count,
+no run measures an interactive review or `egm-review-loop`, and no record gives
+a cost in money.
 
-On a subscription plan, a review can reach the plan's usage limit before it
-finishes. On 2026-10-22, a Claude Cowork review (Opus 5.5 Medium) stopped
-during Stage 8 for this reason; see the
+On a plan with a usage limit, such as a subscription plan, a review can reach
+the limit before it finishes. On 2026-10-22, a Claude Cowork run of brainstorm,
+draft, and review (Opus 5.5 Medium) reached its usage limit during review
+Stage 8; see the
 [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record).
 
 For a small, well-understood change, skip the review and use your normal
 workflow. Save the review for uncertain or consequential designs, as the
-answer above explains.
+[answer on developer velocity](#q-does-this-workflow-degrade-developer-velocity)
+explains.
 
 #### Q: Is expecting design documentation to be complete enough for a zero-context agent realistic?
 
