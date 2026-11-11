@@ -159,7 +159,7 @@ try {
     const initial = await visit('egm.dev');
     await initial.page.evaluate((state, needed) => window.__finishConsent(state, needed), status, required);
     await initial.page.waitForNetworkIdle();
-    const granted = status === 'ACCEPTED' && required;
+    const granted = status === 'ACCEPTED';
     assert.equal(initial.gaRequests().length, granted ? 1 : 0);
     assert.equal(initial.collects().length, granted ? 1 : 0);
     assert.deepEqual(initial.errors, []);

@@ -114,14 +114,19 @@ test('stored affirmative choice starts GA once and revocation blocks future even
   assert.equal(p.gaScripts().length, 1);
 });
 
-for (const options of [{ status: 'REJECTED' }, { required: false, status: 'ACCEPTED' }]) {
-  test(`loaded does not imply affirmative consent: ${JSON.stringify(options)}`, () => {
-    const p = page();
-    p.loadConsent(options);
-    assert.equal(p.gaScripts().length, 0);
-    assert.equal(p.window['ga-disable-G-TEST'], true);
-  });
-}
+test('rejected consent never loads GA', () => {
+  const p = page();
+  p.loadConsent({ status: 'REJECTED' });
+  assert.equal(p.gaScripts().length, 0);
+  assert.equal(p.window['ga-disable-G-TEST'], true);
+});
+
+test('regions without a consent requirement follow standard Glue behavior', () => {
+  const p = page();
+  p.loadConsent({ required: false, status: 'ACCEPTED' });
+  assert.equal(p.gaScripts().length, 1);
+  assert.equal(p.window['ga-disable-G-TEST'], false);
+});
 
 test('loaded callback without valid vendor details fails closed', () => {
   const p = page();

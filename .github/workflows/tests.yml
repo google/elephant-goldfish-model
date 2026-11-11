@@ -18,6 +18,7 @@ name: Tests
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
@@ -58,6 +59,7 @@ jobs:
         run: npm run build
         env:
           PUBLIC_GA_MEASUREMENT_ID: G-TEST
+      - run: npm run check:docs
       - name: Verify browser consent ordering
         run: npm run test:browser -- "$RUNNER_TEMP/egm-without-analytics.html"
 

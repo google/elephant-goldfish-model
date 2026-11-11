@@ -46,7 +46,7 @@ Example: `Explain ignored agents folder warning in Claude Code`.
 Add applicable labels: `docs` for documentation, `site` for the website,
 `ci` for GitHub Actions, or `deps` for dependencies. If you cannot apply labels,
 suggest them in the PR description. Maintainers control `design-ready` and
-`pr-ready`. Automation manages `design-needed`.
+`pr-ready`. Automation manages `design-needed` and `triage: passed`.
 
 All contributions must comply with our [AI & Automated Contribution Policy](AI_POLICY.md):
 every pull request requires a human author who has reviewed and tested the change. They

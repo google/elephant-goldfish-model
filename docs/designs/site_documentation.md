@@ -7,7 +7,7 @@
 
 ## Overview
 
-Use Astro Starlight to publish a guide and skill reference pages from repository Markdown.
+Use Astro Starlight to publish a guide and skill pages from the website Markdown in `docs/site/`.
 Keep one shared header, footer, type scale, and color system across the website.
 Provide Markdown exports and local search without a server runtime.
 
@@ -30,7 +30,8 @@ This proposal has a separate scope. Issue #7 and the worked-example issue #58 re
 
 - Publish `/guide`, `/install`, `/getting-started`, `/workflow`, and `/skills`.
 - Publish one `/skills/<skill-name>` page for each of the seven existing skills.
-- Read skill instructions from `skills/*/SKILL.md` at build time.
+- Keep one page for each skill in `docs/site/skills/`. Each page explains the skill to a person who uses the plugin.
+- Link each skill page to its canonical `SKILL.md`.
 - Keep website guide text in `docs/site/`, outside presentation components.
 - Share the header and footer between the homepage and documentation.
 - Use the existing Material Web gBreeze styles, fonts, marks, and skill icons.
@@ -77,7 +78,7 @@ This proposal has a separate scope. Issue #7 and the worked-example issue #58 re
 - **Given:** A reader knows the next task but not its command.
 - **When:** The reader opens `/skills` and chooses a task group.
 - **Then:** The page shows each skill's canonical icon, name, command, and short purpose.
-- **Then:** A skill link opens a separate page with the repository instructions and working reference links.
+- **Then:** A skill link opens a separate page that explains the skill and links to its repository instructions.
 
 | Task group | Skills and commands |
 | --- | --- |
@@ -107,12 +108,13 @@ This proposal has a separate scope. Issue #7 and the worked-example issue #58 re
 ### Static content pipeline
 
 Astro keeps static output. Starlight supplies documentation layout, navigation, contents, search integration, and code rendering.
-The Astro content loader reads `docs/site/*.md` and `skills/*/SKILL.md` directly.
-The loader maps website filenames to short routes and skill names to `/skills/<name>`.
-Website titles remain presentation metadata. Canonical skill instructions remain unchanged.
+The Astro content loader reads `docs/site/**/*.md`.
+Each collection entry ID is the file path below `docs/site/` without `.md`, and the route is `/` plus that ID.
+For example, `docs/site/skills/egm-review.md` has the route `/skills/egm-review`.
+A `SKILL.md` file gives instructions to an AI assistant. The website does not render those files.
+Canonical skill instructions remain unchanged.
 
-The Markdown transform removes a redundant leading skill title.
-It resolves relative repository references to canonical GitHub URLs.
+The Markdown transform resolves relative repository references to canonical GitHub URLs.
 It must preserve absolute URLs, website routes, anchors, and code examples.
 
 ### Dependency and loader choices
@@ -134,12 +136,19 @@ Preserve these resolutions in `package-lock.json`. Use `npm ci` for validation a
 The candidate passes Astro checks, static builds, and documentation checks with these versions.
 
 Define the `docs` collection with `defineCollection` and the Astro `glob` loader from `astro/loaders`.
-Use repository root `..` as its base, with patterns `docs/site/*.md` and `skills/*/SKILL.md`.
-Use `generateId` for the route mapping above.
-Preprocess frontmatter with `z.preprocess` from `astro/zod`, then check it with Starlight `docsSchema()(context)`.
-Preserve an explicit title. Otherwise, supply the fixed page title for the skill's canonical `name`.
+Use the repository root as its base (`..` from `site/`), with pattern `docs/site/**/*.md`.
+Use `generateId` to produce the collection entry ID.
+Validate frontmatter against Starlight `docsSchema()`.
 Reject a missing title or invalid Starlight metadata through schema validation.
-Read canonical descriptions and instruction bodies without edits.
+
+### Skill pages
+
+Each skill page has the file name `docs/site/skills/<skill-name>.md`, where `<skill-name>` equals the skill directory name.
+The icon lookup, the sidebar, and the redirects depend on that name.
+Each page has these sections in this order: What it does, When to use it, What you get, Example, Full instructions.
+The frontmatter title is the display name in the task-group table above. The frontmatter description is website text. It does not change the canonical skill description.
+A new skill needs a page, a sidebar entry, and a redirect.
+If a page and its `SKILL.md` disagree, the `SKILL.md` is correct and the page has a defect.
 
 For Markdown exports, parse `entry.body` with `unified`, `remark-parse`, and `remark-gfm`.
 Apply the shared repository transform, then serialize with `remark-stringify`.
@@ -243,7 +252,7 @@ Check pending, rejected, accepted, revoked, failed-initialization, and noncanoni
 ### Deployment
 
 GitHub Pages remains the production target for `egm.dev`.
-Its build reacts to site files, website Markdown, skill instructions, and skill icon changes.
+Its build reacts to site files, website Markdown, and skill icon changes.
 A daily build refreshes public star data.
 
 ## Alternatives Considered
@@ -257,6 +266,29 @@ It does not meet the selected multi-page guide and skill-reference requirements.
 
 This option supplies a complete documentation interface but adds another deployment and content system.
 The selected design keeps repository Markdown, the current Astro site, and the existing production host.
+
+### Render each `SKILL.md` file
+
+The first version of this design rendered each `skills/*/SKILL.md` file as its skill page.
+This option keeps one text for each skill and cannot diverge.
+A `SKILL.md` file addresses an AI assistant: it names parameters, tool calls, and loop rules.
+It does not meet the requirement for an explanation that does not assume a coding workflow.
+
+### Add a written introduction above the rendered `SKILL.md`
+
+This option keeps the canonical text on the page.
+The reader still gets the assistant instructions as most of the page, and the local search returns them.
+The selected design links to the canonical file instead.
+
+## Risks
+
+| Risk | Mitigation or acceptance |
+| --- | --- |
+| A skill page and its `SKILL.md` diverge. | `npm run check:docs` requires one page for each skill directory and a link from each page to its own `SKILL.md`. A content check is separate work in [#391](https://github.com/google/elephant-goldfish-model/issues/391). |
+| A `SKILL.md` change does not start a site build. | Accepted. The page text does not come from that file. The daily build finds a deleted or renamed link target. |
+| Markdown exports and `llms.txt` carry the page text, not the assistant instructions. | Accepted. Each export links to the canonical instructions. |
+| Local search does not find terms that appear only in a `SKILL.md`. | Accepted. |
+| The Full instructions link shows `main`, which can differ from an installed plugin version. | Accepted. |
 
 ## Non-Functional Requirements
 
@@ -309,10 +341,10 @@ Until earlier PRs merge, later upstream diffs include preceding commits. Their d
 
 | Interface | Contract |
 | --- | --- |
-| Content loader | Website IDs equal the filename without `.md`. Skill IDs equal `skills/` plus the frontmatter `name`. |
-| Content metadata | Define page titles for all seven commands. Preserve canonical names, descriptions, and instruction bodies. |
+| Content loader | Each collection entry ID equals the file path below `docs/site/` without `.md`. |
+| Content metadata | Each page defines its title and description in frontmatter. The schema requires the title. |
 | `repositoryLink(url, file)` | Return a resolved URL string. Keep schemes, root-relative URLs, and anchors unchanged. Resolve other paths against the source file in the repository. |
-| `transformRepositoryMarkdown(tree, file)` | Mutate the tree. Remove only the first level-one heading in a skill file. Rewrite `link`, `image`, and `definition` URLs. Leave code nodes unchanged. |
+| `transformRepositoryMarkdown(tree, file)` | Mutate the tree. Rewrite `link`, `image`, and `definition` URLs. Leave code nodes unchanged. |
 | Markdown endpoint | Return one static path per collection entry with its entry as props. Serialize the page title, description, and transformed body. Use `text/markdown; charset=utf-8`. |
 | `githubStars` | Export `Promise<number \| null>`. Accept only a safe non-negative integer. Use the optional build token and a five-second timeout. Return null on any failure. |
 | `Nav` | Accept optional `embedded: boolean` and a named search slot. The embedded form uses the existing Starlight header container. |
@@ -338,8 +370,9 @@ Do not commit generated output.
 
 | Files | Change and reason |
 | --- | --- |
-| `docs/site/guide.md`, `docs/site/install.md`, `docs/site/getting-started.md`, `docs/site/workflow.md`, `docs/site/skills.md` | Add repository-owned website text and short page routes. |
-| `site/src/content.config.ts` | Load guide and skill Markdown without duplicate skill text. |
+| `docs/site/guide.md`, `docs/site/install.md`, `docs/site/getting-started.md`, `docs/site/workflow.md`, `docs/site/skills.md` | Add repository-owned website text and page routes. |
+| `docs/site/skills/<skill-name>.md` for the seven skills | Add one page that explains each skill to a person. |
+| `site/src/content.config.ts` | Load the website Markdown in `docs/site/`. |
 | `site/astro.config.mjs` | Add Starlight, component overrides, code settings, exports, redirects, and the explicit sidebar. |
 | `site/package.json`, `site/package-lock.json` | Declare and lock the documentation dependencies and validation commands. |
 | `.github/workflows/deploy-site.yml` | Watch source Markdown and icons, run documentation checks, and refresh star data. |
@@ -393,7 +426,7 @@ Do not add or edit canonical skill instructions, manifests, or generated runtime
 - Run `npm ci`, `npm run check`, `npm run build`, `npm run check:docs`, and `npm test` in `site/`.
 - Run the repository unit suite and package-consistency tests.
 - Check every documentation route, Markdown export, generated asset reference, and legacy redirect.
-- Check that the seven skill pages use the canonical Markdown and icons.
+- Check that each skill directory has one skill page, that each page links to its own `SKILL.md`, and that each page uses the canonical icon.
 - Check search open, query, clear, result navigation, Escape, and focus return.
 - Check copy success, denied permission, and the direct Markdown fallback.
 - Check the theme menu, system preference changes, and persisted selection.
@@ -413,6 +446,11 @@ The draft now defines skill groups, redirects, file operations, interface contra
 The Zoom Out review finds no major issue. Comprehension findings pass a resolution check.
 The readiness review identifies two file classifications. The draft now states both operations explicitly.
 The exact interface dimensions remain in this document to keep the selected visual target measurable.
+
+On 2026-11-09 the skill pages changed from rendered `SKILL.md` files to pages written for a person.
+Fresh-context reviewers applied the Structural, Style, and Design Critic personas with the feature spec standard to that change.
+The draft now records the rejected alternatives, the risks, and the skill page contract.
+The prototype test results above predate that change.
 
 These bounded rubric reviews do not establish full `egm-review` completion or convergence.
 The full protocol and maintainer approval remain pending.
