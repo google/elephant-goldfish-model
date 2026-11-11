@@ -59,6 +59,7 @@ jobs:
         run: npm run build
         env:
           PUBLIC_GA_MEASUREMENT_ID: G-TEST
+      - run: npm run check:docs
       - name: Verify browser consent ordering
         run: npm run test:browser -- "$RUNNER_TEMP/egm-without-analytics.html"
 

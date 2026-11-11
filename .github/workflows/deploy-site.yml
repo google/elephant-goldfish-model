@@ -28,9 +28,12 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'docs/site/**'
       - 'skills/*/assets/*.svg'
       - '.github/workflows/deploy-site.yml'
   workflow_dispatch:
+  schedule:
+    - cron: '0 16 * * *'
 
 permissions:
   contents: read
@@ -59,7 +62,9 @@ jobs:
       - run: npm run check
       - run: npm run build
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           PUBLIC_GA_MEASUREMENT_ID: ${{ vars.PUBLIC_GA_MEASUREMENT_ID }}
+      - run: npm run check:docs
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/dist
