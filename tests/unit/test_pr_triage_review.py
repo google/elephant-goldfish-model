@@ -43,13 +43,35 @@ review_pr = importlib.util.module_from_spec(_SPEC)
 sys.modules["egm_review_pr"] = review_pr
 _SPEC.loader.exec_module(review_pr)
 
+VALID_PR_BODY = (
+    "## Summary of Key Changes\n\n"
+    "Small targeted fix.\n\n"
+    "## Contribution Type\n\n"
+    "Track: Bug Fix / Minor Patch\n\n"
+    "## Verification\n\n"
+    "Ran `python3 -m pytest tests/unit`.\n\n"
+    "## Human Accountability Affirmation\n\n"
+    "- [x] I am a human contributor. I personally reviewed this change.\n"
+)
+
 
 def test_workflow_enforces_zizmor_ready_for_review_and_two_job_boundary() -> None:
   raw = WORKFLOW_PATH.read_text(encoding="utf-8")
   data = yaml.safe_load(raw)
+  wf_on = data.get("on") or data.get(True) or {}
 
   assert data["permissions"] == {}
-  assert "zizmor: ignore[dangerous-triggers]" in raw
+  assert raw.count("zizmor: ignore[dangerous-triggers]") >= 2
+  assert wf_on["pull_request_target"]["branches"] == ["main"]
+  assert set(wf_on["pull_request_target"]["types"]) == {
+      "opened",
+      "edited",
+      "synchronize",
+      "reopened",
+      "ready_for_review",
+  }
+  assert wf_on["workflow_run"]["workflows"] == ["Tests"]
+  assert "${{ github.event_name }}" in data["concurrency"]["group"]
   assert "gemini-4-argon" in raw
   assert "gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite" in raw
   assert review_pr.DEFAULT_MODEL == "gemini-4-argon"
@@ -67,6 +89,13 @@ def test_workflow_enforces_zizmor_ready_for_review_and_two_job_boundary() -> Non
 
   review_job = data["jobs"]["review"]
   assert "github.event.repository.default_branch" in review_job["if"]
+  assert "github.event_name == 'pull_request_target'" in review_job["if"]
+  assert "github.event.pull_request.draft == false" in review_job["if"]
+  plan_env = next(
+      step["env"] for step in review_job["steps"] if step.get("id") == "plan"
+  )
+  assert "github.event.pull_request.number" in plan_env["PR_NUMBER"]
+  assert "github.event.pull_request.head.sha" in plan_env["HEAD_SHA"]
   assert review_job["permissions"] == {
       "contents": "read",
       "pull-requests": "read",
@@ -171,6 +200,7 @@ def test_evaluate_sweep_gate_uses_author_association_dynamically() -> None:
       {
           "state": "open",
           "draft": False,
+          "body": VALID_PR_BODY,
           "user": {"login": "alice"},
           "head": {"sha": "1111111"},
       },
@@ -189,6 +219,7 @@ def test_evaluate_sweep_gate_uses_author_association_dynamically() -> None:
       {
           "state": "open",
           "draft": False,
+          "body": VALID_PR_BODY,
           "user": {"login": "alice"},
           "head": {"sha": "2222222"},
       },
@@ -213,6 +244,7 @@ def test_evaluate_sweep_gate_uses_author_association_dynamically() -> None:
       {
           "state": "open",
           "draft": False,
+          "body": VALID_PR_BODY,
           "user": {"login": "alice"},
           "head": {"sha": "deadbeef"},
       },
@@ -418,7 +450,7 @@ def test_plan_pr_review_guards_missing_key_stale_sha_and_two_pass_flow(
       "state": "open",
       "draft": False,
       "title": "Fix skill frontmatter check",
-      "body": "## Summary\nSmall fix.",
+      "body": VALID_PR_BODY,
       "user": {"login": "contributor"},
       "base": {"ref": "main"},
       "head": {"sha": "abc12345"},
@@ -649,7 +681,7 @@ def test_plan_pr_review_promotes_working_fallback_model_for_pass_2(
       "state": "open",
       "draft": False,
       "title": "Add helper script",
-      "body": "## Summary\nSmall addition.",
+      "body": VALID_PR_BODY,
       "user": {"login": "contributor"},
       "base": {"ref": "main"},
       "head": {"sha": "beef1234"},
@@ -727,3 +759,288 @@ def test_plan_pr_review_promotes_working_fallback_model_for_pass_2(
       ),
       ("gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"),
   ]
+
+
+def test_template_gate_skips_nonconformant_prs_until_edited() -> None:
+  spam_pr = {
+      "state": "open",
+      "draft": False,
+      "body": "drive-by spam without template sections",
+      "user": {"login": "external-user"},
+      "head": {"sha": "1234567"},
+  }
+  skipped = review_pr.evaluate_sweep_gate(
+      spam_pr, reviews=[], issue_comments=[], files=[]
+  )
+  assert not skipped.should_review
+  assert skipped.reason == "SKIP_TEMPLATE_NONCONFORMANT"
+
+  unchecked_human = {
+      **spam_pr,
+      "body": VALID_PR_BODY.replace("[x] I am a human", "[ ] I am a human"),
+  }
+  assert (
+      review_pr.evaluate_sweep_gate(
+          unchecked_human, reviews=[], issue_comments=[], files=[]
+      ).reason
+      == "SKIP_TEMPLATE_NONCONFORMANT"
+  )
+
+  # Manual workflow_dispatch --force-manual bypasses template gate when needed.
+  forced = review_pr.evaluate_sweep_gate(
+      spam_pr, reviews=[], issue_comments=[], files=[], force_manual=True
+  )
+  assert forced.should_review
+
+  # Once the contributor edits the PR description to conform, the same SHA runs.
+  edited_pr = {**spam_pr, "body": VALID_PR_BODY}
+  eligible = review_pr.evaluate_sweep_gate(
+      edited_pr, reviews=[], issue_comments=[], files=[]
+  )
+  assert eligible.should_review
+  assert eligible.reason == "ELIGIBLE"
+
+
+def test_deterministic_claude_bundle_parity_catches_drift_and_ignores_design_docs(
+    monkeypatch,
+) -> None:
+  # Regression for PR #409: modifying skills/egm-bootstrap/SKILL.md without
+  # syncing distributions/claude/ short-circuits with 0 LLM calls.
+  pr_409_payload = {
+      "number": 409,
+      "state": "open",
+      "draft": False,
+      "title": "Fix bootstrap typo",
+      "body": VALID_PR_BODY,
+      "user": {"login": "contributor"},
+      "base": {"ref": "main"},
+      "head": {"sha": "40900001"},
+      "requested_reviewers": [],
+      "requested_teams": [],
+      "labels": [{"name": "triage: passed"}],
+  }
+  pr_409_files = [{
+      "filename": "skills/egm-bootstrap/SKILL.md",
+      "status": "modified",
+      "sha": "0000000000000000000000000000000000000409",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "patch": "@@ -10,3 +10,3 @@\n context\n-old\n+new\n",
+  }]
+  monkeypatch.setattr(
+      review_pr,
+      "_github_request_json",
+      lambda url, token, **_kw: (
+          (pr_409_payload, {}) if url.endswith("/pulls/409") else ({}, {})
+      ),
+  )
+  monkeypatch.setattr(
+      review_pr,
+      "_github_paginate",
+      lambda endpoint, token, **_kw: (
+          pr_409_files if endpoint.endswith("/files") else []
+      ),
+  )
+
+  llm_calls = 0
+
+  def should_not_be_called(_prompt: str):
+    nonlocal llm_calls
+    llm_calls += 1
+    return {"findings": []}
+
+  plan_409 = review_pr.plan_pr_review(
+      repo="google/elephant-goldfish-model",
+      pr_number=409,
+      head_sha="40900001",
+      github_token="tok",
+      gemini_api_key="key",
+      styleguide_path=ROOT / ".gemini" / "styleguide.md",
+      config_path=CONFIG_PATH,
+      repo_root=ROOT,
+      llm_caller=should_not_be_called,
+  )
+  assert llm_calls == 0
+  assert plan_409["action"] == "post_findings"
+  assert plan_409["reason"] == "DETERMINISTIC_PRECHECK_BLOCKER"
+  assert plan_409["model"] == "deterministic"
+  assert plan_409["remove_labels"] == ["triage: passed"]
+  comments = plan_409["review_payload"]["comments"]
+  assert len(comments) == 1
+  assert comments[0]["path"] == "skills/egm-bootstrap/SKILL.md"
+  assert "pack_plugin.py --target claude --output /tmp/egm-pack" in comments[0]["body"]
+
+  # Matching Git blob SHAs (like PR #412) pass deterministic parity cleanly.
+  synced_findings, synced_checked = review_pr.check_claude_bundle_parity(
+      [
+          {
+              "filename": "skills/egm-review/SKILL.md",
+              "status": "modified",
+              "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          },
+          {
+              "filename": "distributions/claude/skills/egm-review/SKILL.md",
+              "status": "modified",
+              "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          },
+      ],
+      ROOT,
+  )
+  assert synced_checked
+  assert synced_findings == []
+
+  # Unbundled files placed inside distributions/claude/ are caught deterministically.
+  unbundled_findings, _ = review_pr.check_claude_bundle_parity(
+      [{
+          "filename": "distributions/claude/docs/designs/extra.md",
+          "status": "added",
+          "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "patch": "@@ -0,0 +1,1 @@\n+# Not bundled\n",
+      }],
+      ROOT,
+  )
+  assert len(unbundled_findings) == 1
+  assert unbundled_findings[0]["path"] == "distributions/claude/docs/designs/extra.md"
+
+
+def test_repo_inventory_and_false_positive_filter_prevent_pr_410_regressions(
+    monkeypatch,
+) -> None:
+  inventory_text, existing_paths = review_pr.collect_repo_inventory(ROOT)
+  assert "agents/design_critic.md" in existing_paths
+  assert "agents/implementation_readiness.md" in existing_paths
+  assert "- agents/design_critic.md" in inventory_text
+
+  # Regression for PR #410: docs/designs/ edits must NOT trigger bundle parity
+  # blockers, and hallucinated agent/bundle findings from Pass 1 are dropped
+  # deterministically without even spending a Pass 2 call.
+  pr_410_payload = {
+      "number": 410,
+      "state": "open",
+      "draft": False,
+      "title": "Record architectural decisions",
+      "body": VALID_PR_BODY,
+      "user": {"login": "Crispinvz"},
+      "base": {"ref": "main"},
+      "head": {"sha": "6fe8a89c"},
+      "requested_reviewers": [],
+      "requested_teams": [],
+      "labels": [],
+  }
+  pr_410_files = [
+      {
+          "filename": "docs/designs/README.md",
+          "status": "modified",
+          "sha": "1111111111111111111111111111111111111410",
+          "additions": 2,
+          "deletions": 0,
+          "changes": 2,
+          "patch": "@@ -10,2 +10,4 @@\n # Designs\n+- [Recorded Decisions](recorded_decisions.md)\n",
+      },
+      {
+          "filename": "docs/designs/recorded_decisions.md",
+          "status": "added",
+          "sha": "2222222222222222222222222222222222222410",
+          "additions": 5,
+          "deletions": 0,
+          "changes": 5,
+          "patch": "@@ -0,0 +210,5 @@\n+## Agents\n+Uses `agents/design_critic.md`, `agents/implementation_readiness.md`, `agents/zoom_out.md`, and `agents/comprehension.md`.\n",
+      },
+  ]
+  monkeypatch.setattr(
+      review_pr,
+      "_github_request_json",
+      lambda url, token, **_kw: (
+          (pr_410_payload, {}) if url.endswith("/pulls/410") else ({}, {})
+      ),
+  )
+  monkeypatch.setattr(
+      review_pr,
+      "_github_paginate",
+      lambda endpoint, token, **_kw: (
+          pr_410_files if endpoint.endswith("/files") else []
+      ),
+  )
+
+  prompts_seen: list[str] = []
+
+  def replay_pr_410_hallucinations(prompt: str):
+    prompts_seen.append(prompt)
+    return {
+        "findings": [
+            {
+                "severity": "Blocker",
+                "path": "docs/designs/README.md",
+                "line": 11,
+                "summary": (
+                    "Changes under `docs/designs/` are missing from the"
+                    " checked-in `distributions/claude/` runtime bundle,"
+                    " breaking packaging parity"
+                ),
+                "fix": (
+                    "Run `python3 scripts/pack_plugin.py --target claude"
+                    " --output distributions/claude`"
+                ),
+            },
+            {
+                "severity": "Major",
+                "path": "docs/designs/recorded_decisions.md",
+                "line": 211,
+                "summary": (
+                    "Section 3 references nonexistent agent file paths"
+                    " (`agents/design_critic.md`,"
+                    " `agents/implementation_readiness.md`,"
+                    " `agents/zoom_out.md`, `agents/comprehension.md`) instead"
+                    " of the repository's `agents/egm-*.md` filenames"
+                ),
+                "fix": "Update the agent paths to `agents/egm-design.md`",
+            },
+        ]
+    }
+
+  plan_410 = review_pr.plan_pr_review(
+      repo="google/elephant-goldfish-model",
+      pr_number=410,
+      head_sha="6fe8a89c",
+      github_token="tok",
+      gemini_api_key="key",
+      styleguide_path=ROOT / ".gemini" / "styleguide.md",
+      config_path=CONFIG_PATH,
+      repo_root=ROOT,
+      llm_caller=replay_pr_410_hallucinations,
+  )
+  assert len(prompts_seen) == 1
+  assert "Canonical Repository File Inventory" in prompts_seen[0]
+  assert "- agents/design_critic.md" in prompts_seen[0]
+  assert plan_410["action"] == "clean_handoff"
+  assert plan_410["add_labels"] == ["triage: passed"]
+  assert plan_410["team_reviewers"] == ["egm-maintainers"]
+
+  # Converse check: genuine broken path claims (`agents/egm-design.md` or a
+  # file deleted in the PR) are preserved and NOT filtered out.
+  kept = review_pr.filter_false_positive_findings(
+      [
+          {
+              "severity": "Major",
+              "path": "docs/designs/recorded_decisions.md",
+              "line": 211,
+              "summary": (
+                  "Section 3 references nonexistent agent file path"
+                  " `agents/egm-design.md` instead of `agents/design_critic.md`"
+              ),
+              "fix": "Use `agents/design_critic.md`",
+          },
+          {
+              "severity": "Major",
+              "path": "docs/designs/recorded_decisions.md",
+              "line": 212,
+              "summary": "Document still links to deleted `agents/zoom_out.md` which does not exist",
+              "fix": "Remove stale reference",
+          },
+      ],
+      existing_repo_paths=existing_paths,
+      files=[{"filename": "agents/zoom_out.md", "status": "removed"}],
+      parity_checked_deterministically=True,
+  )
+  assert len(kept) == 2
