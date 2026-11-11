@@ -51,28 +51,38 @@ the EGM workflow alone does not demonstrate a productivity improvement.
 the design is. Each reviewer is a fresh subagent that reads the design from the
 start, and most also read a document standard.
 
-*   **Reviewers and stages**: A full `/egm-review` runs 10 reviewer subagents
-    in five stages, one stage after another. Reviewers in the same stage can run
-    in parallel. Hosts that nest reviewers under `egm-synthesizer` also start a
-    synthesizer for Stages 5, 7, 8, and 9. The `Feature spec only` preset runs
-    Stages 5 to 8 (7 reviewers), and `Implementation plan only` runs Stage 9
-    (3 reviewers). `egm-review-loop` repeats the review for up to 5 rounds.
+*   **Reviewers and stages**: A full `/egm-review` runs five stages, one after
+    another. Reviewers in the same stage can run in parallel. The
+    `Consolidated report with all review rubrics` preset runs each stage once:
+    10 reviewer subagents. The other presets pause after each stage and run
+    Stage 7 or Stage 9, when they include it, through `egm-review-loop`. Each
+    round of that loop starts the stage's 3 reviewers again; it asks you before
+    each new round, finishes after two clean rounds in a row, and asks again at
+    5 rounds. Each stage can also run once more after the design changes. An
+    interactive review therefore usually starts more than 10 reviewers, and the
+    number depends on your choices. `Feature spec only` runs Stages 5 to 8 (7
+    reviewers in one pass), and `Implementation plan only` runs Stage 9 (3
+    reviewers per round). Hosts that nest reviewers under `egm-synthesizer`
+    also start a synthesizer subagent in each stage or round that uses one;
+    Stage 6 does not.
 *   **Document size**: Every reviewer reads the design, so a longer design
     costs more in each one.
 
 One measured run: on 2026-10-22, Antigravity CLI 1.4.5 ran brainstorm, draft,
 and review on a small test design, a tool that counts nonblank lines, with
-approvals given in advance and the review in uninterrupted mode. The session
-used the CLI's default model. The whole run took 1,398.7 seconds and reported
-309,915 tokens. The five review stages took 17 minutes 56 seconds, from the
-first Stage 5 reviewer start to the last Stage 9 reviewer finish. Its review
-stages ran 9 reviewers; Stage 5 has since added `egm-inventive-catalyst`. See the
+approvals given in advance and the review in uninterrupted mode, one pass per
+stage. The session used the CLI's default model. The whole run took 1,398.7
+seconds and reported 309,915 tokens. The five review stages took 17 minutes 56
+seconds, from the first Stage 5 reviewer start to the last Stage 9 reviewer
+finish. Its review stages ran 9 reviewers; Stage 5 has since added
+`egm-inventive-catalyst`. See the
 [run report](https://github.com/google/elephant-goldfish-model/pull/103#issuecomment-6350669488).
 This is one run, not an average.
 
 These measurements do not exist: the model name and the size of the test
 design in that run, whether its token count includes the reviewers' own
-sessions, a recorded token count for any other run, and a cost in money.
+sessions, a recorded token count for any other run, any measurement of an
+interactive review or of `egm-review-loop`, and a cost in money.
 
 On a subscription plan, a review can reach the plan's usage limit before it
 finishes. On 2026-10-22, a Claude Cowork review (Opus 5.5 Medium) stopped

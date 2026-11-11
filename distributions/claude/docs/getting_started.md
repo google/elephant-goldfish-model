@@ -70,8 +70,8 @@ The "core" workflow looks like:
     validate its completeness, clarity, self-containment, and readiness.
 
     This will provide *a lot* of feedback by design. Take what you think is
-    relevant. Ignore the rest. A full review runs 10 reviewer subagents, which
-    takes time and tokens; see
+    relevant. Ignore the rest. A full review runs at least 10 reviewer subagents,
+    which takes time and tokens; see
     [What does a review cost, and how long does it take?](faq.md#q-what-does-a-review-cost-and-how-long-does-it-take).
 
 4.  **Human Review**: Send a Pull Request with your design to another human. EGM
