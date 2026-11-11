@@ -21,6 +21,8 @@ def test_windsurf_adapter_routes_to_shared_skills_without_copied_text(
   assert rule_cfg["trigger"] == "model_decision"
   rule_text = rule.read_text(encoding="utf-8")
   assert "fresh-context" in rule_text
+  assert "read-only subagent profile" in rule_text
+  assert "never resume a reviewer" in rule_text
   assert len(rule_text.splitlines()) <= 20, f"{rule} must stay at or below 20 lines"
 
   workflow_files = sorted((repo_root / ".windsurf/workflows").glob("*.md"))
@@ -35,6 +37,9 @@ def test_windsurf_adapter_routes_to_shared_skills_without_copied_text(
     if skill_name in GOLDFISH_SWARM_SKILLS:
       assert "read-only subagents" in text
       assert "stop" in text
+      assert "read-only subagent profile" in text
+      assert "never resume a reviewer" in text
+      assert "only the parent writes files" in text
     else:
       assert "subagent delegation is unavailable" not in text
       assert "stop" not in text
