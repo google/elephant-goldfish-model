@@ -8,12 +8,21 @@ import Skills from '../components/Skills.astro';
 import Install from '../components/Install.astro';
 import Footer from '../components/Footer.astro';
 
-const title = 'Elephant-Goldfish Model';
+const title = 'Elephant-Goldfish Model | AI-assisted software design';
 const description =
   'Open-source plugin for spec-driven development with AI coding agents. Deep-context agents draft the design, and zero-context subagents stress-test it before you write code.';
 ---
 
 <Base title={title} description={description}>
+  <script type="application/ld+json" is:inline>
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Elephant-Goldfish Model",
+      "alternateName": "EGM",
+      "url": "https://egm.dev/"
+    }
+  </script>
   <Nav />
   <main id="main">
     <Hero />

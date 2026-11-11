@@ -99,6 +99,13 @@ npm run capture  # rebuilds, then regenerates public/og.png and screenshots/*.pn
 The social image comes from `scripts/og.html`; edit that file, not the PNG.
 Run `npm run capture` after any visible change so the committed images stay in sync.
 
+## Search metadata
+
+The homepage declares the site name as JSON-LD and links both the adaptive SVG
+favicon and a 96px PNG fallback. The PNG uses the SVG's light-theme colors;
+regenerate it when `public/favicon.svg` changes. Add new indexable pages to
+`public/sitemap.xml` when the documentation site ships (#303).
+
 ## Deploy
 
 `.github/workflows/deploy-site.yml` builds and publishes `dist/` on every push
