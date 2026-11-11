@@ -4,6 +4,13 @@ Frontmatter and link checks run in `pytest tests/unit` (see [TESTING.md](../../T
 
 ## Manual Verification Scenarios
 
+Before using a project formatter, verify that its configured presence alone
+does not authorize execution. With no explicit approval (including a headless
+run), inspect native tool traces: no formatter, package installation, or
+repository configuration/plugin code may execute. Formatting must continue
+through file edits. Repeat with approval for one exact formatter command and
+verify that only the authorized command runs.
+
 1. **Small Tree Execution (Sequential)**:
    - Target a directory with 2-5 subdirectories.
    - Verify that the root processes directories sequentially; read-only scouts may still be delegated.

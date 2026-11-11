@@ -25,7 +25,8 @@ calls use the user's host account. EGM does not control host transcript, artifac
 backup, or model-provider retention.
 
 Bootstrap can run local discovery commands and an existing project-configured
-formatter. A formatter or other user-approved project command may contact a
+formatter only with explicit user authorization. Formatter configuration and
+plugins can execute repository-provided code. An approved command may contact a
 package registry or another service. Inspect and authorize those commands using
 the host's permission controls. EGM's runtime declares no MCP server and installs
 no permission-approval hook.

@@ -22,8 +22,6 @@ jobs:
       commit: ${{ steps.source.outputs.commit }}
     permissions:
       contents: read
-      id-token: write
-      attestations: write
     steps:
       - name: Require default-branch workflow
         env:
@@ -36,9 +34,9 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
-      # Older release tags can predate the workflow's test dependency group.
-      - run: python -m pip install --upgrade "pip>=25.1"
-      - run: python -m pip install --group test
+      # Install the reviewed main-branch lock before checking out older tags.
+      - run: >-
+          python -m pip install --require-hashes --only-binary=:all: -r .github/requirements-release.txt
       - name: Check out an existing tag contained in main
         id: source
         env:
@@ -54,11 +52,6 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag }}
         run: python scripts/prepare_release.py --tag "$RELEASE_TAG" --commit "$(git rev-parse HEAD)" --output release
-      - name: Attest runtime archives
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
-        with:
-          subject-path: release/*.zip
-          create-storage-record: false
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-candidate
@@ -69,8 +62,27 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  draft:
+  attest:
     needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-candidate
+          path: release
+      - run: cd release && sha256sum -c SHA256SUMS
+      - name: Attest runtime archives
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: release/*.zip
+          create-storage-record: false
+
+  draft:
+    needs: [build, attest]
     runs-on: ubuntu-24.04
     permissions:
       actions: read

@@ -61,8 +61,9 @@ done
 
 The workflow signs both ZIP digests and stores provenance in GitHub before
 creating a draft. Signing failure blocks draft creation. Local preparation does
-not create attestations. The build job uses `id-token: write` to request a signing
-certificate and `attestations: write` to store the result. It cannot write releases.
+not create attestations. A separate attestation job holds signing permissions;
+it downloads the build artifact without installing dependencies or running
+repository code. The build uses hash-checked wheels and read-only permissions.
 
 The provenance identifies the workflow run from `main`. The tagged source checked
 out during that run can be a different commit. Check the release notes for that
