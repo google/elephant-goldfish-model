@@ -21,7 +21,18 @@ export default defineConfig({
     favicon: '/favicon.svg',
     credits: false,
     expressiveCode: { defaultProps: { frame: 'none' }, styleOverrides: { borderRadius: '8px', borderColor: 'var(--md-sys-color-outline-variant)', codeBackground: 'var(--md-sys-color-surface-container-low)', frames: { shadowColor: 'transparent' } } },
-    components: { Head: './src/components/docs/Head.astro' },
+    customCss: ['./src/styles/docs.css'],
+    components: {
+      Header: './src/components/docs/Header.astro',
+      Head: './src/components/docs/Head.astro',
+      PageTitle: './src/components/docs/PageTitle.astro',
+      PageSidebar: './src/components/docs/PageSidebar.astro',
+      ThemeSelect: './src/components/docs/ThemeSelect.astro',
+      PageFrame: './src/components/docs/PageFrame.astro',
+      Sidebar: './src/components/docs/Sidebar.astro',
+      Pagination: './src/components/docs/Pagination.astro',
+      MobileMenuToggle: './src/components/docs/MobileMenuToggle.astro',
+    },
     sidebar: [
       { label: 'Guide', items: [
         { label: 'Overview', slug: 'guide' },
