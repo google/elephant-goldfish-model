@@ -53,8 +53,10 @@ and unpolluted without operating in an artificial vacuum.
 4.  **Semantic Split Blindness**: Under `skills/egm-review`, the review pipeline
     splits documents into `FeatureRange` (`1..L-1`) and `DetailedRange`
     (`L..End`). Stage 9 (`egm-implementation-readiness`) evaluates only
-    `DetailedRange`. If recorded decisions reside exclusively in the high-level
-    section, the implementing Tech Lead reviewer is physically blind to them.
+    `DetailedRange`. If the high-level specification and recorded constraints
+    reside exclusively in `FeatureRange`, the implementing Tech Lead reviewer
+    is blind to the goals and architectural boundaries the implementation steps
+    must fulfill.
 
 ## Goals vs. Non-Goals
 
@@ -65,25 +67,33 @@ and unpolluted without operating in an artificial vacuum.
     remains strictly withheld, and *recorded architectural decisions* (ADRs,
     settled constraints, approved standards), which are supplied as baseline facts.
 *   **Standardized Document Section & Ingestion**:
-    *   Standardize an H2 section: `## Architectural Constraints & Recorded Decisions`
-        in technical design specifications.
+    *   Standardize an H2 section: `## Architectural Constraints & Context`
+        in technical design specifications for fixed platform premises and cited
+        ADR links.
+    *   Consolidate feature-level choices into `## Alternatives Considered & Design Decisions`,
+        pairing each local decision directly with evaluated and rejected options.
     *   Support linked ADR files (e.g., `docs/decisions/0001-storage.md`) harvested
         automatically via `skills/egm-review` Step 1.3 link discovery.
 *   **Decision Provenance & Anti-Evasion**:
-    *   Require verifiable provenance: recorded decisions must cite merged ADRs,
-        approved issues/RFCs, or documented infrastructure policies.
-    *   Treat in-flight feature choices as proposals subject to audit against
-        `## Alternatives Considered`, preventing authors from shielding
-        unvetted choices behind a "settled" label.
-*   **Pipeline Semantic Split Integration**:
-    *   Update `skills/egm-review` Step 3 to extract the
-        `## Architectural Constraints & Recorded Decisions` block (`PremiseRange`)
-        and append it to `GoldfishContext` across all split-range stages,
-        ensuring Stage 9 (`egm-implementation-readiness`) receives it.
+    *   Require verifiable provenance: recorded constraints must cite merged ADRs,
+        approved issues/RFCs, or documented infrastructure policies under
+        `## Architectural Constraints & Context`.
+    *   Treat feature choices under `## Alternatives Considered & Design Decisions`
+        as active proposals subject to trade-off scrutiny against rejected
+        alternatives, preventing authors from shielding unvetted choices behind
+        a "settled" label.
+*   **Pipeline Semantic Split Integration (Split Target, Unified Context)**:
+    *   Update `skills/egm-review` Step 3 to pass the high-level specification
+        (`1..L-1`) into `GoldfishContext` as read-only baseline context for Stage 9
+        (`egm-implementation-readiness`), while keeping its evaluation target
+        strictly scoped to `DetailedRange` (`L..End`). This eliminates fragile
+        regex line-slicing while providing full visibility into goals and constraints.
 *   **Persona Calibration & Operational Rubrics**:
     *   Instruct Goldfish personas (`egm-design`, `egm-implementation-readiness`,
         `egm-zoom-out`, `egm-comprehension`) on how to evaluate recorded
         decisions without opening settled questions or neutering critique.
+    *   Provide `egm-implementation-readiness` with an explicit negative constraint
+        prohibiting abstraction critiques against the read-only baseline (`1..L-1`).
 *   **Targeted Context Ingestion**:
     *   Restrict external decision loading to explicitly referenced or linked
         files to prevent context bloat and token dilution.
@@ -115,11 +125,11 @@ sequenceDiagram
 
     Human->>Driver: /egm-review Spec
     Driver->>Spec: Discover links in Step 1.3 (harvests ADRs into GoldfishContext)
-    Driver->>Spec: Step 3 Semantic Split (extracts PremiseRange & DetailedRange)
+    Driver->>Spec: Step 3 Semantic Split (defines TargetRange & FeatureRange Baseline)
     Driver->>Synthesizer: Dispatch Reviewers with TargetRange + GoldfishContext
-    Note over Synthesizer,Reviewer: Context contains Spec + PremiseRange + ADRs (Zero Chat History)
+    Note over Synthesizer,Reviewer: Context contains TargetRange + FeatureRange Baseline + ADRs (Zero Chat History)
     Synthesizer->>Reviewer: Spawn fresh reviewer instance
-    Reviewer->>Reviewer: Audit Spec against PremiseRange, ADRs & Target Standard
+    Reviewer->>Reviewer: Audit TargetRange against Feature Baseline, ADRs & Standards
     Reviewer->>Synthesizer: Return prioritized findings (Blocker, Major, Nit)
     Synthesizer->>Driver: Compile deduplicated review report
     Driver->>Human: Present findings for triage (/egm-resolve)
@@ -131,6 +141,7 @@ sequenceDiagram
 | :--- | :--- | :--- | :--- |
 | Project codebase & files | Yes | Yes (via tools) | Read-only workspace access |
 | Target specification (`TargetFile`) | Yes | Yes | Scope restricted by active line range |
+| High-level specification baseline (`1..L-1`) | Yes | Yes (Stage 9 read-only context) | Provided via `GoldfishContext`; audit forbidden |
 | Linked ADRs & Decision Records | Yes | Yes (via `GoldfishContext`) | Explicitly linked files only; no wildcards |
 | Document Standards & Rubrics | Yes | Yes | Read from `resources/document_standards/` |
 | Author conversation & chat transcripts | Yes | **No (Strictly withheld)** | Never injected into subagent prompts |
@@ -145,6 +156,7 @@ classification rubric:
 1.  **Type A: Verified External Constraints (Settled Premises)**:
     *   *Definition*: Pre-existing platform mandates, corporate compliance
         rules, language runtimes, or merged repository ADRs.
+    *   *Placement*: Documented under `## Architectural Constraints & Context`.
     *   *Requirement*: Must cite a verifiable source (e.g., file link to
         `docs/decisions/*.md`, tracking issue, or platform policy).
     *   *Reviewer Mandate*: Accept as a fixed premise. Do not challenge why the
@@ -153,8 +165,9 @@ classification rubric:
 2.  **Type B: Feature-Local Architectural Choices (Proposals Under Audit)**:
     *   *Definition*: Architectural choices introduced by the current feature
         specification itself (e.g., choosing a worker queue over direct RPC).
-    *   *Requirement*: Must be documented under `## Alternatives Considered`
-        with rejected alternatives and trade-off rationales.
+    *   *Placement*: Documented under `## Alternatives Considered & Design Decisions`.
+    *   *Requirement*: Must be paired directly with rejected alternatives and
+        concrete trade-off rationales.
     *   *Reviewer Mandate*: Actively stress-test the rationale. If the trade-off
         is fully justified and mitigated, accept it; if the rationale relies on
         unbacked assumptions, flag it.
@@ -180,24 +193,26 @@ flagged as a **Blocker** under three concrete conditions:
 
 ### 1. Document Standard (`resources/document_standards/feature-spec-standard.md`)
 
-*   Add an optional H2 section: `## Architectural Constraints & Recorded Decisions`.
-*   Establish structural division:
-    *   `## Architectural Constraints & Recorded Decisions`: Fixed platform
-        premises, compliance rules, and external ADR links.
-    *   `## Alternatives Considered`: Local architectural trade-offs, rejected
-        options, and design rationale.
+*   Standardize two non-overlapping sections for decisions and constraints:
+    *   `## Architectural Constraints & Context`: Fixed platform premises,
+        compliance mandates, and links to merged repository ADRs (`docs/decisions/*.md`).
+    *   `## Alternatives Considered & Design Decisions`: Consolidates local
+        feature architectural choices paired directly with evaluated and
+        rejected options and trade-off rationales.
 
 ### 2. Review Orchestrator (`skills/egm-review/SKILL.md`)
 
 *   **Step 1.3 (Link Discovery)**: Relative Markdown links to decision files
     (e.g., `docs/decisions/*.md`) inside the document are automatically added to
     `GoldfishContext`.
-*   **Step 3 (Semantic Split)**:
-    *   Detect the line range of `## Architectural Constraints & Recorded Decisions`
-        as `PremiseRange`.
-    *   When dispatching split-range reviews (specifically Stage 9 for
-        `DetailedRange`), pass `PremiseRange` content as supplementary context
-        in `GoldfishContext`.
+*   **Step 3 (Semantic Split & Context Supply)**:
+    *   Maintain `TargetRange = DetailedRange` (`L..End`) for Stage 9
+        (`egm-implementation-readiness`).
+    *   Automatically pass the entire high-level specification (`1..L-1`) into
+        `GoldfishContext` under a distinct boundary tag:
+        `[ESTABLISHED FEATURE SPECIFICATION (READ-ONLY BASELINE)]`.
+    *   Eliminates fragile regex line-slicing (`PremiseRange`) while giving the
+        implementing Tech Lead complete visibility into goals and constraints.
 
 ### 3. Review Personas (`agents/*.md`)
 
@@ -205,14 +220,20 @@ flagged as a **Blocker** under three concrete conditions:
     Add to all Goldfish personas:
     > *"Stateless Mindset & Recorded Decisions: You evaluate plans with zero
     > conversational history. However, when an architectural choice has verified
-    > external provenance or is recorded under 'Architectural Constraints & Recorded
-    > Decisions', treat it as a design premise. Do not challenge why the premise
-    > was chosen unless it introduces a mathematical impossibility, quota
-    > breach, or unmitigated failure mode."*
+    > external provenance or is recorded under 'Architectural Constraints & Context',
+    > treat it as a design premise. Do not challenge why the premise was chosen
+    > unless it introduces a mathematical impossibility, quota breach, or
+    > unmitigated failure mode."*
 *   **`agents/design_critic.md`**: Focus critique on failure modes, error
     handling, and system scaling within the chosen constraint boundaries.
 *   **`agents/implementation_readiness.md`**: Verify that concrete implementation
-    steps faithfully implement the recorded constraints without silent drift.
+    steps faithfully implement the recorded constraints and architecture without
+    silent drift.
+    *   *Negative Constraint*: Lines `1..(L-1)` represent an established,
+        approved baseline. You must not critique lines `1..(L-1)` for abstraction,
+        nor propose edits to them. Your audit targets ONLY `DetailedRange`
+        (`L..End`) to ensure it comprehensively and concretely realizes that
+        baseline without gaps.
 *   **`agents/zoom_out.md`**: Respect documented constraints when assessing
     simplicity; do not flag necessary mechanisms as YAGNI if an explicit
     constraint mandates them.
@@ -248,6 +269,23 @@ on genuine design defects and implementation gaps.
     *   *Rejection*: Severe context bloat. Irrelevant ADRs consume token budget,
         dilute model attention, and slow down review turnaround. Explicit link
         discovery keeps context lean.
+4.  **Evaluating Entire Document in Stage 9 (Implementation Readiness)**:
+    *   *Approach*: Point `egm-implementation-readiness` directly at `1..End`
+        as its audit target.
+    *   *Rejection*: Direct evaluation of high-level narrative prose causes the
+        Tech Lead persona (governed by the Zero-Decision Rule) to flag normal
+        architectural abstractions as unactionable vagueness, reopening settled
+        high-level debates in the terminal stage. Providing `1..L-1` as read-only
+        baseline context delivers full visibility without relitigation noise.
+5.  **Per-Feature Directory Restructuring (`docs/<feature>/design.md`)**:
+    *   *Approach*: Nest every design specification into a feature folder with
+        local ADR subdirectories.
+    *   *Rejection*: Architecture Decision Records capture repository-wide,
+        cross-cutting invariants that require a centralized catalog in
+        `docs/decisions/` to prevent discovery fragmentation and cross-directory
+        dependency coupling. Furthermore, repository governance (`AGENTS.md`)
+        and tooling (`egm-drift-report`) mandate flat `docs/designs/<name>.md`.
+        Feature-local trade-offs remain cleanly inline within the spec.
 
 ## References
 
