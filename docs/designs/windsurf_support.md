@@ -99,6 +99,12 @@ execution follows four rules:
    if native read-only subagent delegation is unavailable. Cascade reports that
    a same-context review is not a Goldfish review and invokes no write or shell
    tools.
+5. Every Goldfish reviewer launches on the host's read-only subagent profile
+   (`subagent_explore` in the Devin CLI, which exposes no write, edit, or shell
+   tool). The rule and the three Goldfish wrappers forbid write-capable
+   profiles and forbid resuming a reviewer. Reviewers return findings as text.
+   Only the parent writes files: the outputs the skill assigns to it, or a file
+   the user asks for, after the user approves the write.
 
 ### Human approval gates
 
@@ -133,6 +139,8 @@ Windsurf installed:
   `egm-review-loop`) carry the subagent stop rule while single-session and
   inline workflows (`egm-draft`, `egm-resolve`, `egm-drift-report`,
   `egm-bootstrap`) do not false-stop.
+- Verify the rule and the three Goldfish wrappers name the read-only subagent
+  profile, forbid resuming a reviewer, and reserve file writes for the parent.
 
 ### Live promotion gates
 
@@ -146,6 +154,30 @@ on a pinned Windsurf version for three gates:
 3. **Fresh-context isolation**: Place a random marker in the parent session.
    Inspect Windsurf trajectory logs to verify child reviewers receive neither
    parent history nor sibling findings.
+
+Gate 2 needs two probes. A request that names no EGM workflow does not load the
+`model_decision` rule, so it does not test the adapter. Probe the host by asking
+a subagent on the read-only profile to create a file. Probe the adapter by
+asking, inside `/egm-review`, for each reviewer to save its own notes.
+
+### Recorded CLI evidence (2026-11-10)
+
+The Windsurf IDE now ships as Devin Desktop. It was not installed for these
+runs. The author drove the Devin CLI 3000.12.43 from a Muse 1.4.15 session on
+macOS 27.2, headless and interactively in `tmux`, against the
+[#379](https://github.com/google/elephant-goldfish-model/pull/379) adapter. The
+CLI lists `.windsurf/rules/egm.md` as a Windsurf rule. It does not list
+`.windsurf/workflows/` as slash commands; `/egm-*` requests route through the
+rule. Every file write was denied, so no workflow ran to its final artifact.
+
+| Gate | CLI result | Evidence |
+| --- | --- | --- |
+| Workflow execution | Pass for routing and pauses | `egm-brainstorm`, `egm-draft`, and `egm-review` read their `SKILL.md`. Draft paused three times before any write. Brainstorm waited for readiness before dispatching seven reviewers. Review paused at intake |
+| Read-only enforcement | Pass | A subagent on the read-only profile had no tool that writes. Inside EGM workflows, 22 of 22 reviewer launches used that profile with no resume. A reviewer-notes file the user asked for reached the user as a parent write prompt and was not written |
+| Fresh-context isolation | Pass | The marker appeared in 0 of 2 reviewer task texts and 0 of 70 child transcript nodes in the host session store |
+
+These runs do not satisfy the promotion gates. They used the CLI, not the IDE,
+and stopped before final artifacts.
 
 ## Alternatives considered
 
@@ -169,6 +201,9 @@ The table below lists technical constraints, security risks, and mitigations.
 | Cascade ignores prose rules and simulates inline reviews | Breaches Goldfish isolation and exposes workspace write tools | Keep Windsurf experimental, put an immediate stop instruction in the three Goldfish wrappers, and forbid write or shell calls in review paths |
 | Windsurf enforces a 12,000-character limit per workflow file | Large workflows fail to load in Cascade | Cap `.windsurf/workflows/*.md` at 15 lines in `test_windsurf.py` and keep full prompts in `skills/` |
 | Users copy `.windsurf/` without the repository root | Relative `skills/` paths fail to open | State the workspace-root layout requirement in `.windsurf/rules/egm.md` so missing files fail immediately |
+| A request that names no EGM workflow asks for a reviewer subagent | The host does not load the rule, picks a write-capable profile, and offers to write for the reviewer | Out of adapter scope. The rule governs EGM workflows only; the Gate 2 probes above run inside them |
+| The user denies a permission prompt in an interactive session | The host ends its turn without a message and drops batched tool calls | Host behavior. Send a follow-up message to continue; record it as a limit in [harnesses](../harnesses.md) |
+| Personal session hooks or MCP servers inject instructions | A headless run can stop on a rejected tool call before it reads the skill | Run live probes with a host config that has no hooks |
 | New EGM skills land without a Windsurf workflow | Slash command list falls behind `skills/` | `test_windsurf.py` asserts exact equality against `EXPECTED_SKILLS` on every pull request |
 
 ## Rollout and rollback
@@ -194,8 +229,12 @@ removes `.windsurf/`, the status note in [harnesses](../harnesses.md), and
 - Maintainers must review this Stage 1 scope under
   [#376](https://github.com/google/elephant-goldfish-model/issues/376) before
   [#379](https://github.com/google/elephant-goldfish-model/pull/379) merges.
-- Contributors have not run live Windsurf Cascade subagent delegation,
-  read-only tool denial, or trajectory inspection yet.
+- The author ran subagent delegation, read-only denial, and session-store
+  inspection on the Devin CLI on 2026-11-10; see
+  [Recorded CLI evidence](#recorded-cli-evidence-2026-11-10). No contributor
+  has run them in the Windsurf IDE (Devin Desktop) or to a final artifact.
+- Maintainers decide whether Devin CLI evidence counts toward the promotion
+  gates or only IDE evidence does.
 - The author ran the EGM Structural, Style, and Design Critic Goldfish
   reviewers on 2026-11-10 against the feature specification standard and
   resolved all Blocker and Major findings in this draft and in
