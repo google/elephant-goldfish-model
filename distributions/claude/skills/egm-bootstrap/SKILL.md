@@ -233,20 +233,19 @@ If your harness has no subagent tool, run the scout steps inline within a
         *   *Legacy Extraction & Correction*: If `target_filename` exists, call the
             reasoning LLM with prompt: > "Analyze the following unstructured
             documentation content. Extract all public symbol names, classes,
-            interfaces, invariants, and side effects. Format your response
-            strictly as a JSON object matching the following schema: {
-            \"interface\": string[], \"invariants\": string[], \"side_effects\":
-            string[] }." Merge these extracted symbols with the scout's code
-            symbols. Use your file-editing tool (or your file-writing tool) to correct
-            and update the existing contract file to be EGM compliant while preserving
-            developer notes and descriptions.
+            interfaces, invariants, and side effects. Return a JSON object
+            matching { \"interface\": string[], \"invariants\": string[],
+            \"side_effects\": string[] }." Merge these extracted symbols with
+            the scout's code symbols. Use your file-editing or file-writing tool
+            to correct and update the existing contract file to be EGM compliant
+            while preserving developer notes and descriptions.
 
     *   **Scout Spawning & Constraints**: Spawn `goldfish-explorer` for `D`.
 
         *   *Scout Constraints*: No byte caps; every non-test file in `D` is
             read in full. Bound each scout call to about **1,500 lines**
             instead: list top-level definitions
-            (class/func/def/route/flag lines) with your search tool, cut the
+            (class/def/func/route/flag) with your search tool, cut the
             directory's files into chunks at those boundaries (never mid-body;
             small files share a chunk), spawn one `goldfish-explorer` per
             chunk in parallel, and merge their JSON. Scouts cannot list
@@ -398,9 +397,8 @@ If your harness has no subagent tool, run the scout steps inline within a
     *   **Markdown Syntax**: Ensure clean headers, valid tables, and proper code block fences.
     *   **Valid & Resolvable Links (CRITICAL)**: Ensure all subdirectory and
         sibling links use valid relative paths (`./subdir/${target_filename}` or
-        `./subdir/SKILL.md`), and explicitly verify that every referenced target
-        file actually exists on the filesystem. Remove or correct any broken
-        relative references.
+        `./subdir/SKILL.md`), and verify that every referenced target file
+        exists on the filesystem. Remove or correct any broken references.
     *   **Valid Targets**: Verify verification targets match project test
         configuration and use valid target syntax (for Bazel, `/...` or
         `:all`, never `:...`).
