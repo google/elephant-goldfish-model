@@ -45,6 +45,22 @@ def test_release_installs_shared_test_group_before_tag_checkout() -> None:
   assert install_index < tag_index, "Older tags may not define the test group"
 
 
+def test_release_publishes_provenance_bundle() -> None:
+  release = yaml.safe_load(
+      (ROOT / ".github/workflows/release.yml").read_text())
+  build = release["jobs"]["build"]["steps"]
+  attest = next(step for step in build if step.get("id") == "attest")
+  copy = next(step for step in build
+              if "intoto.jsonl" in step.get("run", ""))
+  assert copy["env"]["BUNDLE_PATH"] == "${{ steps.attest.outputs.bundle-path }}"
+  assert build.index(attest) < build.index(copy)
+  upload = next(step for step in build
+                if step.get("uses", "").startswith("actions/upload-artifact"))
+  assert "release/*.intoto.jsonl" in upload["with"]["path"]
+  create = release["jobs"]["draft"]["steps"][-1]["run"]
+  assert '"egm-$RELEASE_TAG.intoto.jsonl"' in create
+
+
 @pytest.mark.parametrize("results,success", [
     ({"unit": "success"}, True),
     ({"unit": "failure"}, False),
