@@ -98,8 +98,12 @@ If your harness has no subagent tool, run the scout steps inline.
 
 ### Step 2: Incremental Scoping & Safety Gate (Root Orchestrator)
 
+Before discovery, run the
+[Unsupported Source Check](references/unsupported-source-check.md) relative to
+this skill directory.
+
 1.  **Incremental BFS Discovery**: Map the target `path` tree level-by-level
-    (BFS) using a directory queue, listing one directory level at a time. (CRITICAL: never run a recursive search such as `find` or `ls -R`.)
+    (BFS) using a directory queue, listing one directory level at a time. (CRITICAL: apart from the Unsupported Source Check, never run a recursive search such as `find` or `ls -R`.)
 
     *   Preserve intermediate folder nodes.
     *   Ignore symbolic links to prevent infinite recursion.
