@@ -60,9 +60,10 @@ Sort archive entries and use fixed timestamps and file modes. Verify identical
 bytes under the same build environment. Do not claim reproducibility across
 untested toolchain versions.
 
-Generate `distributions/claude` from the same builder. Compare every path and
-byte against a fresh build in unit tests. Regenerate it when included source
-files change. Do not edit generated files independently.
+Do not commit a generated Claude runtime to `main`. The Claude marketplace
+catalog installs from the repository root. Directory publication uses a generated
+branch. See
+[Claude release-branch distribution](claude_release_branch_distribution.md).
 
 ## Permissions and host boundaries
 
@@ -82,7 +83,7 @@ OpenAI packaging does not establish support for every ChatGPT mode.
 ## Validation and rollout
 
 - Test required content, image inclusion, exclusions, unsafe paths, missing
-  references, overwrite refusal, reproducibility, and generated freshness.
+  references, overwrite refusal, and reproducibility.
 - Verify allowed and denied resource reads against the generated runtime.
 - Record the source SHA, installed artifact identity, host/model version,
   and separate installation, workflow, and isolation outcomes.
