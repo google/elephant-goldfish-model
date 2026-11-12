@@ -70,3 +70,10 @@ def test_ci_requires_successful_results(results: dict, success: bool) -> None:
   assert (completed.returncode == 0) is success, (
       completed.stdout + completed.stderr
   )
+
+
+def test_every_workflow_job_has_timeout() -> None:
+  for path in sorted((ROOT / ".github/workflows").glob("*.yml")):
+    jobs = yaml.safe_load(path.read_text())["jobs"]
+    for name, job in jobs.items():
+      assert "timeout-minutes" in job, f"{path.name}: {name} has no timeout"

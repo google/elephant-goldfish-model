@@ -32,6 +32,7 @@ concurrency:
 jobs:
   site-validation:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: site
@@ -69,6 +70,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, windows-2025]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -86,6 +88,7 @@ jobs:
     if: ${{ always() }}
     needs: [unit, site-validation]
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Require successful validation
         env:
