@@ -16,10 +16,12 @@ SHARED = (
     "skills/*/references/*.json", "agents/*.md", "resources/*.md",
     "resources/document_standards/*.md", "docs/index.md", "docs/getting_started.md",
     "docs/harnesses.md", "docs/claude.md", "docs/codex.md", "docs/faq.md",
-    "docs/privacy.md", "docs/releases.md",
+    "docs/privacy.md", "docs/releases.md", "docs/devin.md",
     "assets/*.svg", "assets/*.png", "docs/assets/*.svg", "docs/assets/*.png",
 )
 HOST = {
+    "devin": (".devin-plugin/plugin.json", "docs/devin.md",
+              "adapters/devin/AGENTS.md"),
     "claude": (".claude-plugin/plugin.json", ".claude-plugin/icon.png",
                ".claude-plugin/agents/*.md"),
     "openai": (".codex-plugin/plugin.json",),
@@ -99,6 +101,8 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
         if not interface.get(key):
           raise ValueError(f"Missing OpenAI interface reference: {key}")
         references.append(interface[key])
+  elif target == "devin":
+    references.append(manifest["logo"])
   else:
     references.append(manifest.get("icon", "./.claude-plugin/icon.png"))
   for reference in references:
@@ -114,6 +118,8 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
     with zipfile.ZipFile(staged, "x", zipfile.ZIP_DEFLATED) as bundle:
       for relative in sorted(files):
         data = (root / relative).read_bytes()
+        if target == "devin" and relative == Path("adapters/devin/AGENTS.md"):
+          relative = Path("AGENTS.md")
         destination = folder / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)

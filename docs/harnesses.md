@@ -142,6 +142,11 @@ Commit approved specifications in `docs/designs/` and project rules in
 `.dev/docs` to `.gitignore` only to keep scratch drafts out of git before
 approval.
 
+## Experimental Devin integration
+
+See the [Devin CLI and Desktop guide](devin.md) for building a local runtime,
+installation, delegation, and the outstanding verification checklist.
+
 ## Support Status & Contributing Other Harnesses
 
 **Antigravity CLI**, **Claude Code**, and **Codex** pass automated installation
