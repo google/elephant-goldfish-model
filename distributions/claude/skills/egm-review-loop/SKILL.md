@@ -161,8 +161,14 @@ is rare even when the document improves. Use these rules instead:
 
 *   **Settled findings**: A finding is settled when it is contested or
     recorded without a fix (accepted risk). Keep the settled list across
-    rounds. If a new reviewer raises a settled finding again (same affected
-    scope, same issue), do not re-open it.
+    rounds, with the evidence each contest cited. If a new reviewer raises a
+    settled finding again (same affected scope, same issue), do not re-open
+    it, with one exception. If it was contested, check the evidence the
+    contest cited when you consolidate the round's findings, before
+    `egm-resolve` runs. Reworded text that makes the same point still
+    supports the contest. If nothing there supports it any longer, re-open
+    the finding. A new contest settles it again only with evidence as it
+    stood before this round's fixes.
 *   **Fixed findings**: An applied fix does not settle a finding. If a later
     reviewer raises the same issue at the same scope, the fix failed or a
     later edit reintroduced the issue. Re-open the finding.
