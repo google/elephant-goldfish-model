@@ -12,7 +12,9 @@ import uuid
 import pytest
 
 from .diagnosis_checks import (
-    assert_hypothesis_write_order, assert_unbiased_input, claude_diagnosis_answer,
+    assert_hypothesis_write_order,
+    assert_unbiased_input,
+    claude_diagnosis_answer,
     claude_reads,
 )
 from .test_claude import trace_directory

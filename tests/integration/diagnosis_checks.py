@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Input checks shared by the native diagnosis fixtures, without model calls."""
 
-import re
 import json
 from pathlib import Path
+import re
 
 
 def assert_unbiased_input(text: str, marker: str, hypothesis: str) -> None:
@@ -15,7 +15,10 @@ def assert_unbiased_input(text: str, marker: str, hypothesis: str) -> None:
     """
     assert not text.startswith("gAAAA"), "Encrypted input cannot be audited"
     assert marker not in text, "Parent-only marker leaked into diagnostic input"
-    normalize = lambda value: " ".join(re.findall(r"\w+", value.casefold()))
+
+    def normalize(value: str) -> str:
+        return " ".join(re.findall(r"\w+", value.casefold()))
+
     assert normalize(hypothesis) not in normalize(text), (
         "Parent hypothesis leaked into diagnostic input without its marker"
     )

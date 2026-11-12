@@ -1,0 +1,22 @@
+---
+import Search from '@astrojs/starlight/components/Search.astro';
+import IconButton from '../gb/IconButton.astro';
+import Symbol from '../gb/Symbol.astro';
+---
+<div class="search-control">
+  <IconButton label="Search documentation" data-docs-search=""><Symbol name="search" /></IconButton>
+  <Search />
+</div>
+<script>
+  const trigger = document.querySelector<HTMLButtonElement>('[data-docs-search]');
+  const native = document.querySelector<HTMLButtonElement>('site-search [data-open-modal]');
+  trigger?.addEventListener('click', event => {
+    event.stopPropagation();
+    native?.click();
+  });
+  document.querySelector('site-search dialog')?.addEventListener('close', () => trigger?.focus());
+</script>
+<style>
+  .search-control { display:flex; align-items:center; }
+  .search-control :global(site-search>button[data-open-modal]) { display:none; }
+</style>

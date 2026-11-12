@@ -22,6 +22,7 @@ COMPATIBILITY_MANIFESTS = (
 MARKETPLACES = (
     ".agents/plugins/marketplace.json",
     ".claude-plugin/marketplace.json",
+    ".cursor-plugin/marketplace.json",
 )
 EXPECTED_SKILLS = {
     "egm-bootstrap", "egm-brainstorm", "egm-diagnose", "egm-draft",

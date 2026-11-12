@@ -3,19 +3,19 @@
 
 """Opt-in native Codex tests. No API use or config changes unless enabled."""
 
+from collections.abc import Iterator
 import json
 import os
 import pathlib
 import runpy
-import shutil
 import shlex
+import shutil
 import subprocess
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 import uuid
 import warnings
 import zipfile
-from collections.abc import Iterator
-from urllib.parse import urlparse
-from urllib.request import url2pathname
 
 import pytest
 
