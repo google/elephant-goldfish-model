@@ -10,62 +10,21 @@ description: Bootstrap directory README.md files across a repository subtree.
 When running in Codex or ChatGPT Work, first read [Codex integration](../../docs/codex.md).
 In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
 
-## Overview
-
-This skill automates the creation, correction, formatting, and correctness
-verification of Elephant-and-Goldfish Model (EGM) compliant `README.md` files
-across a directory tree. It establishes clear architectural contracts
-(interfaces, invariants, and side effects) for both human developers and AI
-assistants.
-
-*   **Peanuts**: Leaf-level Component Package READMEs containing specific file
-    contracts.
-*   **Hay**: Parent-level Repository Blueprints that roll up child interface
-    contracts into high-altitude indexes.
-
-## Delegation
-
-A Goldfish runs in a fresh context with no conversation history. Spawn each
-subagent with your harness's subagent tool (Antigravity: `invoke_subagent`; Claude Code: `Agent`; Codex: `spawn_agent`). Each subagent is defined in `agents/<file>.md`, and its
-frontmatter `name` (for example `egm-zoom-out`) is the subagent type to request
-where your harness registers named subagents. Otherwise spawn a general-purpose
-subagent and tell it to read that persona file first. Pass the prompt verbatim
-and wait for the report. If your harness cannot nest subagents,
-use direct dispatch instead of the synthesizer. See `docs/harnesses.md`.
-If your harness has no subagent tool, run the scout steps inline.
+Automates creating, updating, and verifying Elephant-and-Goldfish Model (EGM) `README.md` contracts (`Interface`, `Invariants`, `Side Effects`) across a directory tree: **Peanuts** (leaf package contracts) and **Hay** (parent blueprint indexes).
 
 ## Inputs
 
-*   **`path`**: The target root directory path to bootstrap (Required).
-*   **`is_worker`**: Internal parameter. `true` if executing as a worker
-    Sub-Orchestrator (Optional, default: `false`).
-*   **`sub_tree_root`**: Internal parameter. The root path of the assigned
-    subtree partition (Optional).
-*   **`target_filename`**: Target contract filename to generate or update
-    (Optional, default: `"README.md"`). Supports alternate blueprint filenames
-    such as `"EGM.md"` when pre-existing human-maintained READMEs must not be
-    modified.
+*   **`path`**: Target root directory to bootstrap (Required).
+*   **`is_worker`**: Internal; `true` when running as a Sub-Orchestrator (default: `false`).
+*   **`sub_tree_root`**: Internal; subtree partition root path.
+*   **`target_filename`**: Contract filename to generate or update (default: `"README.md"`, or e.g. `"EGM.md"` when preserving human-written READMEs).
 
 ## Execution Constraints (CRITICAL)
 
-1.  **No Code Generation**: You are strictly limited to documentation. Do not
-    write or refactor any functional source code.
-2.  **VCS Isolation**: Do not perform any version control commits (`git commit`,
-    `git add`). All filesystem changes must be written locally using standard
-    file-writing tools. Tracking
-    and submitting is deferred to the human user.
-3.  **Temporary File Isolation**: Each worker keeps its status, checkpoint,
-    and log files in its own directory outside the workspace (host scratch or
-    `mktemp -d`), never a fixed, shared path. If neither exists, skip them.
-4.  **Tool Usage (CRITICAL)**: Use your shell, file-reading, file-writing, and file-editing tools for directory discovery and contract/README
-    generation. Adhere to clean Markdown formatting directly during generation
-    (standard headers, tables, and fenced code blocks). If a project markdown
-    formatter (e.g. `npx prettier --write`) is explicitly configured in the
-    repository, it may optionally be invoked.
-5.  **Subagent Delegation**: Spawn sub-orchestrator workers in parallel.
-6.  **Mandatory Safety Gate (CRITICAL)**: If you discover more than 15
-    subdirectories, you MUST immediately request user approval (using a structured question tool, if your harness has one, or plain chat) before proceeding with full-tree execution
-    or unbounded subagent spawning.
+1.  Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, proceed inline). If your harness cannot nest subagents, use direct dispatch; if it has no subagent tool, run the scout steps inline.
+2.  **Temporary File Isolation**: Each worker keeps its status, checkpoint, and log files in its own directory outside the workspace (host scratch or `mktemp -d`), never a fixed, shared path. If neither exists, skip them.
+3.  **Formatting & Parallelism**: Format generated Markdown cleanly (headers, tables, fenced blocks; optional repo formatter like `npx prettier --write` if configured). Spawn sub-orchestrator workers in parallel.
+4.  **Mandatory Safety Gate (> 15 Subdirectories)**: If BFS discovery finds more than 15 subdirectories, pause immediately and request user confirmation before continuing or spawning workers.
 
 ---
 
@@ -73,360 +32,63 @@ If your harness has no subagent tool, run the scout steps inline.
 
 ### Step 0: Ecosystem & Verification Discovery
 
-1.  Inspect the repository root for package/build manifests:
-    *   Node.js / TypeScript: `package.json` -> `npm test` (or `pnpm test` / `yarn test`)
-    *   Rust: `Cargo.toml` -> `cargo test`
-    *   Go: `go.mod` -> `go test ./...`
-    *   Python: `pyproject.toml` / `pytest.ini` / `setup.py` -> `pytest`
-    *   .NET / C#: `*.sln` / `*.slnx` / `*.csproj` -> `dotnet test`
-    *   C/C++ / Make: `Makefile` -> `make test`
-    *   Bazel: `BUILD` / `BUILD.bazel` -> `bazel test //...`
-    *   None found: `<test-command>`
-2.  Record as `VerificationCommand` to populate generated README contracts.
+Inspect the repo root manifest to record `VerificationCommand`:
+*   Node/TS (`package.json`): `npm test` (or `pnpm test` / `yarn test`)
+*   Rust (`Cargo.toml`): `cargo test` | Go (`go.mod`): `go test ./...` | Python (`pyproject.toml`/`pytest.ini`/`setup.py`): `pytest`
+*   .NET / C# (`*.sln`/`*.slnx`/`*.csproj`): `dotnet test`
+*   Make (`Makefile`): `make test` | Bazel (`BUILD`/`BUILD.bazel`): `bazel test //...` | None: `<test-command>`
 
----
+### Step 1: Startup Branching
 
-### Step 1: Startup Branching Control
-
-1.  Check the `is_worker` input parameter.
-2.  If `is_worker` is `true`, jump directly to **Step 4: Sub-Orchestrator Worker
-    Flow** to process the assigned `sub_tree_root`.
-3.  If `is_worker` is `false` or unset, proceed as the Root Orchestrator to
-    **Step 2: Incremental Scoping & Safety Gate**.
-
----
+If `is_worker` is `true`, jump to **Step 4** for `sub_tree_root`. Otherwise run **Step 2**.
 
 ### Step 2: Incremental Scoping & Safety Gate (Root Orchestrator)
 
-1.  **Incremental BFS Discovery**: Map the target `path` tree level-by-level
-    (BFS) using a directory queue, listing one directory level at a time. (CRITICAL: never run a recursive search such as `find` or `ls -R`.)
-
-    *   Preserve intermediate folder nodes.
-    *   Ignore symbolic links to prevent infinite recursion.
-    *   Ignore hidden/system directories (`.git`, `.antigravity`, `node_modules`,
-        `venv`, `dist`, `build`, `third_party`).
-    *   Read `.gitignore` and `.egmignore` (if present) and ignore matching glob patterns.
-    *   Preserve package and build manifests (`package.json`, `Cargo.toml`,
-        `go.mod`, `pyproject.toml`, `*.sln`, `*.csproj`, `Makefile`, `BUILD`) in
-        the discovery map to extract verification targets later.
-
-2.  **Safety Gate & Unbounded Spawning Approval (CRITICAL)**: During the BFS
-    loop, if the total running count of discovered directories exceeds **15**,
-    immediately pause discovery and request user approval (using a structured question tool, if your harness has one, or plain chat) to warn the user and request approval
-    for full-tree execution:
-
-    *   `question`: "The target directory tree contains more than 15
-        subdirectories. This is a large execution scope. Do you want to proceed
-        with full-tree bootstrapping?"
-    *   `options`: `["Yes, proceed with full tree bootstrapping",
-        "No, abort execution"]`
-    *   (CRITICAL: After requesting approval, you MUST wait for the user's
-        response before continuing or spawning any workers).
-    *   If the user selects abort, terminate execution immediately.
-
-3.  **Bottom-up Post-Pruning Pass**: Once mapping is complete (and approved),
-    walk the mapped tree bottom-up (leaves to root). Filter out non-code and
-    test-only directories:
-
-    *   *Source Code Files*: Files matching recognized source code, schema, and
-        contract extensions:
-        - Systems & Compiled: `.c`, `.cc`, `.cpp`, `.cxx`, `.h`, `.hh`, `.hpp`,
-          `.rs`, `.go`, `.zig`, `.lean`, `.f`, `.f90`, `.f95`, `.f03`, `.f08`,
-          `.hs`
-        - Managed & Enterprise: `.java`, `.kt`, `.scala`, `.cs`, `.razor`,
-          `.cshtml`, `.fs`, `.vb`
-        - Scripting & Dynamic: `.py`, `.rb`, `.php`, `.lua`, `.sh`, `.bash`,
-          `.ps1`, `.psm1`, `.psd1`, `.r`, `.R`, `.ex`, `.exs`
-        - Web & Mobile: `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.swift`,
-          `.m`, `.dart`
-        - Data & Schemas / IDLs: `.sql`, `.proto`, `.graphql`, `.gql`,
-          `.thrift`, `.prisma`
-        - Infrastructure / Declarative Code: `.tf`, `.hcl`, `.cue`
-        (Excludes build manifests, lockfiles, test fixtures, documentation, and
-        generic data dumps like `.csv`, `.tsv`, `.parquet`).
-    *   *Test Directory Exclusion*: Exclude directories containing exclusively
-        test code (e.g. named `tests`, `testing`, `testdata`, or containing only
-        files matching `*_test.*`, `*Test.*`, `test_*.*`, or `*.spec.*`).
-    *   *Non-Code Filtering*: Exclude any directory that contains no source code
-        files AND contains no subdirectories with code. Retain empty
-        intermediate folders only if they have child directories that contain
-        code.
-
-4.  Calculate the total count of pruned directories and maximum depth. Proceed
-    to **Step 3: Execution Strategy Selection**.
-
----
+1.  **BFS Discovery**: Map `path` level-by-level via a queue (never recursive `find` or `ls -R`). Keep intermediate folders and build manifests (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, `*.sln`, `*.csproj`, `Makefile`, `BUILD`). Ignore symlinks, `.git`, `.antigravity`, `node_modules`, `venv`, `dist`, `build`, `third_party`, and patterns in `.gitignore` / `.egmignore`.
+2.  **Safety Gate (> 15)**: When running directory count exceeds **15**, stop and ask via single-select gate (`is_multi_select: false`):
+    *   `question`: `"The target directory tree contains more than 15 subdirectories. This is a large execution scope. Do you want to proceed with full-tree bootstrapping?"`
+    *   `options`: `["Yes, proceed with full tree bootstrapping", "No, abort execution"]`
+    Wait for the user; abort immediately if declined.
+3.  **Bottom-Up Post-Pruning**:
+    *   *Recognized Source / Schema Extensions*: Systems (`.c`, `.cc`, `.cpp`, `.cxx`, `.h`, `.hh`, `.hpp`, `.rs`, `.go`, `.zig`, `.lean`, `.f`, `.f90`, `.f95`, `.f03`, `.f08`, `.hs`), Managed (`.java`, `.kt`, `.scala`, `.cs`, `.razor`, `.cshtml`, `.fs`, `.vb`), Scripting (`.py`, `.rb`, `.php`, `.lua`, `.sh`, `.bash`, `.ps1`, `.psm1`, `.psd1`, `.r`, `.R`, `.ex`, `.exs`), Web/Mobile (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.swift`, `.m`, `.dart`), Schemas/IDLs (`.sql`, `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`), Infra (`.tf`, `.hcl`, `.cue`). Exclude manifests, lockfiles, fixtures, docs, and `.csv`/`.tsv`/`.parquet`.
+    *   *Exclude Test-Only Dirs*: Skip `tests`, `testing`, `testdata`, or dirs holding only `*_test.*`, `*Test.*`, `test_*.*`, `*.spec.*`.
+    *   *Non-Code Filtering*: Drop directories with neither direct code nor code-containing subdirectories; keep empty intermediate folders only when descendants hold code.
+4.  Compute pruned directory count and max depth, then run **Step 3**.
 
 ### Step 3: Execution Strategy Selection (Root Orchestrator)
 
-1.  **Direct Execution Strategy (Directory Count <= 5)**:
-
-    *   If the total count of pruned directories is 5 or fewer, execute the bottom-up
-        documentation directly in the current thread.
-    *   Jump to **Step 4: Sub-Orchestrator Worker Flow** (treating the Root
-        Orchestrator as the worker for the entire `path`), and then proceed to
-        **Step 5: Root Compilation & Termination**.
-
-2.  **Unbounded Parallel Subagent Swarm Strategy (Directory Count > 5)**:
-
-    *   (CRITICAL: If Directory Count > 15, you MUST verify that you have
-        received explicit user approval before proceeding. If not yet approved,
-        request approval immediately and wait for the user's response before
-        spawning workers).
-    *   Partition the discovery map into independent subtree branches using the
-        **Adaptive Depth Partitioning Algorithm**:
-        1.  Set `depth = 1`.
-        2.  Extract directory nodes from the discovery map located at the
-            current `depth`.
-        3.  If the count of nodes at `depth` is between 3 and 5: select these
-            nodes as subtree partition roots.
-        4.  If the count of nodes at `depth` < 3: increment `depth` (up to a max
-            of 3) and repeat step 2.
-        5.  If the count of nodes at `depth` > 5: group the largest branches (by
-            total nested folder count) into 3-4 separate partitions, combine the
-            remaining small branches into a single fallback partition subtree,
-            and select these as partition roots.
-        6.  Fallback: If `depth` reaches 3 and count is still < 3, select the
-            immediate children of the root (or fall back to sequential
-            execution).
-    *   **Spawn Unbounded Sub-Orchestrators**: For each partition subtree root,
-        use your harness's subagent tool to spawn a parallel worker:
-        *   Subagent: `egm-bootstrap-orchestrator` (`agents/bootstrap_orchestrator.md`) (or a general-purpose subagent)
-        *   `Prompt`: "Run egm-bootstrap with path=`[path]`,
-            is_worker=true, sub_tree_root=`[partition_root]`,
-            target_filename=`[target_filename]`."
-    *   **Unbounded Execution**: Spawn all Sub-Orchestrators in parallel without
-        artificial concurrency limits (as authorized by the user during the
-        safety gate).
-    *   Go idle and wait for all worker subagents to return their JSON subtree
-        index payloads. Jump to **Step 5: Root Compilation & Termination**.
-
----
+1.  **Direct (`<= 5` pruned dirs)**: Run **Step 4** inline on `path`, then **Step 5**.
+2.  **Parallel Swarm (`> 5` pruned dirs)**: Verify >15 approval first if applicable. Partition via **Adaptive Depth Partitioning**:
+    *   Start at `depth = 1`. Collect nodes at `depth`. If 3-5 nodes, use them as partition roots.
+    *   If `< 3`, increment `depth` (max 3) and re-check. If `> 5`, take the 3-4 largest branches separately and combine smaller ones into one fallback subtree.
+    *   If `depth == 3` and still `< 3`, pick immediate children of root (or run sequentially).
+    *   Spawn parallel workers using `egm-bootstrap-orchestrator` (`agents/bootstrap_orchestrator.md`, or a general-purpose subagent):
+        `Prompt`: `"Run egm-bootstrap with path=[path], is_worker=true, sub_tree_root=[partition_root], target_filename=[target_filename]."`
+    *   Wait for all worker JSON `subtree_index` payloads, then proceed to **Step 5**.
 
 ### Step 4: Sub-Orchestrator Worker Flow
 
-1.  **Scout Registration**: Use a read-only `goldfish-explorer` scout. Where your harness supports defining subagents at runtime, register it with:
-
-    *   `name`: `goldfish-explorer`
-    *   `description`: `Read-only codebase explorer scout.`
-    *   `system_prompt`: >- You are a read-only codebase explorer. Your task is
-        to analyze the source files in the target directory and return a
-        concise, factual summary. Do not write or modify any files. Return a
-        JSON object containing the directory's public symbols (interface),
-        invariants, and side effects matching schema: {"interface": [],
-        "invariants": [], "side_effects": []}. Never infer RPC methods,
-        routes, status enums, or invariants from file or directory names
-        alone; cite the exact `[file:symbol_or_flag]` for every entry, and
-        output `["None"]` if no explicit invariants or side effects exist in
-        code.
-    *   `enable_write_tools`: `false`
-    *   `enable_subagent_tools`: `false`
-
-2.  **Post-Order Traversal**: Walk the assigned `sub_tree_root` (or `path`) in
-    post-order (deepest leaves first). For each directory `D`:
-
-    *   **Correction & Modification Policy**: Check if `target_filename` (default:
-        `README.md`) already exists in `D`.
-
-        *   If `target_filename` exists, **do not overwrite it completely**. Instead,
-            read its existing content.
-        *   *Scout Scan Requirement*: Whether `target_filename` exists or not,
-            **always scan** the source code using the `goldfish-explorer` scout
-            for `D` to compile the true code symbol boundary.
-        *   *Legacy Extraction & Correction*: If `target_filename` exists, call the
-            reasoning LLM with prompt: > "Analyze the following unstructured
-            documentation content. Extract all public symbol names, classes,
-            interfaces, invariants, and side effects. Format your response
-            strictly as a JSON object matching the following schema: {
-            \"interface\": string[], \"invariants\": string[], \"side_effects\":
-            string[] }." Merge these extracted symbols with the scout's code
-            symbols. Use your file-editing tool (or your file-writing tool) to correct
-            and update the existing contract file to be EGM compliant while preserving
-            developer notes and descriptions.
-
-    *   **Scout Spawning & Constraints**: Spawn `goldfish-explorer` for `D`.
-
-        *   *Scout Constraints*: No per-directory or per-file byte cap; every
-            non-test file in `D` is read in full. Bound each scout call to
-            about **1,500 lines** of source instead: list top-level definitions
-            (class/func/def/route/flag lines) with your search tool, cut the
-            directory's files into chunks at those boundaries (never mid-body;
-            small files share a chunk), spawn one `goldfish-explorer` per
-            chunk in parallel, and merge their JSON. Give each chunk the
-            file's imports and top-level definition list so it can judge
-            visibility. Check build-manifest deps and `import` / `#include`
-            statements before attributing an RPC service, schema, or message
-            type to a local file. Read non-test files in this order:
-            1.  Contracts, schemas, and build manifests (`.h`, `.hh`, `.hpp`,
-                `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`, `.sql` DDL,
-                interface classes); extract exact DDL table names and exported
-                build targets.
-            2.  Module entry points (`main.*`, `index.*`, `lib.*`, `mod.*`,
-                `__init__.py`, or files matching directory name), then
-                production source/query files alphabetically.
-            3.  Templates and configs: up to 200 lines each (800 in config-only
-                directories); exclude `.css`/`.scss`.
-            4.  Test files (`*_test.*`, `*Test.*`, `test_*.*`, `*.spec.*`):
-                ignore entirely, including in hybrid directories.
-        *   *Child Fault Tolerance*: If the scout fails or times out, log a
-            warning, use placeholder values `["(Details pending/documentation
-            failed)"]`, and continue execution.
-
-    *   **Parent Context Propagation**: When processing a parent directory `P`,
-        retrieve the compiled interface summaries of its immediate child
-        subdirectories.
-
-        *   *Propagation Heuristics*:
-            1.  If the child was documented during this run, retrieve its public
-                interface directly from the in-memory execution cache.
-            2.  If the child was corrected/modified (Correction Policy), use the
-                merged legacy extraction symbols.
-        *   Pass these child symbol blocks as prompt context when invoking `P`'s
-            explorer scout.
-
-    *   **Verification Command Target Lookup**: Populate the Verification section
-        using the discovered `VerificationCommand`.
-        *   If the project uses Bazel/BUILD files: check if a `BUILD` file exists
-            in `D` or the nearest ancestor, referencing `bazel test` / `bazel build`
-            with valid target patterns (`//[package_path]/...` or
-            `//[package_path]:all`, never `//[package_path]...` or
-            `//[package_path]:...`). Use `bazel run` for interactive runner
-            targets.
-        *   If the project uses other manifests (`package.json`, `Cargo.toml`,
-            `go.mod`, `pyproject.toml`, `*.sln`, `*.csproj`, `Makefile`), populate
-            with the corresponding test runner command (.NET: `dotnet test` on
-            the nearest `*.csproj`).
-        *   If no verification command is identified, omit or use a placeholder.
-
-    *   **Directory Classification & Template Generation**: Generate or correct
-        `target_filename` using your file-writing tool or your file-editing tool based on
-        `D`'s classification.
-
-        *   **Component Package (Peanut)**: `D` contains direct source code
-            files. Use the **Component Package README Template**. (If it also
-            has child subdirectories, include relative links to their contracts
-            in the Interface section).
-        *   **Repository Blueprint (Hay)**: `D` contains no direct source code
-            files, but contains subdirectories with code contracts. Use the
-            **Intermediate Blueprint README Template**.
-        *   **Link Formatting Policy (CRITICAL)**: Package contract files must use a
-            hybrid link formatting approach to balance portability and clarity:
-            1.  **Relative Links to Existing Files Only**: Use relative paths
-                (e.g., `./child/${target_filename}` or `../sibling/${target_filename}`) for child
-                contracts and sibling file references within the same codebase
-                subsystem. (CRITICAL: Only generate `[Child](./child/${target_filename})`
-                links for child directories that exist in the pruned
-                `subtree_index` and contain an actual `${target_filename}`. If a child
-                directory contains a `SKILL.md` or other non-contract asset, link
-                directly to `./child/SKILL.md` or format it as an unlinked
-                bullet point. Never output speculative links to non-existent
-                contract files).
-            2.  **Absolute Links**: Use standard URLs or repository paths
-                for referencing files outside the package subsystem (e.g.,
-                cross-package dependencies).
-
-    *   **Markdown Formatting**: Immediately after writing or correcting
-        `target_filename` in `D`, ensure clean markdown formatting (valid headers,
-        tables, and code fences). If a project markdown formatter (e.g. `npx prettier --write`)
-        is configured in the repository, you may execute it on `target_filename`.
-
-3.  **Worker Reporting**: Once the assigned subtree is fully traversed, compile
-    the `subtree_index` array containing the `path`, `summary`, `interface`,
-    `invariants`, and `side_effects` for every processed directory.
-
-4.  If `is_worker` is `true`, read the [Worker Return Interface Schema](references/worker-return.schema.json)
-    relative to this skill directory, then return a matching JSON payload to
-    the Root Orchestrator and terminate. If
-    `is_worker` is `false` (sequential mode), proceed directly to **Step 5: Root
-    Compilation & Termination**.
-
----
+1.  **Scout Setup (`goldfish-explorer`)**: Register (where runtime subagent definition is supported) or prompt a read-only scout (`enable_write_tools: false`, `enable_subagent_tools: false`) with:
+    > You are a read-only codebase explorer. Analyze source files in the target directory and return a JSON object matching `{"interface": string[], "invariants": string[], "side_effects": string[]}`. Do not write files. Never infer RPC methods, routes, status enums, or invariants from file or directory names alone; cite exact `[file:symbol_or_flag]` for every entry, and output `["None"]` if no explicit invariants or side effects exist in code.
+2.  **Post-Order Traversal (Deepest Leaves First)** across `D`:
+    *   **Correction Policy**: If `target_filename` already exists in `D`, read it (never blindly overwrite), scan code via `goldfish-explorer`, extract legacy public symbols/invariants/side effects JSON, merge with code-verified scout output, and edit `target_filename` preserving valid developer notes.
+    *   **Scout Reading & Chunking**: No per-directory or per-file byte cap. List top-level definitions with your search tool first, then read every non-test file in full in chunks of ~**1,500 lines** cut at top-level definitions (never mid-body; small files share a chunk), giving each parallel chunk scout the file's imports and top-level definitions to judge visibility, and merge chunk scout JSON outputs. Verify build-manifest deps and `import` / `#include` before attributing RPCs, schemas, or message types locally. Read order: (1) contracts, schemas, build manifests (`.h`, `.hh`, `.hpp`, `.proto`, `.graphql`, `.gql`, `.thrift`, `.prisma`, `.sql` DDL, interfaces; extract exact DDL tables and exported targets); (2) entry points (`main.*`, `index.*`, `lib.*`, `mod.*`, `__init__.py`, dir-named files) then source/query files alphabetically; (3) templates/configs <= 200 lines each (800 in config-only dirs), excluding `.css`/`.scss`; (4) ignore test files (`*_test.*`, `*Test.*`, `test_*.*`, `*.spec.*`) everywhere. On scout timeout/failure, log a warning and use `["(Details pending/documentation failed)"]`.
+    *   **Parent Propagation**: Pass merged child `interface` summaries into parent `P`'s scout prompt.
+    *   **Verification Commands**: Use `VerificationCommand` or nearest ancestor manifest (.NET: `dotnet test` on the nearest `*.csproj`). For Bazel, always emit valid targets (`//[package_path]/...` or `//[package_path]:all`; NEVER `//[package_path]...`, `//[package_path]:...`, or bare `...`); use `bazel run` for runners.
+    *   **Template & Link Policy**: Read [README templates](references/templates.md) before writing. Use **Component Package (Peanuts)** when `D` has direct code (plus child contract links if any) and **Intermediate Blueprint** when `D` has only child contracts. Use relative links (`./child/${target_filename}`, `../sibling/${target_filename}`) **only** for dirs existing in pruned `subtree_index` with real files (link `./child/SKILL.md` for skill dirs or omit uncreated links), and repo/URL links for external cross-package refs. Format cleanly.
+3.  **Report or Continue**: Compile `subtree_index` (`path`, `summary`, `interface`, `invariants`, `side_effects`). If `is_worker` is `true`, read [Worker Return Interface Schema](references/worker-return.schema.json), return the matching JSON payload, and stop. Otherwise proceed to **Step 5**.
 
 ### Step 5: Root Compilation & Termination (Root Orchestrator)
 
-1.  **Receive Worker Payloads**: Collect the JSON `subtree_index` payloads
-    returned by all parallel Sub-Orchestrators.
-
-    *   **Root Fault Tolerance**: If a parallel worker fails or times out, log a
-        warning, insert a placeholder warning link (`[Subtree Root]
-        (Documentation failed / Subagent execution timeout)`) in the root
-        Blueprint's subdirectory index, and complete the remaining compilation.
-        (Worker failures leaving partial files are handled as an incremental
-        progress feature; the Correction Policy allows resuming on subsequent
-        runs).
-
-2.  **Intermediate Directory Documentation**: Identify any intermediate
-    directories sitting between the root `path` and the partitioned subtree
-    roots.
-
-    *   Process these intermediate directories sequentially bottom-up.
-    *   Generate Intermediate Blueprint contract files using the compiled summaries
-        returned by the workers.
-    *   Ensure clean formatting and valid relative links for each Intermediate
-        Blueprint contract file.
-
-3.  **Root Directory Documentation**: The target root `path` of the execution is
-    *always* classified as the **Repository Root (Blueprint / Hay)**.
-
-    *   Check if `target_filename` already exists in `path`. If present, apply the
-        **Correction & Modification Policy** to read and retain the existing
-        title, metadata, and architectural overview at the top of the root
-        contract file.
-    *   Check if `path` itself contains any direct source files. If present,
-        spawn a `goldfish-explorer` scout for `path` to extract local symbols
-        and invariants, appending them under the optional `## Local Interface &
-        Invariants` section.
-    *   Compile the final root `target_filename` using the **Repository Root Blueprint
-        Template**, rolling up all top-level subdirectory boundaries. Ensure any
-        root architecture or sequence diagrams strictly match the synchronous /
-        asynchronous boundaries, operation names, and storage backends in the
-        child `subtree_index` payloads without inventing unverified nodes.
-    *   Write the root `target_filename` using your file-writing tool.
-
-4.  **Final Correctness Verification (CRITICAL)**: You MUST perform a final
-    verification pass across ALL created and modified contract files in the
-    `subtree_index` (including all child package contracts like `pkg1/${target_filename}`
-    and `pkg2/${target_filename}`) as a correctness check before concluding work. You
-    MUST explicitly read every single created or modified contract file
-    to verify its content. Do not skip any child contract files. Verify:
-
-    *   **EGM Compliance & Code Grounding**: Ensure `Interface`, `Invariants`,
-        and `Side Effects` sections exist, cite real code symbols/flags/tables
-        from the scout extraction, and contain zero speculative or unverified
-        claims.
-    *   **Markdown Syntax**: Ensure clean headers, valid tables, and proper code block fences.
-    *   **Valid & Resolvable Links (CRITICAL)**: Ensure all subdirectory and
-        sibling links use valid relative paths (`./subdir/${target_filename}` or
-        `./subdir/SKILL.md`), and explicitly verify that every referenced target
-        file actually exists on the filesystem. Remove or correct any broken
-        relative references.
-    *   **Valid Targets**: Verify verification targets match project test
-        configuration and use valid target syntax (for Bazel, `/...` or
-        `:all`, never `:...`).
-
-5.  **Optional Drift Review (CRITICAL)**: After verification, ask the user (using
-    a structured question tool, if your harness has one, or plain chat) to offer running a drift report
-    on the generated documentation updates:
-
-    *   `question`: "Do you want to run the EGM Drift Report on the generated
-        contract updates to check for consistency with the codebase?"
-    *   `options`: `["(Recommended) Yes, run drift report on modified contracts",
-        "No, skip drift review"]`
-    *   If the user selects "Yes", run the `egm-drift-report` skill targeting
-        the modified contracts to verify both missing code coverage and
-        doc-to-code hallucinations (verifying every documented method, route,
-        enum, database table, and invariant against local source files and
-        recording discrepancies in the drift report for human triage). (Note:
-        While `egm-drift-report` is often used for design documents, it can be
-        applied to EGM-compliant contracts as a variant).
-
-6.  Terminate execution successfully.
-
----
-
-## Templates
-
-Before writing any contract file, read the
-[README templates](references/templates.md) relative to this skill directory.
-It defines the **Component Package (Peanuts)**, **Repository Root (Blueprint /
-Hay)**, and **Intermediate Blueprint** README templates referenced above.
+1.  **Collect Worker Payloads**: Merge `subtree_index` JSON results. On worker timeout/failure, insert `[Subtree Root] (Documentation failed / Subagent execution timeout)` in the root index and continue.
+2.  **Intermediate Directories**: Document intermediate folders between `path` and partition roots bottom-up using **Intermediate Blueprint** template and valid relative links.
+3.  **Root Contract (`path`)**: Always classify `path` as **Repository Root (Blueprint / Hay)**. Preserve existing top title/metadata/overview via Correction Policy if `target_filename` exists. If `path` has direct source files, scout them into `## Local Interface & Invariants`. Ensure root diagrams reflect only verified sync/async boundaries, operations, and stores from `subtree_index`, then write `target_filename`.
+4.  **Final Correctness Verification (CRITICAL)**: Re-read **every** created or modified contract file in `subtree_index` (including all child packages) and verify:
+    *   `Interface`, `Invariants`, and `Side Effects` sections cite verified `[file:symbol_or_flag]` entries (or `None`) without unverified claims.
+    *   Valid Markdown headers, tables, fences, and Bazel/test targets (`/...` or `:all`, never `:...`).
+    *   Every relative link (`./subdir/${target_filename}`, `./subdir/SKILL.md`) points to an existing file on disk.
+5.  **Optional Drift Review**: Present a single-select gate (`is_multi_select: false`):
+    *   `question`: `"Do you want to run the EGM Drift Report on the generated contract updates to check for consistency with the codebase?"`
+    *   `options`: `["(Recommended) Yes, run drift report on modified contracts", "No, skip drift review"]`
+    If selected, run [egm-drift-report](../egm-drift-report/SKILL.md) over modified contracts, verifying every documented method, route, enum, database table, and invariant against local source files and recording discrepancies in the drift report for human triage.
+6.  Terminate cleanly.

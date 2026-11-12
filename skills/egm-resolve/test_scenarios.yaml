@@ -21,6 +21,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-resolve/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run egm-resolve with TargetFile: docs/design.md, Finding: Missing SLO on line 2."
         assertions:
@@ -33,6 +35,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-resolve/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run egm-resolve with TargetFile: docs/design.md, Finding (Major): No retry policy for the export job. The team agreed verbally that exports are never retried; no file records this."
         assertions:

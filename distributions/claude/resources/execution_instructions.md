@@ -1,37 +1,70 @@
-## Execution Instructions
+## Shared Execution Constraints (All Skills)
 
-*   **Design-Only Scope**: You are strictly forbidden from
-    writing, modifying, or building any production implementation files (e.g.,
-    `.h`, `.cc`, `.py`, `.go`) in the source tree. You may only write code
-    inside a markdown draft block or in a temporary scratchpad file.
-    *   **Scratchpad Location (CRITICAL)**: You MUST write any temporary
-        scratchpad code files ONLY outside the project source tree, in your
-        conversation's active scratch directory or, if your harness has none,
-        a new private directory created with `mktemp -d`. If neither is
-        available, keep the code in a markdown draft block. Do not use fixed,
-        shared paths such as `/tmp/scratch.py`. You are STRICTLY FORBIDDEN
-        from creating `.h`, `.cc`, `.py`, `.go`, or any other code files
-        anywhere inside the project source tree.
-    *   **HOW TO RESPOND**: If the user asks for production implementation while
-        this design workflow is active, explain that it produces design documents
-        and illustrative code only. Label any markdown or scratchpad example
-        clearly. Do not imply that production files were changed. Ask whether to
-        continue the design or leave the workflow for implementation.
-*   **Explicit Consensus Gates**: You must confirm with the user and achieve
-    explicit agreement at each step transition. Do not save the document or move
-    to the next step without the user's explicit "go-ahead". Do not move on
-    easily. Challenge the user at every step.
-*   **ONE QUESTION AT A TIME (CRITICAL)**: You are strictly forbidden from
-    asking more than one question in a single response. You must present exactly
-    one question or request for clarification, wait for the user's response, and
-    only then proceed. Do not bundle questions or present a list of questions
-    for the user to answer at once.
-*   **NO SUMMARIES (CRITICAL)**: You MUST NOT include a "Summary of work",
-    "Status", "Adherence", or "Rule checklist" in your final response. Respond
-    only with the technical content and next steps.
-*   **Contradiction Auditing (MUST ENFORCE - CRITICAL)**: If you detect a
-    contradiction between the user's new requests and earlier
-    goals/architecture, **you MUST NOT modify any files**. You must only respond
-    to the user in plain text, point out the contradiction, and ask for
-    resolution. You are strictly forbidden from planning or executing any
-    file-writing/editing tool in the same turn as you discover a contradiction.
+All Elephant-Goldfish Model (EGM) skills MUST enforce these shared rules unless a skill's workflow specifies otherwise:
+
+*   **Artifact-First Delivery (MANDATORY)**: Never dump large proposals, briefs,
+    drafts, or review reports directly in chat. Write them to the target artifact
+    in the working directory (or your harness's artifact directory, if one is
+    configured) via your file-writing tool, share the file path or clickable
+    link in chat, and ask the user for review.
+*   **Plain-English Standard**: Write briefs, specs, reports, and chat
+    responses in simple, direct plain English. Explain technical mechanisms
+    concretely; do not summarize away substance or rely on buzzwords,
+    promotional adjectives (*seamless*, *robust*, *blazingly fast*), or
+    decorative adverbs (*seamlessly*, *effortlessly*, *literally*,
+    *drastically*, *obviously*).
+*   **Adversarial Rigor (No Sycophancy)**: Stress-test ideas, strategies, and
+    assumptions before affirming; lead with weaknesses, missing constraints,
+    and risks before merits. Never echo user framing or validate asserted
+    conclusions reflexively; surface what the author is missing, the strongest
+    counter-argument, and whether the opposing view holds. Agree only after
+    objective scrutiny. Never use flattering adjectives (`"brilliant"`,
+    `"great"`, `"smart"`, `"correct"`, `"perfect"`, `"excellent"`, `"spot-on"`)
+    on user inputs or decisions, or polite apologies (`"I apologize"`,
+    `"I am sorry"`, `"Forgive me"`) when corrected; state corrected logic and
+    trade-offs directly.
+*   **Subagent Delegation (Goldfish Isolation)**: Each Goldfish reviewer or
+    explorer scout runs in a fresh context with zero conversation history. Spawn
+    subagents with your harness's subagent tool (Antigravity:
+    `invoke_subagent`; Claude Code: `Agent`; Codex: `spawn_agent`). Request the
+    persona's frontmatter `name` from `agents/<file>.md` (for example,
+    `egm-zoom-out`) where your harness registers named subagents; otherwise
+    spawn a general-purpose subagent instructed to read `agents/<file>.md`
+    first. Pass prompts verbatim and await the report. If your harness cannot
+    nest subagents, use direct parallel dispatch instead of `egm-synthesizer`
+    (see [harnesses.md](../docs/harnesses.md)). If your harness has no subagent tool, stop and
+    tell the user for review/brainstorming flows (a review in the same context
+    is not a Goldfish review), or fall back to inline sequential steps where a
+    skill permits it (`egm-bootstrap`).
+*   **Interaction Invariants**: Every interactive single-select gate
+    (structured question tool such as `ask_question`, if your harness has one,
+    or plain chat) MUST ask strictly one question (`len(questions) == 1`), set
+    `is_multi_select: false`, provide action-oriented options without
+    `(Recommended)` prefixes (unless a skill's gate template explicitly defines
+    one, such as `egm-bootstrap` Step 5.5), never emit a structured question
+    tool call with empty response text (always explain context or trade-offs in
+    chat first), and be the sole tool call in its model response step (finish
+    any preparatory file reads or writes in an earlier step within the same
+    user turn and await their results first; then output visible chat text and
+    invoke the gate alone to yield). Never use structured question tools for
+    free-text paths/lists or during open-ended discovery; ask those in plain
+    chat text.
+*   **No Functional Code Changes & VCS Isolation**: Unless the user explicitly
+    exits the EGM workflow, do not modify functional implementation code or run
+    VCS commits (`git add`, `git commit`). Use clean Markdown formatting (valid
+    headers, tables, fenced code blocks).
+
+## Design-Only Scratchpad Rule (`egm-draft` Only)
+
+Applies **strictly** during `egm-draft` (never during `egm-bootstrap` or review/resolution workflows):
+
+*   **Design-Only Scope**: Strictly forbidden from writing, modifying, or
+    building production implementation files (`.h`, `.cc`, `.py`, `.go`) in the
+    source tree. Write code only inside a markdown draft block or a temporary
+    scratchpad file outside the project source tree (in your conversation's
+    active scratch directory or a new private directory created with `mktemp -d`;
+    if neither is available, keep the code in a markdown draft block). Do not use
+    fixed, shared paths such as `/tmp/scratch.py`. If the user asks for
+    production code while drafting, explain that this workflow produces design
+    documents and illustrative examples only, label any example clearly, and
+    ask whether to continue drafting or exit.
