@@ -18,6 +18,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     outputs:
       commit: ${{ steps.source.outputs.commit }}
     permissions:
@@ -72,6 +73,7 @@ jobs:
   draft:
     needs: build
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       actions: read
       contents: write
