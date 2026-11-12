@@ -75,6 +75,17 @@ pytest tests/unit/test_link_integrity.py -v
 
 ---
 
+## Lint
+
+CI lints Python with `ruff` and the workflows with `actionlint`. Run both locally:
+
+```bash
+python -m pip install --group lint && ruff check .
+actionlint
+```
+
+---
+
 ## Native Claude Reviewer Probe (Opt-in)
 
 With an authenticated Claude Code 2.1.271+ installation, run:

@@ -13,6 +13,9 @@
 # limitations under the License.
 
 [dependency-groups]
+lint = [
+    "ruff==0.17.4",
+]
 test = [
     "pytest==9.0.3",
     "pyyaml==6.0.3",
@@ -24,3 +27,15 @@ testpaths = ["tests/unit"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-ra -q --import-mode=importlib"
+
+[tool.ruff]
+exclude = ["site", "distributions", ".claude"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+# 99 existing lines exceed the default limit.
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+# Google import order: sort by module name, not by import style.
+force-sort-within-sections = true
