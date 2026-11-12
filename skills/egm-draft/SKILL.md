@@ -303,8 +303,10 @@ strictly:
         `"Please specify the custom target directory path where you would like
         to save the design document."` and yield active execution.
 
-3.  **Update Sitemap**: If `<DESIGN_DIR>/SITEMAP.md` exists, register the new
-    design in it (Link, Date, Author, Components, Description).
+3.  **Update Design Index**: If `<DESIGN_DIR>/SITEMAP.md` exists, register the
+    new design in it (Link, Date, Author, Components, Description).
+    Otherwise, if `<DESIGN_DIR>/README.md` exists, register the new design
+    there instead.
 
 4.  **Write doc**: Once finalized, write the contents of `design_draft.md` to
     the designated destination file at `<DESIGN_DIR>/<FEATURE>.md` using your
