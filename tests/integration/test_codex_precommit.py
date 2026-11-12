@@ -8,11 +8,17 @@ import warnings
 
 import pytest
 
-from .precommit_fixture import make_project, assert_preserved
-from .precommit_trace import codex_full_reads, field, assert_seeded_findings, summary_field
-from .test_codex import (
-    installed_plugin, run_codex, child_traces, assert_isolated_spawns,
+from . import test_codex
+from .precommit_fixture import assert_preserved, make_project
+from .precommit_trace import (
+    assert_seeded_findings,
+    codex_full_reads,
+    field,
+    summary_field,
 )
+from .test_codex import assert_isolated_spawns, child_traces, run_codex
+
+installed_plugin = test_codex.installed_plugin
 
 pytestmark = pytest.mark.skipif(
     os.environ.get("EGM_CODEX_LIVE") != "1", reason="Set EGM_CODEX_LIVE=1",

@@ -16,7 +16,6 @@ import threading
 from typing import Any
 import uuid
 
-
 PACKAGE = Path(__file__).resolve().parents[2]
 CHILD_TAG = 'EGM_CHILD_CONTROLLED'
 

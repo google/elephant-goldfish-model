@@ -26,7 +26,7 @@ html {
 body {
   margin: 0;
   background: var(--md-sys-color-surface);
-  color: var(--md-sys-color-on-surface);
+  color: var(--egm-color-text);
   font: var(--md-sys-typescale-body-md);
   font-family: var(--font-display);
   letter-spacing: var(--md-sys-typescale-body-md-tracking);
@@ -40,6 +40,8 @@ h3,
 p {
   margin: 0;
 }
+
+h1, h2, h3, h4, h5, h6 { color:var(--md-sys-color-on-surface); }
 
 /* Plain prose links only. gBreeze anchors (.btn, .icon-btn, .list-item) keep the package
    colors and focus ring; an unlayered rule here would beat their @layer styles. */
@@ -93,56 +95,6 @@ svg {
   fill: var(--md-icon-color);
 }
 
-/* Layout */
-:root {
-  /* Section rhythm: one scale, three steps. Tight for asides, loose before a change of register. */
-  --section-y-tight: clamp(48px, 6vw, 80px);
-  --section-y: clamp(72px, 9vw, 120px);
-  --section-y-loose: clamp(96px, 12vw, 160px);
-}
-
-.wrap {
-  inline-size: min(100% - 48px, 1160px);
-  margin-inline: auto;
-}
-
-@media (max-width: 640px) {
-  .wrap {
-    inline-size: min(100% - 32px, 1160px);
-  }
-}
-
-.section {
-  padding-block: var(--section-y);
-}
-
-.section-tight {
-  padding-block: var(--section-y-tight);
-}
-
-.section-head {
-  max-inline-size: 760px;
-  margin-block-end: clamp(32px, 5vw, 56px);
-}
-
-.display {
-  font: var(--md-sys-typescale-display-lg);
-  letter-spacing: var(--md-sys-typescale-display-lg-tracking);
-  text-wrap: balance;
-}
-
-.headline {
-  font: var(--md-sys-typescale-headline-lg);
-  letter-spacing: var(--md-sys-typescale-headline-lg-tracking);
-  text-wrap: balance;
-  margin-block: 12px 16px;
-}
-
-.title {
-  font: var(--md-sys-typescale-title-lg);
-  letter-spacing: var(--md-sys-typescale-title-lg-tracking);
-}
-
 p {
   text-wrap: pretty;
 }
@@ -150,17 +102,12 @@ p {
 .lead {
   font: var(--md-sys-typescale-body-lg);
   letter-spacing: var(--md-sys-typescale-body-lg-tracking);
-  color: var(--md-sys-color-on-surface-variant);
   max-inline-size: 58ch;
   text-wrap: balance;
 }
 
 .muted {
   color: var(--md-sys-color-on-surface-variant);
-}
-
-.nowrap {
-  white-space: nowrap;
 }
 
 .skip-link {

@@ -1,6 +1,7 @@
 ---
 
 const repo = 'https://github.com/google/elephant-goldfish-model';
+import ThemeSelect from './docs/ThemeSelect.astro';
 
 const links = [
   { label: 'Apache 2.0', href: `${repo}/blob/HEAD/LICENSE` },
@@ -53,6 +54,7 @@ const links = [
             </button>
           </li>
         </ul>
+        <ThemeSelect />
       </nav>
     </div>
   </div>
@@ -60,7 +62,10 @@ const links = [
 
 <style>
   .footer {
-    padding-block: 0 24px;
+    padding-block: 0 40px;
+    position:relative;
+    z-index:20;
+    background:var(--md-sys-color-surface);
   }
 
   /* One row: legal on the left, links on the right. When the row cannot hold both,
@@ -82,7 +87,10 @@ const links = [
     gap: 4px 8px;
     font: var(--md-sys-typescale-label-md);
     font-weight: 400;
+    color:var(--md-sys-color-on-surface-variant);
   }
+
+  nav { display:flex; align-items:center; gap:16px; }
 
   /* The G takes the legal line's color. */
   .g {

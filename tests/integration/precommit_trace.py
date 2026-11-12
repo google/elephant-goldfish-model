@@ -2,9 +2,9 @@
 """Read native Claude evidence; reports alone do not establish execution."""
 
 import json
+from pathlib import Path
 import re
 import shlex
-from pathlib import Path
 
 
 def blocks(raw: str):

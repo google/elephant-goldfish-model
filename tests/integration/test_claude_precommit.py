@@ -10,10 +10,15 @@ import uuid
 
 import pytest
 
-from .precommit_fixture import make_project, assert_preserved
+from .precommit_fixture import assert_preserved, make_project
 from .precommit_trace import (
-    calls_and_results, successful_reads, child_answer, field, assert_validation,
-    assert_seeded_findings, summary_field,
+    assert_seeded_findings,
+    assert_validation,
+    calls_and_results,
+    child_answer,
+    field,
+    successful_reads,
+    summary_field,
 )
 from .test_claude import trace_directory
 

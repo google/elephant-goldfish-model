@@ -1,6 +1,6 @@
-# Global code owners for Elephant-Goldfish Model (EGM)
+# Code owners for Elephant-Goldfish Model (EGM)
 #
-# These owners are automatically requested for review on pull requests touching any file in the repository.
-# NOTE: To enforce approval before merging, "Require review from Code Owners" must be enabled in Branch Protection Rules.
+# Require maintainer review on GitHub workflow and automation config changes.
+# Normal PRs are pre-filtered by automated triage before requesting @google/egm-maintainers.
 
-* @google/egm-maintainers
+.github/** @google/egm-maintainers

@@ -3,20 +3,19 @@
 
 """Opt-in native Codex tests. No API use or config changes unless enabled."""
 
+from collections.abc import Iterator
 import json
 import os
 import pathlib
-import shutil
 import shlex
+import shutil
 import subprocess
-import uuid
-import zipfile
-from collections.abc import Iterator
 from urllib.parse import urlparse
 from urllib.request import url2pathname
+import uuid
+import zipfile
 
 import pytest
-
 
 InstalledPlugin = tuple[str, str, pathlib.Path, pathlib.Path]
 
