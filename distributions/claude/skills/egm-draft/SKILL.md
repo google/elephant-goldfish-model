@@ -19,14 +19,14 @@ Guides the user through drafting a technical design document section-by-section 
 ## Execution Constraints (CRITICAL)
 
 1. Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, apply the inline constraints below), enforcing both Shared Execution Constraints and the Design-Only Scratchpad Rule.
-2. **Artifact-First & Style**: Never print drafts, summaries, or code in chat; write `design_draft.md` in the working or artifact directory, share its path, and use direct plain English with adversarial scrutiny (never `"brilliant"`, `"great"`, `"smart"`, `"correct"`, `"perfect"`, `"excellent"`, `"spot-on"`, or apologies).
+2. **Artifact-First & Style**: Never print drafts, summaries, or plans in chat; write `design_draft.md` in the working or artifact directory, share its path, and use direct plain English with adversarial scrutiny (never `"brilliant"`, `"great"`, `"smart"`, `"correct"`, `"perfect"`, `"excellent"`, `"spot-on"`, or apologies).
 3. **Interaction Invariants**: Every interactive gate MUST have strictly one question (`len(questions) == 1`), `is_multi_select: false`, clear action-oriented options without `(Recommended)` prefixes, non-empty visible chat text before invoking the gate, and be the sole tool call in its model response step (finish preparatory file writes or reads in an earlier step within the same user turn first).
 4. **Author Decides Architecture**: For design choices with multiple defensible answers (storage, data model, component boundaries, protocols), explain up to three unranked options in chat without a default (mechanism, trade-offs, failure conditions), then ask the author to choose via a single-select gate; if told to "just pick one", restate trade-offs and re-present the same gate. Decide mechanical choices (naming, formatting) yourself.
 5. **Drafting Pace & Discipline**:
    * **Explicit Consensus Gates**: Achieve explicit agreement at each step transition; never save the final document or advance without user go-ahead, and challenge weak assumptions at each step.
    * **ONE QUESTION AT A TIME**: Present strictly one clarification question per turn and wait for the user's answer before continuing; never bundle multiple questions.
    * **NO SUMMARIES**: Never end responses with a "Summary of work", "Status", "Adherence", or "Rule checklist"; respond only with technical content and next steps.
-   * **Contradiction Auditing**: If new requests contradict earlier goals or architecture, **do NOT modify any files** in that turn; report the contradiction in plain text and ask for resolution first.
+   * **Contradiction Auditing**: If new requests contradict earlier goals or architecture, **do NOT create or modify any files** in that turn; respond only in plain text reporting the contradiction and ask for resolution first.
 
 ## Inputs
 
@@ -59,7 +59,7 @@ After writing or updating each section in `design_draft.md` via your file-writin
 
 For each step below, append or update the section in `design_draft.md` using your file-writing tool (preserving previously approved sections) and run the **Section Approval Gate** with the step's `[Section Name]`:
 
-* **Step 2: Overview, Goals & Problem Statement (`[Section Name] = Overview & Goals`)**: Frame the business problem and user pain points from ingested context. Write `The Problem`, `Overview`, `Goals`, and `Non-Goals` in plain-English Markdown per `references/design_doc.md`, emphasizing the *why* (user need and business value) over implementation *how*.
+* **Step 2: Overview, Goals & Problem Statement (`[Section Name] = Overview & Goals`)**: Frame the business problem and user pain points from ingested context. Write `The Problem`, `Overview`, `Goals`, and `Non-Goals` in plain-English Markdown per the [design document template](references/design_doc.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/skills/egm-draft/references/design_doc.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/skills/egm-draft/references/design_doc.md`), emphasizing the *why* (user need and business value) over implementation *how*.
 * **Step 3: Technical Plan (`[Section Name] = Technical Plan`)**: Synthesize the proposed high-level architecture in clear prose, identifying new components, modified files, API changes, and text-based data-flow block diagrams (ASCII or Mermaid).
 * **Step 4: Alternatives (`[Section Name] = Alternatives Considered`)**: Read rejected alternatives from `Alternatives Weighed` in the ingested context (do not rely on session memory; if absent, ask the user which alternatives were rejected and why). State concrete rejection reasons (e.g., latency, scaling limits, team unfamiliarity) as `Rejected by author: [technical rationale]`; do NOT write `Rejected by maintainer` unless quoting an upstream maintainer issue, discussion, or PR URL.
 * **Step 5: Detailed Implementation (`[Section Name] = Detailed Implementation`)**: Ask clarifying questions until the plan alone suffices to implement without impactful open decisions:
@@ -70,7 +70,7 @@ For each step below, append or update the section in `design_draft.md` using you
 
 ### Step 6: Write Design Document Finalization
 
-1. **Reconcile Against Predecessor Context**: Do not grade the draft against the Zoom Out standard here (`/egm-review` Stage 5 runs that check from a fresh context). Re-read the Step 1 context file (skip if none existed) and compare it with `design_draft.md` (no Goldfish reads the brief):
+1. **Reconcile Against Predecessor Context**: Do not grade the draft against the Zoom Out standard here (`egm-review` Stage 5 runs that check from a fresh context). Re-read the Step 1 context file (skip if none existed) and compare it with `design_draft.md` (no Goldfish reads the brief):
    * **Contradiction**: Brief decided a question and the draft decides it differently (report every one).
    * **Addition**: Draft decides an unraised question that changes architecture, an external interface, or a dependency.
 
