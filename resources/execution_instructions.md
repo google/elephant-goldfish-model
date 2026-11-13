@@ -50,21 +50,23 @@ All Elephant-Goldfish Model (EGM) skills MUST enforce these shared rules unless 
     free-text paths/lists or during open-ended discovery; ask those in plain
     chat text.
 *   **No Functional Code Changes & VCS Isolation**: Unless the user explicitly
-    exits the EGM workflow, do not modify functional implementation code or run
-    VCS commits (`git add`, `git commit`). Use clean Markdown formatting (valid
-    headers, tables, fenced code blocks).
+    exits the EGM workflow, do not create, modify, or refactor functional
+    implementation code or run VCS commits (`git add`, `git commit`). Use clean
+    Markdown formatting (valid headers, tables, fenced code blocks).
 
 ## Design-Only Scratchpad Rule (`egm-draft` Only)
 
-Applies **strictly** during `egm-draft` (never during `egm-bootstrap` or review/resolution workflows):
+Applies **strictly** during `egm-draft` (never during `egm-bootstrap`, `egm-drift-report`, or review/resolution workflows):
 
 *   **Design-Only Scope**: Strictly forbidden from writing, modifying, or
-    building production implementation files (`.h`, `.cc`, `.py`, `.go`) in the
-    source tree. Write code only inside a markdown draft block or a temporary
-    scratchpad file outside the project source tree (in your conversation's
-    active scratch directory or a new private directory created with `mktemp -d`;
-    if neither is available, keep the code in a markdown draft block). Do not use
+    building production implementation files (e.g., `.h`, `.cc`, `.py`, `.go`,
+    or any other code files) in the source tree. Write code only inside a
+    markdown draft block or a temporary scratchpad file outside the project
+    source tree (in your conversation's active scratch directory or, if your
+    harness has none, a new private directory created with `mktemp -d`; if
+    neither is available, keep the code in a markdown draft block). Do not use
     fixed, shared paths such as `/tmp/scratch.py`. If the user asks for
     production code while drafting, explain that this workflow produces design
-    documents and illustrative examples only, label any example clearly, and
-    ask whether to continue drafting or exit.
+    documents and illustrative examples only, label any example clearly, do not
+    imply that production files were changed, and ask whether to continue
+    drafting or exit.
