@@ -18,6 +18,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     outputs:
       commit: ${{ steps.source.outputs.commit }}
     permissions:
@@ -55,16 +56,23 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: python scripts/prepare_release.py --tag "$RELEASE_TAG" --commit "$(git rev-parse HEAD)" --output release
       - name: Attest runtime archives
+        id: attest
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-path: release/*.zip
           create-storage-record: false
+      - name: Keep the provenance bundle with the release files
+        env:
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: cp "$BUNDLE_PATH" "release/egm-$RELEASE_TAG.intoto.jsonl"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-candidate
           path: |
             release/*.zip
             release/SHA256SUMS
+            release/*.intoto.jsonl
             release/RELEASE_NOTES.md
           if-no-files-found: error
           retention-days: 7
@@ -72,6 +80,7 @@ jobs:
   draft:
     needs: build
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       actions: read
       contents: write
@@ -90,4 +99,4 @@ jobs:
           cd release
           sha256sum -c SHA256SUMS
           test "$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha)" = "$SOURCE_COMMIT"
-          gh release create "$RELEASE_TAG" --verify-tag --draft --title "EGM $RELEASE_TAG" --notes-file RELEASE_NOTES.md ./*.zip SHA256SUMS
+          gh release create "$RELEASE_TAG" --verify-tag --draft --title "EGM $RELEASE_TAG" --notes-file RELEASE_NOTES.md ./*.zip SHA256SUMS "egm-$RELEASE_TAG.intoto.jsonl"

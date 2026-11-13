@@ -1,0 +1,183 @@
+---
+import Button from './gb/Button.astro';
+import Explainer from './Explainer.astro';
+import Mark from './Mark.astro';
+import Symbol from './gb/Symbol.astro';
+const repo = 'https://github.com/google/elephant-goldfish-model';
+const article = 'https://medium.com/@drensin/elephants-goldfish-and-the-new-golden-age-of-software-engineering-c33641a48874';
+const findings = [
+  { question: 'Who staffs the desk?', detail: 'The plan names no person and no rota.' },
+  { question: 'When is the space open?', detail: 'The plan refers to opening hours but does not state them.' },
+  { question: 'What is the Friday rule?', detail: 'The plan depends on a decision that the reader cannot see.' },
+];
+const startingPoints = [
+  { title: 'Develop an idea', text: 'Work through the questions and write a brief.', href: '/getting-started' },
+  { title: 'Review a document', text: 'Choose reviewers and standards for a plan you already have.', href: '/skills/egm-review-loop' },
+  { title: 'Check for drift', text: 'Compare software documentation with the current code.', href: '/skills/egm-drift-report' },
+];
+const applications = [
+  { name: 'ChatGPT and Codex desktop', step: 'Open the plugin page and select Install. This listing is desktop only.', href: 'https://chatgpt.com/plugins/plugins_6aeb90f47ec88191a3c107e01d3eb357', action: 'Open the plugin page' },
+  { name: 'Claude Cowork', step: 'Open the plugin panel and add this marketplace.', copy: 'google/elephant-goldfish-model' },
+  { name: 'Claude Code', step: 'Run this command, then start a new session.', copy: 'claude plugin marketplace add google/elephant-goldfish-model && \\\nclaude plugin install egm@egm' },
+  { name: 'Codex CLI', step: 'Run this command, then start a new session.', copy: 'codex plugin marketplace add google/elephant-goldfish-model && \\\ncodex plugin add egm@egm' },
+  { name: 'Antigravity', step: 'Run this command, then start a new session.', copy: `agy plugin install ${repo}` },
+];
+---
+<section class="wrap hero">
+  <div class="introduction">
+    <h1>Elephant-Goldfish Model</h1>
+    <p class="lead">EGM is an open-source plugin for AI assistants. You develop a plan with an assistant that knows the background. Reviewers that do not see the conversation then read the plan and report what is missing or unclear.</p>
+    <div class="actions"><Button color="outlined" size="md" href="/install">Install</Button><a href="/getting-started">Get started</a></div>
+  </div>
+  <figure class="handoff">
+    <ol>
+      <li><Mark variant="elephant" size={40} /><div><h2>Drafting assistant</h2><p>Knows your goal, the background, and the whole conversation.</p></div></li>
+      <li class="minor"><span class="node"></span><div><h2>Your written plan</h2><p>The only thing the reviewers read.</p></div></li>
+      <li><Mark variant="goldfish" size={40} /><div><h2>Fresh reviewers</h2><p>Start from zero and report what is missing or unclear.</p></div></li>
+      <li class="minor"><span class="node"></span><div><h2>The findings</h2><p>You check them and decide what to change.</p></div></li>
+    </ol>
+  </figure>
+</section>
+<Explainer />
+<section class="wrap example">
+  <div class="explanation">
+    <h2>An example</h2>
+    <p>An author knows things that the plan does not say. Reviewers without the conversation find those gaps.</p>
+  </div>
+  <figure class="sheet">
+    <h3>Study space opening plan</h3>
+    <p>The space opens on 3 March. <span class="gap">Volunteers staff the desk</span><sup>1</sup> during <span class="gap">opening hours</span><sup>2</sup>. Students book rooms with the usual form. We keep <span class="gap">the Friday rule</span><sup>3</sup>.</p>
+    <ol class="findings">
+      {findings.map(item => <li><h4>{item.question}</h4><p>{item.detail}</p></li>)}
+    </ol>
+  </figure>
+</section>
+<section class="wrap starting-points">
+  <div class="explanation">
+    <h2>Where to start</h2>
+    <p>Bring a class project, a design brief, a delivery plan, or a software design. Write down the goal, constraints, and decisions a reviewer needs to understand.</p>
+    <a href="/guide">Read the guide</a>
+  </div>
+  <nav aria-label="Choose a starting point">
+    {startingPoints.map(item => <a href={item.href}><div><h3>{item.title}</h3><p>{item.text}</p></div><Symbol name="arrow_forward" /></a>)}
+  </nav>
+</section>
+<section class="wrap install">
+  <div class="explanation">
+    <h2>Install</h2>
+    <p>EGM runs as a plugin in these applications. You do not need to write software.</p>
+  </div>
+  <fieldset>
+    <legend>Choose your application</legend>
+    {applications.map((item, index) => <>
+      <input type="radio" name="application" id={`application-${index}`} checked={index === 0} />
+      <label for={`application-${index}`}>{item.name}</label>
+      <div class="panel">
+        <p>{item.step}</p>
+        {item.copy
+          ? <button type="button" class="copybox focus-ring-outer" aria-label={`Copy ${item.name} command: ${item.copy}`} data-copy={item.copy}><code>{item.copy}</code><span aria-hidden="true"><Symbol name="content_copy" class="copy" /><Symbol name="check" class="done" /></span></button>
+          : <Button color="outlined" size="md" href={item.href} target="_blank">{item.action}</Button>}
+      </div>
+    </>)}
+  </fieldset>
+  <p class="limits">Review support differs between applications. <a href="/install">Read the install guide</a> or <a href={repo}>view the source</a>.</p>
+</section>
+<p class="wrap origin">The method comes from Dave Rensin’s article, <a href={article}>Elephants, Goldfish, and the New Golden Age of Software Engineering</a>.</p>
+<script>
+  // Clipboard copy for the install commands. The command stays selectable text.
+  const timers = new WeakMap<HTMLElement, number>();
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+    const label = button.getAttribute('aria-label') ?? '';
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy ?? '');
+      } catch {
+        return;
+      }
+      const prev = timers.get(button);
+      if (prev) window.clearTimeout(prev);
+      button.classList.add('copied');
+      button.setAttribute('aria-label', `Copied: ${button.dataset.copy ?? ''}`);
+      const timer = window.setTimeout(() => {
+        button.classList.remove('copied');
+        button.setAttribute('aria-label', label);
+      }, 1800);
+      timers.set(button, timer);
+    });
+  }
+</script>
+<style>
+  p { text-wrap:pretty; }
+  h1 { font:500 clamp(2rem,3vw,2.5rem) / 1.15 var(--font-display); letter-spacing:-.02em; }
+  h2 { font-size:1.5rem; font-weight:500; line-height:1.3; letter-spacing:-.01em; margin-bottom:16px; text-wrap:balance; }
+  h3 { font-size:1.125rem; font-weight:500; line-height:1.4; }
+  section+section { border-top:1px solid var(--md-sys-color-outline-variant); }
+  .explanation>p { max-width:52ch; line-height:1.7; margin-bottom:20px; }
+  .explanation>a { display:inline-block; margin-top:4px; }
+  .actions { display:flex; flex-wrap:wrap; align-items:center; gap:24px; margin-top:32px; }
+
+  .hero { display:grid; grid-template-columns:1.1fr 1fr; gap:72px; align-items:start; padding-block:64px 72px; }
+  .lead { max-width:55ch; margin-top:20px; line-height:1.7; text-wrap:pretty; }
+
+  .handoff { margin:0; }
+  .handoff ol { list-style:none; margin:0; padding:0; }
+  .handoff li { position:relative; display:grid; grid-template-columns:40px minmax(0,1fr); gap:20px; padding-bottom:32px; }
+  /* One line joins the three steps. */
+  .handoff li:not(:last-child)::before { content:''; position:absolute; inset-block:48px 8px; inset-inline-start:20px; border-inline-start:1px solid var(--md-sys-color-outline); }
+  .handoff li>:global(svg) { justify-self:center; }
+  .node { justify-self:center; width:9px; height:9px; margin-top:14px; border-radius:50%; background:var(--md-sys-color-outline); }
+  .handoff .minor::before { inset-block-start:32px; }
+  .handoff li:last-child { padding-bottom:0; }
+  .handoff h2 { margin:6px 0 0; font-size:1.125rem; line-height:1.4; letter-spacing:0; }
+  .handoff li p { margin-top:4px; max-width:36ch; line-height:1.6; }
+
+  .example { padding-block:56px 64px; }
+  .sheet { margin:40px 0 0; border:1px solid var(--md-sys-color-outline-variant); border-radius:12px; padding:32px; }
+  .sheet>p { margin-top:16px; max-width:70ch; font-size:1.125rem; line-height:1.9; }
+  .gap { text-decoration:underline 2px var(--egm-color-goldfish); text-underline-offset:.3em; color:var(--md-sys-color-on-surface); }
+  .sheet sup { margin-inline-start:2px; font-size:.6875rem; font-weight:500; line-height:1; color:var(--egm-color-goldfish); }
+  .findings { list-style:none; display:grid; grid-template-columns:repeat(3,1fr); gap:24px 40px; margin:28px 0 0; padding:24px 0 0; border-top:1px solid var(--md-sys-color-outline-variant); counter-reset:finding; }
+  .findings li { counter-increment:finding; }
+  .findings li::before { content:counter(finding); display:block; margin-bottom:6px; font-size:.8125rem; font-weight:500; line-height:1.5; color:var(--egm-color-goldfish); }
+  .findings h4 { margin:0; font-size:1rem; font-weight:500; line-height:1.5; }
+  .findings p { margin-top:4px; font-size:.9375rem; line-height:1.6; }
+
+  .starting-points { display:grid; grid-template-columns:1fr 1fr; column-gap:80px; padding-block:56px 64px; }
+  nav>a { display:flex; align-items:center; justify-content:space-between; gap:24px; padding-block:24px; text-decoration:none; }
+  nav>a:first-child { padding-top:0; }
+  nav>a+a { border-top:1px solid var(--md-sys-color-outline-variant); }
+  nav h3 { margin-bottom:8px; }
+  nav p { max-width:42ch; line-height:1.6; }
+  nav>a:hover h3 { text-decoration:underline; text-underline-offset:.2em; }
+  nav :global(svg) { width:20px; height:20px; flex:none; color:var(--md-sys-color-on-surface-variant); }
+
+  .install { padding-block:56px 64px; }
+  fieldset { display:flex; flex-wrap:wrap; gap:4px; max-width:760px; margin:32px 0 0; padding:0; border:0; }
+  legend, fieldset input { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  fieldset label { padding:8px 12px; border-radius:8px; font-size:.9375rem; font-weight:500; line-height:1.5; color:var(--md-sys-color-on-surface-variant); cursor:pointer; }
+  fieldset label:hover { color:var(--md-sys-color-on-surface); }
+  fieldset input:checked+label { color:var(--md-sys-color-on-secondary-container); background:var(--md-sys-color-secondary-container); }
+  fieldset input:focus-visible+label { outline:3px solid var(--md-sys-color-secondary); outline-offset:3px; }
+  /* Without styles, every panel shows. With styles, only the chosen one. */
+  .panel { display:none; order:1; flex-basis:100%; margin-top:20px; }
+  fieldset input:checked+label+.panel { display:block; }
+  .panel p { margin-bottom:16px; line-height:1.6; }
+  .copybox { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; width:100%; padding:16px; border:1px solid var(--md-sys-color-outline-variant); border-radius:8px; background:var(--md-sys-color-surface-container-low); color:var(--md-sys-color-on-surface); text-align:start; cursor:pointer; }
+  .copybox:hover { border-color:var(--md-sys-color-outline); }
+  .copybox code { font-size:.875rem; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .copybox :global(svg) { width:20px; height:20px; flex:none; fill:var(--md-sys-color-on-surface-variant); }
+  .copybox :global(.done), .copybox:global(.copied) :global(.copy) { display:none; }
+  .copybox:global(.copied) :global(.done) { display:block; }
+  .limits { margin-top:28px; font-size:.875rem; line-height:1.6; color:var(--md-sys-color-on-surface-variant); }
+
+  .origin { padding-block:32px 40px; border-top:1px solid var(--md-sys-color-outline-variant); font-size:.875rem; line-height:1.6; color:var(--md-sys-color-on-surface-variant); }
+
+  @media(max-width:900px) { .hero { gap:40px; } .starting-points { column-gap:48px; } }
+  @media(max-width:760px) {
+    .hero,.starting-points { grid-template-columns:1fr; gap:40px; }
+    .findings { grid-template-columns:1fr; }
+    .hero { padding-block:48px 56px; }
+    .example,.starting-points,.install { padding-block:48px 56px; }
+    .sheet { padding:24px; }
+  }
+</style>

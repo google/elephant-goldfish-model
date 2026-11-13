@@ -1,0 +1,17 @@
+---
+import PageActions from './PageActions.astro';
+import SkillIcon from '../SkillIcon.astro';
+const { entry, toc } = Astro.locals.starlightRoute;
+const name = entry.id.startsWith('skills/') ? entry.id.split('/')[1] : undefined;
+const skill = name?.slice(4).replaceAll('-', '_') as 'ask' | 'brainstorm' | 'draft' | 'review' | 'resolve' | 'review_loop' | 'bootstrap' | 'drift_report' | undefined;
+---
+<h1 id="_top">{skill && <SkillIcon skill={skill} />}{entry.data.title}</h1>
+{entry.data.description && <p class="description">{entry.data.description}</p>}
+{name && <code>/{name}</code>}
+{!toc && <PageActions placement="standalone" />}
+<style>
+  h1 { display:flex; align-items:center; gap:12px; }
+  h1 { font-size:var(--sl-text-h1); line-height:1.2; font-weight:600; letter-spacing:-.025em; margin:0; color:var(--sl-color-white); }
+  .description { font-size:1.125rem; line-height:1.7; color:var(--sl-color-gray-2); margin-top:20px; max-width:62ch; }
+  code { display:inline-block; font: .875rem / 1.6 var(--sl-font-mono); margin-top:20px; }
+</style>

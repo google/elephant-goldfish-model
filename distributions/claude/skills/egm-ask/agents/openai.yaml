@@ -1,6 +1,0 @@
-interface:
-  display_name: "EGM Ask"
-  short_description: "Get read-only help with the EGM workflow"
-  icon_small: "./assets/icon.svg"
-  icon_large: "./assets/icon.svg"
-  brand_color: "#1B6EF3"

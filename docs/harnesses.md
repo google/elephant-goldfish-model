@@ -135,8 +135,12 @@ writing there. If you decline or no one can confirm, as in a headless run, the
 files go to the working directory. The answer isn't saved, so a new session
 asks again. A path in your prompt needs no confirmation. Design docs and other
 project files do not move. Claude Code reads a project `AGENTS.md` only when
-the project has no `CLAUDE.md`. To keep the files out of git, add the folder to
-`.gitignore`.
+the project has no `CLAUDE.md`.
+
+Commit approved specifications in `docs/designs/` and project rules in
+`AGENTS.md`. Teammates and agents then use the same committed files. Add
+`.dev/docs` to `.gitignore` only to keep scratch drafts out of git before
+approval.
 
 ## Support Status & Contributing Other Harnesses
 
@@ -159,6 +163,8 @@ control is verified here for Codex or Antigravity.
 **omp** ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) has a working installation path. Skills are invoked as `/skill:egm-<command>` (omp registers one command per skill; it has no `/egm-*` namespace). Community-verified on omp v18.12.6: all seven skills discover and resolve, and all nine reviewer personas register as subagents. End-to-end workflow fixtures are not yet automated for omp.
 
 **Muse** (1.4.14) has a working installation path. `muse plugins validate` reports the plugin valid with all seven skills and all ten agent adapters supported; every agent tool projection is unsupported, so Claude tool allowlists do not restrict Muse reviewers. Install from a local path; `marketplace add` on this repository discovers zero plugins because Muse reads the Codex catalog first. End-to-end workflow fixtures passed on 2026-10-30 (brainstorm, draft, and uninterrupted review with 15 fresh-context reviewers); named `egm/egm-*` agents cannot be spawned in this runtime, so reviewers used the general-purpose fallback reading the installed persona first. See the [Muse guide](https://github.com/google/elephant-goldfish-model/blob/main/docs/muse.md). No skill routes a Muse session to that guide yet ([#252](https://github.com/google/elephant-goldfish-model/issues/252)), so point the session at it.
+
+**Windsurf** (renamed Devin Desktop on 2026-06-02; [#376](https://github.com/google/elephant-goldfish-model/issues/376)) has experimental workspace routing. The rule and workflow files resolve the shared `skills/*/SKILL.md`, `agents/*.md`, and `resources/document_standards/*.md` files directly. They do not copy skill text. Goldfish reviews stop if fresh-context, read-only subagent delegation is unavailable, and reviewers launch on the host's read-only subagent profile. Devin CLI 3000.12.43 runs on 2026-11-10 passed routing, human pauses, read-only reviewers, and parent-marker isolation with every file write denied, so no workflow ran to a final artifact. Devin Desktop and the Devin CLI run the same agent, Devin Local, which replaced Cascade. The Devin Desktop IDE remains untested. The CLI does not list `.windsurf/workflows/` as slash commands; `/egm-*` requests route through the rule. Denying a permission prompt ends the host's turn without a message; send a follow-up message to continue. See the [design](https://github.com/google/elephant-goldfish-model/blob/main/docs/designs/windsurf_support.md#recorded-cli-evidence-2026-11-10) for the evidence.
 
 See the [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record) for tested surfaces and limits.
 

@@ -23,6 +23,7 @@
   --md-sys-color-surface-container-high: light-dark(#e9ebee, #23272d);
   --md-sys-color-on-surface: light-dark(#1f1f1f, #e8eaed);
   --md-sys-color-on-surface-variant: light-dark(#5f6368, #9aa0a6);
+  --egm-color-text: light-dark(#45494f, #b3b8bf);
   --md-sys-color-outline: light-dark(#80868b, #5f6368);
   --md-sys-color-outline-variant: light-dark(#dadce0, #2b3037);
 
@@ -68,3 +69,6 @@
   --md-sys-shape-corner-lg: 20px;
   --md-sys-shape-corner-md: 14px;
 }
+
+:root[data-theme='dark'] { color-scheme:dark; }
+:root[data-theme='light'] { color-scheme:light; }

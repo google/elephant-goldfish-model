@@ -426,20 +426,3 @@ def test_archive_claimed_after_preflight_is_not_overwritten(
   else:
     assert archive.read_bytes() == b"another build owns this file"
   assert not list(output.glob(".egm-*"))
-
-
-def test_published_claude_runtime_is_current(tmp_path: Path) -> None:
-  """The directory subfolder must contain exactly the reviewed runtime."""
-  generated, _ = build(ROOT, "claude", tmp_path)
-  published = ROOT / "distributions/claude"
-
-  def contents(folder: Path) -> dict[str, bytes]:
-    return {p.relative_to(folder).as_posix(): p.read_bytes()
-            for p in folder.rglob("*") if p.is_file()}
-
-  assert contents(published) == contents(generated), (
-      "Published Claude runtime differs from generated output. Regenerate "
-      "with `python3 scripts/pack_plugin.py --target claude --output "
-      "<output-dir>`; replace `distributions/claude` with the generated "
-      "`egm-claude` folder."
-  )

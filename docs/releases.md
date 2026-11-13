@@ -17,13 +17,13 @@ paths, and report formats. Do not change published artifacts under the same tag.
    `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and
    `.plugin/plugin.json`) to the same version in a reviewed PR.
    `scripts/prepare_release.py` rejects a tag when any of them differs.
-2. Regenerate `distributions/claude` using the runtime builder and run
-   `pytest tests/unit`. Include any migration notes in the PR.
+2. Run `pytest tests/unit`. Include any migration notes in the PR.
 3. After merge, a maintainer creates and pushes an annotated `vMAJOR.MINOR.PATCH`
    tag on the selected main commit. Never move an existing release tag.
 4. Run **Prepare draft release** from `main`, supplying that existing tag.
    The tagged commit must include the release scripts and pass unit tests.
-5. Review the draft's two runtime ZIPs, `SHA256SUMS`, and source commit.
+5. Review the draft's two runtime ZIPs, `SHA256SUMS`, the provenance bundle
+   (`egm-vMAJOR.MINOR.PATCH.intoto.jsonl`), and source commit.
    Verify both ZIP attestations as described below. Replace
    placeholder notes with changes, compatibility/migration details, and exact
    artifact host-verification evidence. Unverified hosts remain unverified.
@@ -47,8 +47,8 @@ Exact installed-bundle verification remains tracked in
 
 ## Verify downloads
 
-Download both ZIPs and `SHA256SUMS` into one directory. With GitHub CLI installed,
-run these commands from that directory:
+Download both ZIPs, `SHA256SUMS`, and the provenance bundle into one directory.
+With GitHub CLI installed, run these commands from that directory:
 
 ```sh
 sha256sum -c SHA256SUMS
@@ -60,8 +60,19 @@ done
 ```
 
 The workflow signs both ZIP digests and stores provenance in GitHub before
-creating a draft. Signing failure blocks draft creation. Local preparation does
-not create attestations. The build job uses `id-token: write` to request a signing
+creating a draft. The same attestation is attached to the release as
+`egm-<tag>.intoto.jsonl`. It is not listed in `SHA256SUMS`. To verify a ZIP
+against that downloaded bundle, pass it with `--bundle`:
+
+```sh
+gh attestation verify egm-claude-0.1.2.zip --repo google/elephant-goldfish-model \
+  --bundle egm-v0.1.2.intoto.jsonl
+```
+
+Add the same `--signer-workflow` and `--source-ref` flags as above.
+
+Signing failure blocks draft creation. Local preparation does not create
+attestations. The build job uses `id-token: write` to request a signing
 certificate and `attestations: write` to store the result. It cannot write releases.
 
 The provenance identifies the workflow run from `main`. The tagged source checked
