@@ -83,7 +83,10 @@ jobs:
             );
 
             const repository = data.repository;
-            const issue = repository.issue;
+            const issue = repository?.issue;
+            if (!issue) {
+              return;
+            }
             const title = issue.title || "";
             const body = issue.body || "";
             const text = `${title}\n${body}`;
@@ -187,15 +190,15 @@ jobs:
               },
               {
                 label: "docs",
-                pattern: /\b(documentation|readme(?:\.md)?|contributing\.md|installation command|outdated .* command|docs\/|examples? or instructions)\b/i
+                pattern: /\b(documentation|readme(?:\.md)?|contributing\.md|installation command|outdated \w+ command|docs\/|examples? or instructions)\b/i
               },
               {
                 label: "site",
-                pattern: /\b(egm\.dev|website|guide sidebar|sidebar|navigation|rendering|mobile viewport|deploy-site)\b/i
+                pattern: /\b(egm\.dev|website|guide sidebar|sidebar|site navigation|web rendering|mobile viewport|deploy-site)\b/i
               },
               {
                 label: "harness",
-                pattern: /\b(host integration|host installation|claude cowork|claude code|codex|cursor|copilot|opencode|antigravity|fails to install in|adapter|compatibility)\b/i
+                pattern: /\b(host (?:integration|installation|adapter)|claude cowork|claude code|codex|cursor|copilot|opencode|antigravity|fails to install in|harness compatibility)\b/i
               },
               {
                 label: "isolation",
