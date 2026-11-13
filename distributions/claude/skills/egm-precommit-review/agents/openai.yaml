@@ -1,6 +1,0 @@
-interface:
-  display_name: "EGM Precommit Review"
-  short_description: "Review pending code changes with fresh eyes"
-  icon_small: "./assets/icon.svg"
-  icon_large: "./assets/icon.svg"
-  brand_color: "#E86E00"

@@ -459,7 +459,7 @@ def check_claude_bundle_parity(
   """
   dist_root = repo_root / "distributions" / "claude"
   if not dist_root.is_dir() or len(files) >= MAX_PARITY_CHECK_FILES:
-    return [], False
+    return [], not dist_root.is_dir()
 
   changed_by_path: dict[str, Mapping[str, Any]] = {}
   removed_paths: set[str] = set()

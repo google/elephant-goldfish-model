@@ -17,8 +17,7 @@ paths, and report formats. Do not change published artifacts under the same tag.
    `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and
    `.plugin/plugin.json`) to the same version in a reviewed PR.
    `scripts/prepare_release.py` rejects a tag when any of them differs.
-2. Regenerate `distributions/claude` using the runtime builder and run
-   `pytest tests/unit`. Include any migration notes in the PR.
+2. Run `pytest tests/unit`. Include any migration notes in the PR.
 3. After merge, a maintainer creates and pushes an annotated `vMAJOR.MINOR.PATCH`
    tag on the selected main commit. Never move an existing release tag.
 4. Run **Prepare draft release** from `main`, supplying that existing tag.
