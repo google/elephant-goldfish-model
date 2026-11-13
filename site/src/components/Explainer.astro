@@ -1,0 +1,46 @@
+---
+import { Image } from 'astro:assets';
+import poster from '../assets/explainer-poster.jpg';
+import Symbol from './gb/Symbol.astro';
+const id = '8_x1u7qSqGs';
+const title = 'Elephant-Goldfish Model explainer';
+---
+<section class="wrap explainer">
+  <div class="head">
+    <h2>Explainer</h2>
+    <a href={`https://www.youtube.com/watch?v=${id}`}>Open on YouTube</a>
+  </div>
+  <div class="player">
+    <button type="button" data-video={id} data-title={title} aria-label={`Play video: ${title}`}>
+      <Image src={poster} alt="" widths={[640, 960, 1280]} sizes="(max-width: 1000px) 100vw, 960px" />
+      <span class="play"><Symbol name="play_arrow" /></span>
+    </button>
+  </div>
+</section>
+<script>
+  // The player loads only after the visitor chooses to watch.
+  for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-video]')) {
+    button.addEventListener('click', () => {
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube-nocookie.com/embed/${button.dataset.video}?autoplay=1&rel=0`;
+      frame.title = button.dataset.title ?? '';
+      frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      frame.allowFullscreen = true;
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      button.replaceWith(frame);
+      frame.focus();
+    });
+  }
+</script>
+<style>
+  .explainer { padding-block:56px 64px; }
+  .head { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:16px; max-width:960px; }
+  h2 { font-size:1.5rem; font-weight:500; line-height:1.3; letter-spacing:-.01em; margin:0; }
+  .player { max-width:960px; margin-top:24px; aspect-ratio:16 / 9; border:1px solid var(--md-sys-color-outline-variant); border-radius:12px; overflow:hidden; background:#0f1013; }
+  .player button, .player :global(iframe), .player :global(img) { display:block; width:100%; height:100%; border:0; padding:0; }
+  .player button { position:relative; background:none; cursor:pointer; }
+  .player :global(img) { object-fit:cover; }
+  .player button:focus-visible { outline:3px solid var(--md-sys-color-secondary); outline-offset:-3px; }
+  .play { position:absolute; inset-block-end:clamp(10px,2vw,20px); inset-inline-end:clamp(10px,2vw,20px); display:grid; place-items:center; width:clamp(40px,6vw,64px); height:clamp(40px,6vw,64px); border-radius:50%; color:var(--md-sys-color-on-primary); background:var(--md-sys-color-primary); }
+  .play :global(svg) { width:50%; height:50%; }
+</style>

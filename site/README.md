@@ -37,6 +37,9 @@ GitHub Pages.
 - Theme only through gBreeze tokens (`src/styles/tokens.css`) and the
   components' documented custom properties. Do not restyle component boxes.
 - Keep skill names and commands identical to the repository README.
+- **Explainer video**: `src/components/Explainer.astro` renders a self-hosted
+  poster inside a button and creates the `youtube-nocookie.com` iframe only
+  after the visitor clicks play.
 - **Cookies and analytics (`egm.dev` only)**: The EGM plugin itself collects zero
   telemetry. On the canonical `https://egm.dev` site only (when the build sets
   `PUBLIC_GA_MEASUREMENT_ID` and

@@ -1,4 +1,4 @@
-Google Material Symbols Rounded, 24px, weight 400, unfilled.
+Google Material Symbols Rounded, 24px, weight 400, unfilled (`play_arrow` is filled).
 
 Source: https://github.com/google/material-design-icons/tree/master/symbols/web
 
