@@ -7,6 +7,7 @@ operational guardrails.
 | Document | Author | Primary Component |
 | :------- | :----- | :---------------- |
 | [site_documentation.md](site_documentation.md)<br>Proposed multi-page guide, skill reference, and shared site interface. | [@n3wth](https://github.com/n3wth) | Website and documentation |
+| [lite.md](lite.md)<br>Proposed rapid ad-hoc engineering protocol enforcing a decoupled 5-phase state machine with Elephant and Goldfish persona switching for small, rapid iterations, specification revisions, code refactors, and bug fixes. | [@njeunje](https://github.com/njeunje) | `egm-lite` |
 | [triz_integration.md](triz_integration.md)<br>Draft Soviet TRIZ method integration introducing the Inventive Catalyst persona to eliminate false architectural compromises in `/egm-brainstorm` and Step 5 of `/egm-review`. | [@briansuchy](https://github.com/briansuchy) | [`egm-brainstorm`](../../skills/egm-brainstorm/SKILL.md), [`egm-review`](../../skills/egm-review/SKILL.md) (#37) |
 | [ask.md](ask.md)<br>Draft read-only command that answers questions about EGM and suggests the next skill from workspace artifacts. | [@smituparmar01](https://github.com/smituparmar01) | `egm-ask` (#175) |
 | [skill_icons.md](skill_icons.md)<br>Canonical skill artwork shared by plugins, the README, and the website. | [@n3wth](https://github.com/n3wth) | Skill presentation |
