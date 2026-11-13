@@ -1,0 +1,6 @@
+interface:
+  display_name: "EGM Lite"
+  short_description: "Rapid ad-hoc design and code iterations"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#1B6EF3"

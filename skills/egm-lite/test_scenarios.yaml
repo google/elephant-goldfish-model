@@ -1,0 +1,356 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+skill: "egm-lite"
+description: "Behavioral evaluation scenario suite for egm-lite skill."
+
+scenarios:
+  - scenario_id: "critique_pause_gating"
+    description: "Verifies agent pauses for user confirmation before executing mutating operations."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "/egm-lite Can we add a quick retry loop with a 5s delay inside our network request handler to handle timeouts?"
+        assertions:
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
+            message: "Critique pause response must open with a > **BLUF:** blockquote."
+          - type: "required_pattern"
+            pattern: "\\n---\\n"
+            message: >-
+              BLUF blockquote must be terminated by a --- horizontal rule.
+          - type: "required_pattern"
+            pattern: "(checklist|Proceed|critique)"
+            message: "Agent must instruct user to proceed or generate checklist before coding."
+          - type: "forbidden_pattern"
+            pattern: "```java\\npublic class"
+            message: "Agent must not implement full code during critique pause."
+          - type: "forbidden_pattern"
+            pattern: "egm_lite_alternatives\\.md"
+            message: >-
+              Agent must omit egm_lite_alternatives.md for single-path tasks.
+
+  - scenario_id: "checklist_generation_and_pause"
+    description: "Tests structured execution checklist creation."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "Using Section 2 of EGM-Lite, here is my command: checklist. What is our plan for this step?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(checklist|exec|Proceed)"
+            message: "Agent must produce checklist instructions and pause before execution."
+          - type: "required_pattern"
+            pattern: "(- \\[ \\]|task list|checkbox)"
+            message: "Agent must format checklist items as GFM task list checkboxes."
+          - type: "required_pattern"
+            pattern: "(clickable|link|\\[[^\\]]+\\]\\([^\\)]+\\))"
+            message: >-
+              Agent must format checklist file targets and references as
+              clickable links.
+
+  - scenario_id: "goldfish_adversarial_review"
+    description: "Asserts adversarial critique is applied without flattering adjectives."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "Using EGM-Lite, review this diff adding retry loops without exponential backoff or jitter."
+        assertions:
+          - type: "forbidden_pattern"
+            pattern: "(brilliant|great idea|perfect|excellent|smart)"
+            message: "Adversarial critique must not contain flattering adjectives."
+          - type: "forbidden_pattern"
+            pattern: "(\\[✅\\s*LGTM\\]|\\bLGTM\\b)"
+            message: >-
+              Adversarial review reporting defects must strictly omit LGTM.
+          - type: "required_pattern"
+            pattern: "(backoff|jitter|stampede|thundering)"
+            message: "Critique must flag missing backoff or thundering herd risks."
+
+  - scenario_id: "external_contract_verification"
+    description: "Verifies public interfaces and contracts are checked."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "We want to rely on enable_fast_path=true in RpcClientConfig. Can you verify this parameter?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(UNVERIFIED|contract|verification|evidence)"
+            message: "Agent must flag unverified assumptions or specify contract verification strategy."
+
+  - scenario_id: "post_review_synchronization_and_gate"
+    description: "Verifies review findings synchronization."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "We completed review on RequestHandler. The review found missing null checks and unaddressed risk. What should we do?"
+        assertions:
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
+            message: "Resolution response must open with a > **BLUF:** blockquote."
+          - type: "required_pattern"
+            pattern: "\\[🛠️\\s*\\d+\\s*FIX\\s*\\|\\s*🛡️\\s*\\d+\\s*CONTEST\\]"
+            message: >-
+              Resolution BLUF must lead with the [🛠️ X FIX | 🛡️ Y CONTEST]
+              status badge.
+          - type: "required_pattern"
+            pattern: "\\n---\\n"
+            message: >-
+              BLUF blockquote must be terminated by a --- horizontal rule.
+          - type: "required_pattern"
+            pattern: "(findings|agree|checklist)"
+            message: "Agent must summarize findings and ask user which ones to incorporate into the checklist."
+          - type: "required_pattern"
+            pattern: "(PROPOSE FIX|CONTEST)"
+            message: "Agent must triage post-review findings into PROPOSE FIX vs. CONTEST."
+          - type: "required_pattern"
+            pattern: "\\[\\d+\\]\\s*\\[P[0-3]\\]"
+            message: "Agent must tag findings with sequential index and priority tiers [X] [PY]."
+          - type: "forbidden_pattern"
+            pattern: "(edit_file|write_file|replace_file_content|write_to_file)"
+            message: >-
+              Triage turn must remain presentation-only without tool mutations.
+
+  - scenario_id: "post_review_lgtm_completion"
+    description: >-
+      Verifies clean Goldfish review passes open with a > **BLUF:** led by
+      [✅ LGTM] and summarize completed files and tests.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          The Goldfish subagent completed its review of RequestHandler and
+          returned an explicit LGTM with zero flaws. How do you handle this
+          response under Section 5?
+        assertions:
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
+            message: "Clean LGTM response must open with a > **BLUF:** blockquote."
+          - type: "required_pattern"
+            pattern: "\\[✅\\s*LGTM\\]"
+            message: "Clean LGTM BLUF must lead with the [✅ LGTM] status badge."
+          - type: "required_pattern"
+            pattern: "\\n---\\n"
+            message: >-
+              BLUF blockquote must be terminated by a --- horizontal rule.
+
+  - scenario_id: "post_review_checklist_update"
+    description: "Asserts dynamic checklist status updates."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "We agreed to add null check and RPC verification to checklist, and contest the thread-safety false positive. Command: checklist."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(null|RPC|checklist)"
+            message: "Agent must update checklist with agreed items."
+          - type: "required_pattern"
+            pattern: "(CONTEST|thread-safety|false positive)"
+            message: "Agent must record accepted CONTEST rationales in the checklist."
+
+  - scenario_id: "exec_protocol_adherence"
+    description: "Enforces step-by-step sequential execution without skipping."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "User approved checklist in egm_lite_checklist.md. Command: exec."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(RequestHandler|exec|implement)"
+            message: "Agent must acknowledge execution of approved checklist items."
+          - type: "required_pattern"
+            pattern: "(- \\[x\\]|egm_lite_checklist\\.md)"
+            message: "Agent must mark completed checklist tasks with - [x]."
+          - type: "required_pattern"
+            pattern: "(review|goldfish)"
+            message: "Agent must gate on prompting for review or goldfish."
+
+  - scenario_id: "fast_path_exec_initializes_checklist"
+    description: "Verifies fast-path exec from Critique Pause or Resolution Gate initializes egm_lite_checklist.md before executing."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "We aligned on adding jitter to RequestHandler during Section 1 Critique Pause and want to skip the Section 2 pause. Command: exec. Describe your exact steps."
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm_lite_checklist\\.md"
+            message: "Fast-path exec must still create or update egm_lite_checklist.md before coding."
+          - type: "required_pattern"
+            pattern: "- \\[x\\]"
+            message: "Fast-path exec must mark completed checklist items with - [x]."
+          - type: "required_pattern"
+            pattern: "(review|goldfish)"
+            message: "Fast-path exec must still gate on review or goldfish."
+
+  - scenario_id: "code_references_and_navigation_links"
+    description: "Asserts clickable links and navigation hygiene."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: "Review diff on RequestHandler touching src/RequestHandler.java."
+        assertions:
+          - type: "required_pattern"
+            pattern: "\\[[^\\]]+\\]\\([^\\)]+\\)"
+            message: "Local references must use clickable markdown links."
+
+  - scenario_id: "fresh_context_delegation_guard"
+    description: >-
+      Verifies Section 4 requires a fresh-context subagent tool and stops if no
+      subagent tool is available rather than running a same-context review.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          Using Section 4 of EGM-Lite, here is my command: goldfish. Note that
+          this harness does not expose any subagent tool (no invoke_subagent,
+          Agent, or spawn_agent). How do you proceed under Section 4?
+        assertions:
+          - type: "required_pattern"
+            pattern: "(stop|not a Goldfish review|same-context|fresh)"
+            message: >-
+              Agent must stop and explain that a same-context review is not a
+              Goldfish review when no subagent tool is available.
+
+  - scenario_id: "pre_review_exclusion_and_materiality_floor"
+    description: >-
+      Verifies Phase 2 persists pre-review exclusions in egm_lite_checklist.md
+      and Phase 4 instructs the Goldfish subagent to skip pre-review exclusions
+      and stylistic nitpicks.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          During Phase 1 we agreed to exclude legacy metric migration from scope
+          for RequestHandler. How do you record this in Section 2 (checklist)
+          and how does Section 4 (review) prevent the Goldfish subagent from
+          re-flagging it or raising stylistic nitpicks?
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm_lite_checklist\\.md"
+            message: >-
+              Agent must record pre-review exclusions in egm_lite_checklist.md.
+          - type: "required_pattern"
+            pattern: "(pre-review exclusion|exclude|skip)"
+            message: >-
+              Section 4 must instruct the Goldfish subagent to skip pre-review
+              exclusions recorded in the checklist.
+          - type: "required_pattern"
+            pattern: "(material|nitpick|stylistic)"
+            message: >-
+              Section 4 must restrict findings to material issues and suppress
+              stylistic nitpicks.
+
+  - scenario_id: "readme_grounding_and_inline_checklist_comments"
+    description: >-
+      Verifies Section 1 grounds in target files, direct callers or tests, and
+      any existing directory README.md or user-cited doc, and Section 3 applies
+      inline comments left on egm_lite_checklist.md.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          1) Under Section 1, which local files and documentation must you read
+          during grounding? 2) Under Section 3, if the user leaves an inline
+          comment on egm_lite_checklist.md when approving, how do you handle it?
+        assertions:
+          - type: "required_pattern"
+            pattern: "(caller|test)"
+            message: >-
+              Section 1 grounding must include direct callers or tests of target
+              files.
+          - type: "required_pattern"
+            pattern: "README\\.md"
+            message: >-
+              Section 1 grounding must include any existing directory README.md
+              or user-cited doc.
+          - type: "required_pattern"
+            pattern: "(inline|comment|adjustment)"
+            message: >-
+              Section 3 must apply inline comments on egm_lite_checklist.md
+              before implementing.
+
+  - scenario_id: "exec_conditional_bluf_escalation_and_multifile"
+    description: >-
+      Verifies Section 3 leads with a > **BLUF:** on escalation halts,
+      autonomous self-repairs, or multi-file changes while omitting it on clean
+      single-target runs.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          Under Section 3 (EXEC PROTOCOL), when must your output lead with a
+          > **BLUF:** blockquote and when must you omit it?
+        assertions:
+          - type: "required_pattern"
+            pattern: "(Escalation|multi-file|self-repair)"
+            message: >-
+              Section 3 must require a > **BLUF:** on escalation halts,
+              multi-file changes, or autonomous self-repairs.
+          - type: "required_pattern"
+            pattern: "(single-target|omit)"
+            message: >-
+              Section 3 must omit > **BLUF:** on clean single-target runs.
+
+  - scenario_id: "alternatives_considered_artifact"
+    description: >-
+      Verifies multiple viable approaches are documented in
+      egm_lite_alternatives.md during Critique Pause.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite We can either add a local in-memory LRU cache or query
+          database read-only replicas to fix the lookup latency in
+          RequestHandler. Which approach should we take and how do you document
+          the alternatives?
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm_lite_alternatives\\.md"
+            message: >-
+              Agent must document competing approaches in
+              egm_lite_alternatives.md.
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
+            message: >-
+              Critique pause and alternatives artifact must use a > **BLUF:**
+              blockquote.
+          - type: "required_pattern"
+            pattern: "\\n---\\n"
+            message: >-
+              BLUF blockquote must be terminated by a --- horizontal rule.
+          - type: "required_pattern"
+            pattern: "(without.*inline|not.*inline|link.*artifact)"
+            message: >-
+              Agent must link egm_lite_alternatives.md in chat without
+              discussing alternatives inline.
+          - type: "required_pattern"
+            pattern: "(checklist|exec)"
+            message: >-
+              Agent must still gate on checklist or exec at the end of the
+              Critique Pause.

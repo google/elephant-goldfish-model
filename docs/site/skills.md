@@ -35,7 +35,11 @@ The default review follows the software design workflow. Custom review lets you 
 
 ## Work with code
 
-Document a codebase and check whether it matches the plan.
+Document a codebase, make targeted changes, and check whether code matches the plan.
+
+- [Lite](/skills/egm-lite) `/egm-lite`
+
+  Fast-track small iterations, spec revisions, refactors, and bug fixes.
 
 - [Document a codebase](/skills/egm-bootstrap) `/egm-bootstrap`
 
