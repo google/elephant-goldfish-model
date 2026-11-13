@@ -26,7 +26,7 @@ Use Review for a software design document. For another type of document, use [Cu
 
 ## What you get
 
-One report for each stage, or one combined report. A review uses several AI agents, so it uses more of your model allowance than a normal conversation.
+One report for each stage, or one combined report (`consolidated_review_report.md`). A review uses several AI agents, so it uses more of your model allowance than a normal conversation.
 
 ## Example
 

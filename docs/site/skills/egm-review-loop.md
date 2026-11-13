@@ -15,7 +15,7 @@ Use Custom review when you want to choose the reviewers and the standards. It re
 
 ## What you get
 
-A report of the findings and a document that contains the fixes you approved.
+A report of the findings (`goldfish_review_report.md`) and a document that contains the fixes you approved.
 
 ## Example
 
