@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EECS481_HW3_Submission",
+  "type": "object",
+  "required": [
+    "contributor_id",
+    "repository",
+    "pr_number",
+    "ground_truth_is_bad",
+    "decision",
+    "detected_defects",
+    "review_summary"
+  ],
+  "properties": {
+    "contributor_id": { "type": "string" },
+    "repository": { "type": "string" },
+    "pr_number": { "type": "integer", "minimum": 1 },
+    "ground_truth_is_bad": { "type": "boolean" },
+    "decision": { "type": "string", "enum": ["ACCEPT", "REJECT", "REQUEST_CHANGES"] },
+    "detected_defects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "line", "severity", "explanation"],
+        "properties": {
+          "file": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "severity": { "type": "string", "enum": ["CRITICAL", "MAJOR", "MINOR"] },
+          "explanation": { "type": "string" }
+        }
+      }
+    },
+    "review_summary": { "type": "string" }
+  }
+}

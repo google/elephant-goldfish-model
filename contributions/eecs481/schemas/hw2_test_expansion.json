@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EECS481_HW2_Submission",
+  "type": "object",
+  "required": [
+    "contributor_id",
+    "target_project",
+    "baseline_commit",
+    "baseline_test_count",
+    "final_test_count",
+    "baseline_coverage_percent",
+    "final_coverage_percent",
+    "test_cases"
+  ],
+  "properties": {
+    "contributor_id": { "type": "string" },
+    "target_project": { "type": "string" },
+    "baseline_commit": { "type": "string" },
+    "baseline_test_count": { "type": "integer", "minimum": 1 },
+    "final_test_count": { "type": "integer", "minimum": 1 },
+    "baseline_coverage_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+    "final_coverage_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+    "test_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["test_name", "test_code", "targets_defect"],
+        "properties": {
+          "test_name": { "type": "string" },
+          "test_code": { "type": "string" },
+          "targets_defect": { "type": "boolean" },
+          "defect_description": { "type": "string" }
+        }
+      }
+    }
+  }
+}
