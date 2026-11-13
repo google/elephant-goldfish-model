@@ -67,7 +67,7 @@ for (const output of [rendered.code, exported]) {
   assert.ok(!output.includes('blob/main/site/public/favicon.svg'));
 }
 
-const pages = ['install', 'guide', 'getting-started', 'workflow', 'skills', 'skills/egm-bootstrap', 'skills/egm-brainstorm', 'skills/egm-draft', 'skills/egm-drift-report', 'skills/egm-resolve', 'skills/egm-review', 'skills/egm-review-loop'];
+const pages = ['install', 'guide', 'getting-started', 'workflow', 'skills', 'skills/egm-bootstrap', 'skills/egm-brainstorm', 'skills/egm-draft', 'skills/egm-drift-report', 'skills/egm-lite', 'skills/egm-resolve', 'skills/egm-review', 'skills/egm-review-loop'];
 const skillNames = (await readdir(new URL('../../skills/', import.meta.url), { withFileTypes: true }))
   .filter(entry => entry.isDirectory()).map(entry => entry.name);
 for (const name of skillNames) {

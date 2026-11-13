@@ -46,6 +46,7 @@ export default defineConfig({
         { label: 'Draft', slug: 'skills/egm-draft' },
         { label: 'Review', slug: 'skills/egm-review' },
         { label: 'Resolve findings', slug: 'skills/egm-resolve' },
+        { label: 'Lite', slug: 'skills/egm-lite' },
         { label: 'Custom review', slug: 'skills/egm-review-loop' },
         { label: 'Document a codebase', slug: 'skills/egm-bootstrap' },
         { label: 'Check for drift', slug: 'skills/egm-drift-report' },
@@ -63,7 +64,7 @@ export default defineConfig({
     '/docs/getting-started': '/getting-started',
     '/docs/workflow': '/workflow',
     '/docs/skills': '/skills',
-    ...Object.fromEntries(['bootstrap', 'brainstorm', 'draft', 'drift-report', 'resolve', 'review', 'review-loop'].map(skill => [`/docs/skills/egm-${skill}`, `/skills/egm-${skill}`])),
+    ...Object.fromEntries(['bootstrap', 'brainstorm', 'draft', 'drift-report', 'lite', 'resolve', 'review', 'review-loop'].map(skill => [`/docs/skills/egm-${skill}`, `/skills/egm-${skill}`])),
   },
 
   fonts: [
