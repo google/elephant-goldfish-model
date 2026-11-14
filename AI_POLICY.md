@@ -17,16 +17,18 @@ review, understand, and explain every submitted change.
    * **a)** Reach out to maintainers first via a
      [Feature Inquiry Issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
      (`.github/ISSUE_TEMPLATE/feature_proposal.md`) to receive
-     `design-ready`.
+     `design-ready` (idea approved to write a design).
    * **b)** Submit and merge a full EGM design document PR
      (`docs/designs/<name>.md` authored via `/egm-brainstorm`, `/egm-draft`,
      and `/egm-review`, referencing the issue with `Refs #<issue>`) so
-     maintainers can apply `pr-ready` to the Feature Inquiry Issue.
+     automation transitions the Feature Inquiry Issue to `pr-ready` (design
+     approved to write and merge the implementation PR).
    * **c)** Submit and merge an implementation PR of the approved design into
      the codebase (`Closes #<issue>`).
 
-   A contributor can open (b) and (c) before the labels are applied, as a stack
-   of pull requests. Each one needs its label to merge. See
+   A contributor can prepare (b) and (c) early as a draft stack; Stage 1 needs
+   `design-ready` alignment and Stage 2 merges after Stage 1 lands and
+   `pr-ready` is applied. See
    [CONTRIBUTING.md](CONTRIBUTING.md#stacked-pull-requests-and-size).
 4. **No Artificial PR Splitting**: Do not artificially split a single logical
    feature or refactoring into multiple smaller pull requests (e.g., two 60-line PRs)

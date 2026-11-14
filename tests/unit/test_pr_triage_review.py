@@ -1258,3 +1258,16 @@ def test_feature_proposal_template_and_issue_triage_workflow() -> None:
   assert job["timeout-minutes"] == 5
   assert job["permissions"] == {"issues": "write"}
   assert "@" in job["steps"][0]["uses"]
+
+
+def test_design_pr_merged_workflow_hardening() -> None:
+  wf_path = ROOT / ".github/workflows/design-pr-merged.yml"
+  raw = wf_path.read_text()
+  wf = yaml.safe_load(raw)
+  assert wf["permissions"] == {}
+  assert "zizmor: ignore[dangerous-triggers]" in raw
+  job = wf["jobs"]["transition-design-pr"]
+  assert job["if"] == "github.event.pull_request.merged == true"
+  assert job["timeout-minutes"] == 5
+  assert job["permissions"] == {"pull-requests": "read", "issues": "write"}
+  assert "@" in job["steps"][0]["uses"]

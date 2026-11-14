@@ -45,9 +45,12 @@ Example: `Explain ignored agents folder warning in Claude Code`.
 
 Add applicable labels: `docs` for documentation, `site` for the website,
 `ci` for GitHub Actions, or `deps` for dependencies. If you cannot apply labels,
-suggest them in the PR description. Maintainers control `design-ready` and
-`pr-ready`. A PR needs its label to merge. You can open the PR earlier.
-Automation manages `design-needed` and `triage: passed`.
+suggest them in the PR description. Maintainers apply `design-ready` when an
+idea is approved to write a design. When the Stage 1 Design Doc PR merges,
+automation swaps the issue label to `pr-ready` (design approved to write and
+merge the implementation PR). You can open Stage 1 or stacked Stage 2 PRs
+earlier; Stage 2 needs `pr-ready` to merge. Automation manages `design-needed`
+and `triage: passed`.
 
 All contributions must comply with our [AI & Automated Contribution Policy](AI_POLICY.md):
 every pull request requires a human author who has reviewed and tested the change. They
@@ -73,8 +76,8 @@ follows the EGM Spec-Driven Development process:
     [Feature / Architectural Inquiry Issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
     (`.github/ISSUE_TEMPLATE/feature_proposal.md`) outlining the problem
     statement and proposed `Goals` vs. `Non-Goals`. We recommend using
-    `/egm-brainstorm` to complete this section. Maintainers will review and apply
-    `design-ready` once aligned on direction.
+    `/egm-brainstorm` to complete this section. Maintainers review the idea and
+    apply `design-ready` once it is approved to write a design.
 
 2.  **Draft & Review Design Specification**:
     Draft a technical design specification under `docs/designs/<name>.md`. We
@@ -82,20 +85,21 @@ follows the EGM Spec-Driven Development process:
     We also recommend running `/egm-review docs/designs/<name>.md` to stress-test
     the proposal.
 
-3.  **Submit a Design Doc PR and wait for `pr-ready`**:
-    You can open this PR before `design-ready` is applied. It merges after.
-    Open a dedicated **Design Doc PR** containing `docs/designs/<name>.md`
-    and `docs/designs/README.md` (referencing your aligned issue with
+3.  **Submit and Merge a Design Doc PR (`pr-ready`)**:
+    Once the issue has `design-ready` (or earlier as a draft), open a dedicated
+    **Design Doc PR** containing `docs/designs/<name>.md` and
+    `docs/designs/README.md` (referencing your aligned issue with
     `Refs #<issue>` rather than `Closes #<issue>` so the issue stays open).
-    When maintainers merge the Design Doc PR, the specification is checked into
-    the codebase and maintainers manually transition the issue label to
-    `pr-ready`.
+    When maintainers approve and merge the Design Doc PR, the specification is
+    checked into the codebase and automation updates the issue from
+    `design-ready` to `pr-ready` (design approved to write and merge the
+    implementation PR).
 
 4.  **Submit the Implementation PR**:
-    Open the implementation PR (`Closes #<issue>`) referencing
-    `docs/designs/<name>.md`. It merges after the specification merges and the
-    issue has `pr-ready`. To start early, stack it on the Design Doc PR as a
-    draft.
+    Once `pr-ready` is on the issue (design approved and merged), write and
+    submit the implementation PR (`Closes #<issue>`) referencing
+    `docs/designs/<name>.md`. To start early, stack it on the Design Doc PR as a
+    draft until Stage 1 merges and `pr-ready` is applied.
 
 ### Stacked Pull Requests and Size
 
