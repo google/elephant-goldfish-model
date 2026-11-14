@@ -1,0 +1,232 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Triage new issues
+
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  issue-triage:
+    name: "Assign Issue Type and Topical Labels"
+    if: github.event.issue.pull_request == null
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write # Required to set native issue type and add topical labels
+    steps:
+      - name: "Classify Issue Type and Topical Labels"
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const issuePayload = context.payload.issue;
+            if (!issuePayload || issuePayload.pull_request) {
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const issueNumber = issuePayload.number;
+
+            const data = await github.graphql(
+              `query($owner: String!, $repo: String!, $issueNumber: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  issueTypes(first: 25) {
+                    nodes { id name }
+                  }
+                  labels(first: 100) {
+                    nodes { name }
+                  }
+                  issue(number: $issueNumber) {
+                    id
+                    title
+                    body
+                    issueType { id name }
+                    labels(first: 50) {
+                      nodes { name }
+                    }
+                    timelineItems(first: 100, itemTypes: [UNLABELED_EVENT, ISSUE_TYPE_REMOVED_EVENT, ISSUE_TYPE_CHANGED_EVENT]) {
+                      nodes {
+                        __typename
+                        ... on UnlabeledEvent {
+                          actor { login }
+                          label { name }
+                        }
+                        ... on IssueTypeRemovedEvent {
+                          actor { login }
+                        }
+                        ... on IssueTypeChangedEvent {
+                          actor { login }
+                        }
+                      }
+                    }
+                  }
+                }
+              }`,
+              { owner, repo, issueNumber }
+            );
+
+            const repository = data.repository;
+            const issue = repository?.issue;
+            if (!issue) {
+              return;
+            }
+            const title = issue.title || "";
+            const body = issue.body || "";
+            const text = `${title}\n${body}`;
+
+            const timeline = issue.timelineItems?.nodes || [];
+            const isHumanActor = actor => Boolean(actor?.login) && actor.login !== "github-actions[bot]" && !actor.login.endsWith("[bot]");
+
+            const humanEditedType = timeline.some(
+              item => (item.__typename === "IssueTypeRemovedEvent" || item.__typename === "IssueTypeChangedEvent") && isHumanActor(item.actor)
+            );
+            const humanRemovedLabels = new Set(
+              timeline
+                .filter(item => item.__typename === "UnlabeledEvent" && isHumanActor(item.actor) && item.label?.name)
+                .map(item => item.label.name)
+            );
+
+            // 1. Issue Type classification (preserve existing type or human-cleared type)
+            const eligibleTypes = new Map(
+              (repository.issueTypes?.nodes || [])
+                .filter(t => ["Bug", "Feature", "Task"].includes(t.name))
+                .map(t => [t.name, t.id])
+            );
+
+            let selectedType = null;
+            if (!issue.issueType?.name && !humanEditedType) {
+              const hasBugTemplate = /^## Expected Behavior[ \t]*\r?$/m.test(body) && /^## Actual Behavior[ \t]*\r?$/m.test(body);
+              const hasFeatureTemplate = /^## Problem Statement & Motivation[ \t]*\r?$/m.test(body) && /^## Proposed Scope \(Goals vs\. Non-Goals\)[ \t]*\r?$/m.test(body);
+              const hasTaskTemplate = /^## Objective[ \t]*\r?$/m.test(body) && /^## Completion Criteria[ \t]*\r?$/m.test(body);
+
+              const templateMatches = [
+                hasBugTemplate && "Bug",
+                hasFeatureTemplate && "Feature",
+                hasTaskTemplate && "Task"
+              ].filter(Boolean);
+
+              if (templateMatches.length === 1) {
+                selectedType = templateMatches[0];
+              } else if (templateMatches.length === 0) {
+                const bugSignal = /\b(fails?|failed|failure|regres(?:sion|ses|sed)|broken|crash(?:es|ed)?|error|incorrect|bug)\b/i.test(text);
+                const featureSignal = /\b(new capability|add support|feature request|propose|allow users to|introduce)\b/i.test(text);
+                const taskSignal = /\b(maintenance|follow-up|clean ?up|refactor|correct an outdated|add a regression test|update (?:a )?pinned|update docs)\b/i.test(text);
+
+                const signalMatches = [
+                  bugSignal && "Bug",
+                  featureSignal && "Feature",
+                  taskSignal && "Task"
+                ].filter(Boolean);
+
+                if (signalMatches.length === 1) {
+                  selectedType = signalMatches[0];
+                }
+              }
+            }
+
+            if (selectedType && eligibleTypes.has(selectedType)) {
+              await github.graphql(
+                `mutation($issueId: ID!, $issueTypeId: ID!) {
+                  updateIssue(input: { id: $issueId, issueTypeId: $issueTypeId }) {
+                    issue { id }
+                  }
+                }`,
+                {
+                  issueId: issue.id,
+                  issueTypeId: eligibleTypes.get(selectedType)
+                }
+              );
+            }
+
+            // 2. Topical Label classification (strictly allowlisted, existing in repo, additive)
+            const allowedTopicalLabels = [
+              "ci",
+              "tests",
+              "deps",
+              "docs",
+              "site",
+              "harness",
+              "isolation",
+              "release"
+            ];
+            const excludedLabels = new Set([
+              "design-ready",
+              "pr-ready",
+              "design-needed",
+              "advisory: design-doc-suggested"
+            ]);
+            const repoLabels = new Set((repository.labels?.nodes || []).map(l => l.name));
+            const currentLabels = new Set((issue.labels?.nodes || []).map(l => l.name));
+
+            const labelRules = [
+              {
+                label: "ci",
+                pattern: /\b(github actions|actions (?:job|workflow|run)|(?:ci|actions) workflows?|workflow (?:configuration|execution|permissions?|runs?|files?|jobs?)|token lacks|pull_request_target|zizmor|\.github\/workflows)\b/i
+              },
+              {
+                label: "tests",
+                pattern: /\b(test coverage|fixtures?|assertions?|regression test|unit tests?|pytest|test suite|tests\/)\b/i
+              },
+              {
+                label: "deps",
+                pattern: /\b(dependenc(?:y|ies)|pinned dependency|vulnerability|cve|dependabot|lockfile|package-lock\.json|pip install)\b/i
+              },
+              {
+                label: "docs",
+                pattern: /\b(documentation|readme(?:\.md)?|contributing\.md|installation command|outdated \w+ command|docs\/|examples? or instructions)\b/i
+              },
+              {
+                label: "site",
+                pattern: /\b(egm\.dev|website|guide sidebar|sidebar|site navigation|web rendering|mobile viewport|deploy-site)\b/i
+              },
+              {
+                label: "harness",
+                pattern: /\b(host (?:integration|installation|adapter)|claude cowork|claude code|codex|cursor|copilot|opencode|antigravity|fails to install in|harness compatibility)\b/i
+              },
+              {
+                label: "isolation",
+                pattern: /\b(isolation|reviewer context|instruction leakage|drafting conversation|subagent|contaminated|context leak)\b/i
+              },
+              {
+                label: "release",
+                pattern: /\b(release artifacts?|plugin bundle|manifest|packaging|publishing|release\.yml|version tag)\b/i
+              }
+            ];
+
+            const labelsToAdd = [];
+            for (const { label, pattern } of labelRules) {
+              if (!allowedTopicalLabels.includes(label)) continue;
+              if (excludedLabels.has(label)) continue;
+              if (!repoLabels.has(label)) continue;
+              if (currentLabels.has(label)) continue;
+              if (humanRemovedLabels.has(label)) continue;
+              if (pattern.test(text)) {
+                labelsToAdd.push(label);
+              }
+            }
+
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                labels: labelsToAdd
+              });
+            }
