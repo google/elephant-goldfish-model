@@ -1,0 +1,6 @@
+interface:
+  display_name: "EGM Diagnose"
+  short_description: "Diagnose bugs without sharing the first hypothesis"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#E86E00"

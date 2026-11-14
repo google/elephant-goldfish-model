@@ -3,7 +3,7 @@ import PageActions from './PageActions.astro';
 import SkillIcon from '../SkillIcon.astro';
 const { entry, toc } = Astro.locals.starlightRoute;
 const name = entry.id.startsWith('skills/') ? entry.id.split('/')[1] : undefined;
-const skill = name?.slice(4).replaceAll('-', '_') as 'brainstorm' | 'draft' | 'review' | 'resolve' | 'review_loop' | 'bootstrap' | 'drift_report' | undefined;
+const skill = name?.slice(4).replaceAll('-', '_') as 'brainstorm' | 'draft' | 'review' | 'resolve' | 'review_loop' | 'bootstrap' | 'drift_report' | 'diagnose' | undefined;
 ---
 <h1 id="_top">{skill && <SkillIcon skill={skill} />}{entry.data.title}</h1>
 {entry.data.description && <p class="description">{entry.data.description}</p>}

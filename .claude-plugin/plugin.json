@@ -17,6 +17,7 @@
   "termsOfServiceUrl": "https://github.com/google/elephant-goldfish-model/blob/main/LICENSE",
   "agents": [
     "./.claude-plugin/agents/bootstrap_orchestrator.md",
+    "./.claude-plugin/agents/bug_diagnosis.md",
     "./.claude-plugin/agents/codebase_details.md",
     "./.claude-plugin/agents/comprehension.md",
     "./.claude-plugin/agents/design_critic.md",

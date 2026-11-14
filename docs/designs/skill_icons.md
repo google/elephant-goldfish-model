@@ -5,7 +5,7 @@ Author: @n3wth. Date: 2026-10-25.
 
 ## Purpose and scope
 
-Use the same seven skill marks in plugin pickers, the README, and egm.dev.
+Use the same eight skill marks in plugin pickers, the README, and egm.dev.
 The approved artwork uses familiar silhouettes with two color facets. This
 change replaces the existing skill artwork; it does not change skill behavior,
 reviewer permissions, installation, or the Elephant-Goldfish logo.
@@ -26,6 +26,7 @@ artwork; do not normalize individual bounding boxes or stroke widths.
 | Drift report | Touching, offset halves: document and code diverge | `#e86e00` / `#ff8d41` |
 | Review | Magnifier: inspect the document | `#e86e00` / `#ff8d41` |
 | Review loop | Circular arrow: repeat review | `#e86e00` / `#ff8d41` |
+| Diagnose | Magnifier with an exclamation point: investigate a failure | `#e86e00` / `#ff8d41` |
 
 ## Consumers
 
@@ -45,7 +46,7 @@ artwork; do not normalize individual bounding boxes or stroke widths.
 
 Check metadata colors and SVG structure, runtime byte equality, and README
 image inclusion. Website integration receives its own build and visual checks.
-All seven marks must remain legible beside their labels.
+All eight marks must remain legible beside their labels.
 
 The shared artwork and runtime-packaging PR #136 are merged. Artwork and
 metadata checks do not establish native-host workflow support.

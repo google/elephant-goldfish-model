@@ -59,7 +59,7 @@ Do not disable an organization policy or overwrite an existing package.
 
 3. Stop if a command fails. Inspect any partial copy before retrying.
 4. Reload Cursor and inspect the plugin in Customize.
-5. Confirm seven skills, eight EGM reviewers, and the EGM runtime rule.
+5. Confirm eight skills, eight EGM reviewers, and the EGM runtime rule.
 6. Record the absolute package path and installed file checksums.
 
 The copy retains all shared runtime directories and their relative layout.

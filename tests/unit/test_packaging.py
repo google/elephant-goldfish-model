@@ -51,7 +51,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
-    assert len([p for p in names if p.endswith("/SKILL.md")]) == 7
+    assert len([p for p in names if p.endswith("/SKILL.md")]) == 8
     for skill in source.glob("skills/*/SKILL.md"):
       prefix = skill.parent.relative_to(source)
       metadata = yaml.safe_load(bundle.read((prefix / "agents/openai.yaml").as_posix()))
@@ -68,6 +68,8 @@ def test_runtime_bundle_is_complete_and_reproducible(
     assert "skills/egm-bootstrap/references/templates.md" in names
     assert "resources/document_standards/feature-spec-standard.md" in names
     assert "agents/design_critic.md" in names
+    assert "agents/bug_diagnosis.md" in names
+    assert (".claude-plugin/agents/bug_diagnosis.md" in names) == (target == "claude")
     assert "docs/codex.md" in names
     assert "docs/claude.md" in names
     assert "assets/icon.svg" in names
@@ -106,6 +108,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
     ("resolve", "#1b6ef3", "#7cacf8"),
     ("drift_report", "#e86e00", "#ff8d41"),
     ("review", "#e86e00", "#ff8d41"),
+    ("diagnose", "#e86e00", "#ff8d41"),
     ("review_loop", "#e86e00", "#ff8d41"),
 ])
 def test_skill_icon_and_host_palette_match(skill: str, base: str, facet: str) -> None:
