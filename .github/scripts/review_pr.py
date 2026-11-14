@@ -55,6 +55,78 @@ MAX_PROMPT_DIFF_BYTES = 120_000
 MAX_FILE_PATCH_BYTES = 24_000
 CLEAN_PASS_LABEL = "triage: passed"
 MAINTAINERS_TEAM_SLUG = "egm-maintainers"
+N3WTH_LOGIN = "n3wth"
+DESIGN_REVIEWERS: tuple[str, ...] = ("briansuchy", "eewing314")
+SITE_PATH_PREFIXES: tuple[str, ...] = ("site/", "docs/site/")
+PLATFORM_PATH_PREFIXES: tuple[str, ...] = (
+    "adapters/",
+    ".claude-plugin/",
+    ".codex-plugin/",
+    "com.github.copilot/",
+    ".cursor-plugin/",
+    ".plugin/",
+    ".windsurf/",
+    ".agents/",
+)
+PLATFORM_DOC_FILES: frozenset[str] = frozenset({
+    "docs/claude.md",
+    "docs/codex.md",
+    "docs/copilot.md",
+    "docs/cursor.md",
+    "docs/harnesses.md",
+    "docs/muse.md",
+    "docs/opencode.md",
+    "gemini-extension.json",
+    "plugin.json",
+})
+GEMINI_REVIEW_CONFIG_FILES: frozenset[str] = frozenset({
+    ".gemini/config.yaml",
+    ".gemini/styleguide.md",
+})
+PLATFORM_LABELS: frozenset[str] = frozenset({
+    "adapters",
+    "egm.dev",
+    "platform",
+    "site",
+})
+DESIGN_LABELS: frozenset[str] = frozenset({
+    "design",
+    "design-review",
+    "stage-1",
+})
+STAGE1_TRACK = "Feature / Architectural Change -- Stage 1: Design Doc PR"
+STAGE2_TRACK = "Feature / Architectural Change -- Stage 2: Implementation PR"
+VALID_TRACKS: frozenset[str] = frozenset({
+    "Bug Fix / Minor Patch",
+    STAGE1_TRACK,
+    STAGE2_TRACK,
+})
+HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+CONTRIBUTION_TRACK_HEADING_RE = re.compile(
+    r"^##\s+Contribution\s+Type[ \t]*\r?$", re.MULTILINE
+)
+NEXT_SECTION_HEADING_RE = re.compile(r"^##[ \t]+", re.MULTILINE)
+TRACK_LINE_RE = re.compile(
+    r"^[ \t]*Track:[ \t]*(.*)$", re.IGNORECASE | re.MULTILINE
+)
+TRACK_CHECKBOX_RE = re.compile(
+    r"^[ \t]*(?:[-*][ \t]+)?\[[xX]\][ \t]*\*\*([^*\r\n]+)\*\*", re.MULTILINE
+)
+PLATFORM_TEXT_RE = re.compile(
+    r"\begm\.dev\b|"
+    r"\b(?:ai\s+platform\s+adapter|platform\s+adapter|new\s+(?:ai\s+)?(?:platform\s+)?adapter|"
+    r"harness\s+adapter|platform\s+handle)\b|"
+    r"\b(?:claude|codex|copilot|cursor|gemini|windsurf|opencode)\b"
+    r".{0,40}\b(?:adapter|handle|plugin|extension)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+PR_ISSUE_REF_RE = re.compile(
+    r"(?:design(?:\s+doc)?(?:\s+pr)?|stage\s*1|closes|fixes|resolves|refs?)"
+    r"\s*[:#]?\s*(?:https://github\.com/[^/\s]+/[^/\s]+/(?:pull|issues)/|#)"
+    r"(\d+)",
+    re.IGNORECASE,
+)
+DESIGN_DOC_REF_RE = re.compile(r"docs/designs/([A-Za-z0-9_.-]+\.md)\b")
 
 RETRYABLE_HTTP_STATUSES: frozenset[int] = frozenset({429, 500, 502, 503, 504})
 FALLBACK_GEMINI_HTTP_STATUSES: frozenset[int] = frozenset({
@@ -1018,6 +1090,368 @@ def needs_maintainer_assignment(
   return True
 
 
+def _strip_html_comments(text: str) -> str:
+  return HTML_COMMENT_RE.sub("", text or "")
+
+
+def parse_pr_track(body: str) -> str:
+  """Extracts the single selected Contribution Type track from a PR body."""
+  cleaned = _strip_html_comments(body)
+  match = CONTRIBUTION_TRACK_HEADING_RE.search(cleaned)
+  if not match:
+    return ""
+  after_heading = cleaned[match.end():]
+  next_sec = NEXT_SECTION_HEADING_RE.search(after_heading)
+  section = after_heading[: next_sec.start()] if next_sec else after_heading
+  selected = [
+      m.group(1).strip() for m in TRACK_LINE_RE.finditer(section) if m.group(1).strip()
+  ] + [
+      m.group(1).strip()
+      for m in TRACK_CHECKBOX_RE.finditer(section)
+      if m.group(1).strip()
+  ]
+  if len(selected) == 1 and selected[0] in VALID_TRACKS:
+    return selected[0]
+  return ""
+
+
+def _is_platform_or_site_path(path: str) -> bool:
+  normalized = path.strip().lstrip("/")
+  if not normalized:
+    return False
+  if normalized.startswith(SITE_PATH_PREFIXES) or normalized.startswith(
+      PLATFORM_PATH_PREFIXES
+  ):
+    return True
+  if normalized in PLATFORM_DOC_FILES:
+    return True
+  if (
+      normalized.startswith(".gemini/")
+      and normalized not in GEMINI_REVIEW_CONFIG_FILES
+  ):
+    return True
+  if normalized.startswith("docs/designs/"):
+    name = pathlib.PurePosixPath(normalized).name.lower()
+    if any(tok in name for tok in ("adapter", "harness", "platform", "site")):
+      return True
+  return False
+
+
+def _is_site_or_platform_pr(
+    pr_data: Mapping[str, Any],
+    files: Sequence[Mapping[str, Any]],
+) -> bool:
+  for file_info in files:
+    for key in ("filename", "previous_filename"):
+      if _is_platform_or_site_path(str(file_info.get(key) or "")):
+        return True
+  labels = {
+      str(lbl.get("name") or "").strip().lower()
+      for lbl in (pr_data.get("labels") or ())
+  }
+  if labels & PLATFORM_LABELS:
+    return True
+  title = _strip_html_comments(str(pr_data.get("title") or ""))
+  body = _strip_html_comments(str(pr_data.get("body") or ""))
+  return bool(PLATFORM_TEXT_RE.search(f"{title}\n{body}"))
+
+
+def _pick_from_pool(
+    pr_number: int, pool: Sequence[str], *, exclude: str = ""
+) -> str:
+  excluded = exclude.strip().lower()
+  eligible = [login for login in pool if login.lower() != excluded]
+  candidates = eligible or list(pool)
+  if not candidates:
+    return ""
+  return candidates[pr_number % len(candidates)]
+
+
+def _extract_issue_or_pr_refs(
+    body: str, *, exclude_pr: int
+) -> list[int]:
+  refs: list[int] = []
+  seen: set[int] = {exclude_pr}
+  for match in PR_ISSUE_REF_RE.finditer(_strip_html_comments(body)):
+    num = int(match.group(1))
+    if num > 0 and num not in seen:
+      seen.add(num)
+      refs.append(num)
+  return refs
+
+
+def _reviewer_from_pr_reviews(
+    target_pr: Mapping[str, Any],
+    reviews: Sequence[Mapping[str, Any]],
+    *,
+    stage2_author: str,
+) -> str:
+  stage1_author = str(
+      (target_pr.get("user") or target_pr.get("author") or {}).get("login", "")
+  )
+  excluded_stage2 = stage2_author.strip().lower()
+  approved_reviewer = ""
+  fallback_reviewer = ""
+  for review in reviews:
+    if not _is_trusted_human_reviewer(review, pr_author=stage1_author):
+      continue
+    login = str((review.get("user") or review.get("author") or {}).get("login", ""))
+    if not login or login.lower() == excluded_stage2:
+      continue
+    state = str(review.get("state") or "").upper()
+    if state == "APPROVED":
+      approved_reviewer = login
+    elif state in ("COMMENTED", "CHANGES_REQUESTED"):
+      fallback_reviewer = login
+  if approved_reviewer:
+    return approved_reviewer
+  if fallback_reviewer:
+    return fallback_reviewer
+
+  preferred: list[str] = []
+  others: list[str] = []
+  design_pool = {login.lower() for login in DESIGN_REVIEWERS}
+  for req in target_pr.get("requested_reviewers") or ():
+    if _is_bot_actor(req):
+      continue
+    login = str((req or {}).get("login") or "")
+    if (
+        not login
+        or login.lower() == stage1_author.lower()
+        or login.lower() == excluded_stage2
+    ):
+      continue
+    if login.lower() in design_pool:
+      preferred.append(login)
+    else:
+      others.append(login)
+  if preferred:
+    return preferred[0]
+  return others[0] if others else ""
+
+
+def _is_design_pr_candidate(
+    pr_obj: Mapping[str, Any],
+    *,
+    files: Sequence[Mapping[str, Any]] = (),
+) -> bool:
+  track = parse_pr_track(str(pr_obj.get("body") or ""))
+  if track == STAGE1_TRACK:
+    return True
+  title = str(pr_obj.get("title") or "").lower()
+  if "design" in title or "stage 1" in title:
+    return True
+  labels = {
+      str(lbl.get("name") or "").strip().lower()
+      for lbl in (pr_obj.get("labels") or ())
+  }
+  if labels & DESIGN_LABELS:
+    return True
+  return any(
+      str(f.get("filename") or "").startswith("docs/designs/") for f in files
+  )
+
+
+def _lookup_pr_reviewer(
+    candidate_pr_number: int,
+    *,
+    repo: str,
+    github_token: str,
+    stage2_author: str,
+    require_design_pr: bool = False,
+) -> str:
+  try:
+    pull_data, _ = _github_request_json(
+        f"{GITHUB_API_BASE}/repos/{repo}/pulls/{candidate_pr_number}",
+        github_token,
+    )
+  except RuntimeError:
+    return ""
+  if not isinstance(pull_data, Mapping) or not pull_data.get("number"):
+    return ""
+  try:
+    pull_files = _github_paginate(
+        f"repos/{repo}/pulls/{candidate_pr_number}/files",
+        github_token,
+        max_pages=2,
+    )
+  except RuntimeError:
+    pull_files = []
+  if require_design_pr and not _is_design_pr_candidate(
+      pull_data, files=pull_files
+  ):
+    return ""
+  try:
+    pull_reviews = _github_paginate(
+        f"repos/{repo}/pulls/{candidate_pr_number}/reviews",
+        github_token,
+        max_pages=2,
+    )
+  except RuntimeError:
+    return ""
+  return _reviewer_from_pr_reviews(
+      pull_data, pull_reviews, stage2_author=stage2_author
+  )
+
+
+def _search_merged_design_prs(
+    query_terms: str,
+    *,
+    repo: str,
+    github_token: str,
+    exclude_pr: int,
+) -> list[int]:
+  encoded = urllib.parse.quote(f"repo:{repo} is:pr is:merged {query_terms}")
+  try:
+    data, _ = _github_request_json(
+        f"{GITHUB_API_BASE}/search/issues?q={encoded}&per_page=10",
+        github_token,
+    )
+  except RuntimeError:
+    return []
+  if not isinstance(data, Mapping):
+    return []
+  items = data.get("items") or ()
+  candidates: list[int] = []
+  for item in items:
+    num = item.get("number")
+    if isinstance(num, int) and num > 0 and num != exclude_pr:
+      candidates.append(num)
+  return candidates
+
+
+def _resolve_stage1_reviewer(
+    pr_number: int,
+    pr_data: Mapping[str, Any],
+    files: Sequence[Mapping[str, Any]],
+    *,
+    repo: str,
+    github_token: str,
+) -> str:
+  if not github_token:
+    return ""
+  stage2_author = str(
+      (pr_data.get("user") or pr_data.get("author") or {}).get("login", "")
+  )
+  body = str(pr_data.get("body") or "")
+  refs = _extract_issue_or_pr_refs(body, exclude_pr=pr_number)
+
+  for ref_num in refs[:5]:
+    reviewer = _lookup_pr_reviewer(
+        ref_num,
+        repo=repo,
+        github_token=github_token,
+        stage2_author=stage2_author,
+        require_design_pr=True,
+    )
+    if reviewer:
+      return reviewer
+
+  for ref_num in refs[:3]:
+    for cand_pr in _search_merged_design_prs(
+        f"#{ref_num}", repo=repo, github_token=github_token, exclude_pr=pr_number
+    )[:5]:
+      reviewer = _lookup_pr_reviewer(
+          cand_pr,
+          repo=repo,
+          github_token=github_token,
+          stage2_author=stage2_author,
+          require_design_pr=True,
+      )
+      if reviewer:
+        return reviewer
+
+  design_slugs: list[str] = []
+  for file_info in files:
+    fname = str(file_info.get("filename") or "")
+    if fname.startswith("docs/designs/") and not fname.endswith("/README.md"):
+      design_slugs.append(pathlib.PurePosixPath(fname).name)
+  for match in DESIGN_DOC_REF_RE.finditer(_strip_html_comments(body)):
+    slug = match.group(1)
+    if slug.lower() != "readme.md" and slug not in design_slugs:
+      design_slugs.append(slug)
+
+  for slug in design_slugs[:3]:
+    for cand_pr in _search_merged_design_prs(
+        slug, repo=repo, github_token=github_token, exclude_pr=pr_number
+    )[:5]:
+      reviewer = _lookup_pr_reviewer(
+          cand_pr,
+          repo=repo,
+          github_token=github_token,
+          stage2_author=stage2_author,
+          require_design_pr=False,
+      )
+      if reviewer:
+        return reviewer
+
+  return ""
+
+
+def select_handoff_reviewers(
+    pr_number: int,
+    pr_data: Mapping[str, Any],
+    files: Sequence[Mapping[str, Any]] = (),
+    *,
+    repo: str = DEFAULT_REPO,
+    team_slug: str = MAINTAINERS_TEAM_SLUG,
+    github_token: str = "",
+) -> tuple[list[str], list[str]]:
+  """Routes clean-handoff PRs to individual reviewers or the maintainer team.
+
+  Returns `(reviewers, team_reviewers)` matching the maintainer routing rules:
+  1. Non-n3wth PRs touching `egm.dev` (`site/`) or AI platform handles/adapters -> `n3wth`
+  2. Core/skills Stage-1 design reviews -> `briansuchy` or `eewing314`
+  3. Core/skills Stage-2 implementations -> Stage-1 design reviewer (fallback to design pool)
+  4. Bug fixes / default -> `team_slug` (`egm-maintainers`) round-robin
+  """
+  clean_team = team_slug.strip()
+  author_login = str(
+      (pr_data.get("user") or pr_data.get("author") or {}).get("login", "")
+  )
+
+  if author_login.lower() != N3WTH_LOGIN and _is_site_or_platform_pr(
+      pr_data, files
+  ):
+    return [N3WTH_LOGIN], []
+
+  track = parse_pr_track(str(pr_data.get("body") or ""))
+  labels = {
+      str(lbl.get("name") or "").strip().lower()
+      for lbl in (pr_data.get("labels") or ())
+  }
+  touches_designs = any(
+      str(file_info.get("filename") or "").startswith("docs/designs/")
+      for file_info in files
+  )
+
+  if (
+      track == STAGE1_TRACK
+      or touches_designs
+      or bool(labels & DESIGN_LABELS)
+  ):
+    reviewer = _pick_from_pool(
+        pr_number, DESIGN_REVIEWERS, exclude=author_login
+    )
+    if reviewer:
+      return [reviewer], []
+    return [], ([clean_team] if clean_team else [])
+
+  if track == STAGE2_TRACK:
+    reviewer = _resolve_stage1_reviewer(
+        pr_number, pr_data, files, repo=repo, github_token=github_token
+    )
+    if not reviewer or reviewer.lower() == author_login.lower():
+      reviewer = _pick_from_pool(
+          pr_number, DESIGN_REVIEWERS, exclude=author_login
+      )
+    if reviewer:
+      return [reviewer], []
+    return [], ([clean_team] if clean_team else [])
+
+  return [], ([clean_team] if clean_team else [])
+
+
 def build_clean_handoff_plan(
     pr_number: int,
     pr_data: Mapping[str, Any],
@@ -1026,19 +1460,40 @@ def build_clean_handoff_plan(
     *,
     repo: str = DEFAULT_REPO,
     team_slug: str = MAINTAINERS_TEAM_SLUG,
+    files: Sequence[Mapping[str, Any]] = (),
+    github_token: str = "",
 ) -> dict[str, Any]:
-  """Builds Stage-1-to-Stage-2 clean handoff plan for the maintainers team."""
+  """Builds Stage-1-to-Stage-2 clean handoff plan for reviewers or team."""
   clean_team = team_slug.strip()
   owner = repo.split("/", 1)[0].strip() if "/" in repo else "google"
-  request_team = needs_maintainer_assignment(
+  request_assignment = needs_maintainer_assignment(
       pr_data, reviews, team_slug=clean_team
   )
+  reviewers: list[str] = []
+  team_reviewers: list[str] = []
+  if request_assignment:
+    reviewers, team_reviewers = select_handoff_reviewers(
+        pr_number,
+        pr_data,
+        files,
+        repo=repo,
+        team_slug=clean_team,
+        github_token=github_token,
+    )
   header = f"<!-- {REVIEW_MARKER_PREFIX}:sha={head_sha} -->"
-  routing_note = (
-      f" Routing to `@{owner}/{clean_team}` for maintainer review."
-      if clean_team
-      else ""
-  )
+  if reviewers:
+    targets = ", ".join(f"`@{login}`" for login in reviewers)
+    routing_note = f" Routing to {targets} for maintainer review."
+  elif team_reviewers:
+    routing_note = (
+        f" Routing to `@{owner}/{team_reviewers[0]}` for maintainer review."
+    )
+  elif clean_team:
+    routing_note = (
+        f" Routing to `@{owner}/{clean_team}` for maintainer review."
+    )
+  else:
+    routing_note = ""
   body = (
       f"{header}\n"
       "Automated first-pass review found zero blocking or major issues."
@@ -1058,7 +1513,8 @@ def build_clean_handoff_plan(
       "head_sha": head_sha,
       "add_labels": [CLEAN_PASS_LABEL],
       "remove_labels": [],
-      "team_reviewers": [clean_team] if (clean_team and request_team) else [],
+      "reviewers": reviewers,
+      "team_reviewers": team_reviewers,
       "review_payload": review_payload,
   }
 
@@ -1571,6 +2027,7 @@ def plan_pr_review(
           "remove_labels": [CLEAN_PASS_LABEL]
           if CLEAN_PASS_LABEL in existing_labels
           else [],
+          "reviewers": [],
           "team_reviewers": [],
           "review_payload": det_payload,
       }
@@ -1586,6 +2043,8 @@ def plan_pr_review(
         current_head_sha,
         repo=repo,
         team_slug=maintainers_team,
+        files=files,
+        github_token=github_token,
     )
     handoff["depth"] = decision.depth
     handoff["reason"] = "NO_REVIEWABLE_DIFF_HANDOFF"
@@ -1678,6 +2137,8 @@ def plan_pr_review(
         current_head_sha,
         repo=repo,
         team_slug=maintainers_team,
+        files=files,
+        github_token=github_token,
     )
     handoff["depth"] = decision.depth
     handoff["model"] = selected_model
@@ -1696,6 +2157,7 @@ def plan_pr_review(
       "remove_labels": [CLEAN_PASS_LABEL]
       if CLEAN_PASS_LABEL in existing_labels
       else [],
+      "reviewers": [],
       "team_reviewers": [],
       "review_payload": payload,
   }

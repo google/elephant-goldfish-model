@@ -1048,7 +1048,8 @@ def test_repo_inventory_and_false_positive_filter_prevent_pr_410_regressions(
   assert "- agents/design_critic.md" in prompts_seen[0]
   assert plan_410["action"] == "clean_handoff"
   assert plan_410["add_labels"] == ["triage: passed"]
-  assert plan_410["team_reviewers"] == ["egm-maintainers"]
+  assert plan_410["reviewers"] == ["briansuchy"]
+  assert plan_410["team_reviewers"] == []
 
   # Converse check: genuine broken path claims (`agents/egm-design.md` or a
   # file deleted in the PR) are preserved and NOT filtered out.
@@ -1077,3 +1078,183 @@ def test_repo_inventory_and_false_positive_filter_prevent_pr_410_regressions(
       parity_checked_deterministically=True,
   )
   assert len(kept) == 2
+
+
+def test_handoff_routing_site_and_platform_adapters_to_n3wth() -> None:
+  for filename in (
+      "site/src/pages/index.astro",
+      "adapters/windsurf/install.py",
+      ".cursor-plugin/plugin.json",
+      "docs/claude.md",
+      ".gemini/extensions/egm.json",
+      "docs/designs/windsurf-adapter.md",
+  ):
+    reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+        501,
+        {"user": {"login": "contributor"}, "title": "Update integration", "body": ""},
+        [{"filename": filename}],
+    )
+    assert reviewers == ["n3wth"], filename
+    assert team_reviewers == []
+
+  # New AI platform adapter proposal from a non-n3wth author routes to n3wth.
+  reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+      502,
+      {
+          "user": {"login": "contributor"},
+          "title": "Propose Windsurf AI platform adapter",
+          "body": (
+              "## Contribution Type\n"
+              "Track: Feature / Architectural Change -- Stage 1: Design Doc PR\n"
+          ),
+      },
+      [{"filename": "docs/designs/windsurf.md"}],
+  )
+  assert reviewers == ["n3wth"]
+  assert team_reviewers == []
+
+  # n3wth's own PRs never route back to n3wth.
+  reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+      503,
+      {"user": {"login": "n3wth"}, "title": "Update egm.dev landing page", "body": ""},
+      [{"filename": "site/src/pages/index.astro"}],
+  )
+  assert "n3wth" not in reviewers
+  assert team_reviewers == ["egm-maintainers"]
+
+
+def test_handoff_routing_design_review_and_template_comments() -> None:
+  # Template HTML comments mentioning `site` or `harness` must not false-positive Rule 1.
+  core_design_body = (
+      "<!-- Labels: site -->\n"
+      "## Contribution Type\n"
+      "Track: Feature / Architectural Change -- Stage 1: Design Doc PR\n"
+      "<!-- For harness support... -->\n"
+  )
+  r_even, t_even = review_pr.select_handoff_reviewers(
+      100,
+      {"user": {"login": "contributor"}, "title": "Add skill X", "body": core_design_body},
+      [{"filename": "docs/designs/skill-x.md"}],
+  )
+  r_odd, t_odd = review_pr.select_handoff_reviewers(
+      101,
+      {"user": {"login": "contributor"}, "title": "Add skill Y", "body": core_design_body},
+      [{"filename": "docs/designs/skill-y.md"}],
+  )
+  assert r_even == ["briansuchy"]
+  assert r_odd == ["eewing314"]
+  assert t_even == []
+  assert t_odd == []
+
+  # Author exclusion prevents requesting PR author as design reviewer.
+  r_brian, _ = review_pr.select_handoff_reviewers(
+      100,
+      {"user": {"login": "briansuchy"}, "title": "Design skill Z", "body": core_design_body},
+      [{"filename": "docs/designs/skill-z.md"}],
+  )
+  assert r_brian == ["eewing314"]
+
+
+def test_handoff_routing_implementation_follows_design_reviewer(monkeypatch) -> None:
+  stage1_pr = {
+      "number": 210,
+      "title": "Design core orchestrator update",
+      "user": {"login": "contributor"},
+      "body": (
+          "## Contribution Type\n"
+          "Track: Feature / Architectural Change -- Stage 1: Design Doc PR\n"
+      ),
+      "labels": [],
+      "requested_reviewers": [],
+  }
+  stage1_reviews = [
+      {
+          "user": {"login": "eewing314", "type": "User"},
+          "author_association": "MEMBER",
+          "state": "APPROVED",
+      }
+  ]
+
+  def fake_get(url: str, token: str, **_kw):
+    if url.endswith("/pulls/210"):
+      return stage1_pr, {}
+    if "/search/issues?" in url:
+      return {"items": [{"number": 210}]}, {}
+    raise RuntimeError(f"HTTP 404 from GET {url}")
+
+  def fake_paginate(endpoint: str, token: str, **_kw):
+    if endpoint == "repos/google/elephant-goldfish-model/pulls/210/reviews":
+      return stage1_reviews
+    if endpoint == "repos/google/elephant-goldfish-model/pulls/210/files":
+      return [{"filename": "docs/designs/orchestrator.md"}]
+    return []
+
+  monkeypatch.setattr(review_pr, "_github_request_json", fake_get)
+  monkeypatch.setattr(review_pr, "_github_paginate", fake_paginate)
+
+  stage2_via_issue = {
+      "user": {"login": "contributor"},
+      "title": "Implement core orchestrator update",
+      "body": (
+          "## Contribution Type\n"
+          "Track: Feature / Architectural Change -- Stage 2: Implementation PR\n"
+          "Closes #205\n"
+      ),
+      "labels": [],
+  }
+  reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+      215,
+      stage2_via_issue,
+      [{"filename": "skills/egm-design/SKILL.md"}],
+      github_token="tok",
+  )
+  assert reviewers == ["eewing314"]
+  assert team_reviewers == []
+
+  # Unresolved Stage 2 implementation falls back to core design reviewers.
+  reviewers_fb, team_fb = review_pr.select_handoff_reviewers(
+      216,
+      {
+          "user": {"login": "contributor"},
+          "title": "Implement unlinked feature",
+          "body": (
+              "## Contribution Type\n"
+              "Track: Feature / Architectural Change -- Stage 2: Implementation PR\n"
+          ),
+          "labels": [],
+      },
+      [{"filename": "skills/egm-design/SKILL.md"}],
+      github_token="",
+  )
+  assert reviewers_fb == ["briansuchy"]
+  assert team_fb == []
+
+
+def test_handoff_routing_bug_fix_uses_maintainers_round_robin() -> None:
+  bug_pr = {
+      "user": {"login": "contributor"},
+      "title": "Fix typo in SKILL.md",
+      "body": (
+          "## Contribution Type\n"
+          "Track: Bug Fix / Minor Patch\n"
+      ),
+      "labels": [],
+  }
+  reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+      300, bug_pr, [{"filename": "skills/egm-review/SKILL.md"}]
+  )
+  assert reviewers == []
+  assert team_reviewers == ["egm-maintainers"]
+
+
+def test_feature_proposal_template_and_issue_triage_workflow() -> None:
+  template_text = (ROOT / ".github/ISSUE_TEMPLATE/feature_proposal.md").read_text()
+  assert "assignees: eewing314" in template_text
+
+  wf_path = ROOT / ".github/workflows/issue-triage.yml"
+  wf = yaml.safe_load(wf_path.read_text())
+  assert wf["permissions"] == {}
+  job = wf["jobs"]["triage-issue"]
+  assert job["timeout-minutes"] == 5
+  assert job["permissions"] == {"issues": "write"}
+  assert "@" in job["steps"][0]["uses"]
