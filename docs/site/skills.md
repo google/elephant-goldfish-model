@@ -35,7 +35,7 @@ The default review follows the software design workflow. Custom review lets you 
 
 ## Work with code
 
-Document a codebase and check whether it matches the plan.
+Document a codebase, check whether it matches the plan, or review pending changes.
 
 - [Document a codebase](/skills/egm-bootstrap) `/egm-bootstrap`
 
@@ -44,3 +44,7 @@ Document a codebase and check whether it matches the plan.
 - [Check for drift](/skills/egm-drift-report) `/egm-drift-report`
 
   Compare documents with the current source code.
+
+- [Precommit review](/skills/egm-precommit-review) `/egm-precommit-review`
+
+  Review pending code changes independently, with optional fixes and a fresh recheck.

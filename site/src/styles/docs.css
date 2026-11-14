@@ -90,6 +90,7 @@ mobile-starlight-toc .dropdown { box-shadow:none; border-color:var(--md-sys-colo
 .sl-markdown-content a[href='/skills/egm-review-loop'] { --skill-icon:url('../../../skills/egm-review-loop/assets/icon.svg'); }
 .sl-markdown-content a[href='/skills/egm-bootstrap'] { --skill-icon:url('../../../skills/egm-bootstrap/assets/icon.svg'); }
 .sl-markdown-content a[href='/skills/egm-drift-report'] { --skill-icon:url('../../../skills/egm-drift-report/assets/icon.svg'); }
+.sl-markdown-content a[href='/skills/egm-precommit-review'] { --skill-icon:url('../../../skills/egm-precommit-review/assets/icon.svg'); }
 .sl-markdown-content li a[href^='/skills/egm-']::before { content:''; display:inline-block; width:24px; height:24px; margin-inline-end:8px; vertical-align:middle; background:var(--skill-icon) center / contain no-repeat; }
 .sl-markdown-content ul:has(>li>p>a[href^='/skills/egm-']) { list-style:none; padding:0; }
 .sl-markdown-content ul:has(>li>p>a[href^='/skills/egm-'])>li { padding:16px 0; margin:0; border-bottom:1px solid var(--md-sys-color-outline-variant); }

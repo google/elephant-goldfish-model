@@ -70,6 +70,7 @@ for (const output of [rendered.code, exported]) {
 const pages = ['install', 'guide', 'getting-started', 'workflow', 'skills', 'skills/egm-bootstrap', 'skills/egm-brainstorm', 'skills/egm-draft', 'skills/egm-drift-report', 'skills/egm-resolve', 'skills/egm-review', 'skills/egm-review-loop'];
 const skillNames = (await readdir(new URL('../../skills/', import.meta.url), { withFileTypes: true }))
   .filter(entry => entry.isDirectory()).map(entry => entry.name);
+pages.push('skills/egm-precommit-review');
 for (const name of skillNames) {
   assert.ok(pages.includes(`skills/${name}`), `${name}: skill page in the checked routes`);
   const page = await readFile(new URL(`../../docs/site/skills/${name}.md`, import.meta.url), 'utf8');
