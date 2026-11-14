@@ -6,6 +6,7 @@ operational guardrails.
 
 | Document | Author | Primary Component |
 | :------- | :----- | :---------------- |
+| [openspec.md](openspec.md)<br>Draft standalone bidirectional OpenSpec (`spec-driven` v1 schema) interoperability orchestrator (`validate_openspec.py` stdlib validator, bounded baseline import, `egm-codebase-details` export fidelity check, and minimal core-skill intake pointers). | [@briansuchy](https://github.com/briansuchy) | `egm-openspec`, [`egm-brainstorm`](../../skills/egm-brainstorm/SKILL.md), [`egm-draft`](../../skills/egm-draft/SKILL.md), [`egm-review`](../../skills/egm-review/SKILL.md) (#383) |
 | [site_documentation.md](site_documentation.md)<br>Proposed multi-page guide, skill reference, and shared site interface. | [@n3wth](https://github.com/n3wth) | Website and documentation |
 | [triz_integration.md](triz_integration.md)<br>Draft Soviet TRIZ method integration introducing the Inventive Catalyst persona to eliminate false architectural compromises in `/egm-brainstorm` and Step 5 of `/egm-review`. | [@briansuchy](https://github.com/briansuchy) | [`egm-brainstorm`](../../skills/egm-brainstorm/SKILL.md), [`egm-review`](../../skills/egm-review/SKILL.md) (#37) |
 | [ask.md](ask.md)<br>Draft read-only command that answers questions about EGM and suggests the next skill from workspace artifacts. | [@smituparmar01](https://github.com/smituparmar01) | `egm-ask` (#175) |
