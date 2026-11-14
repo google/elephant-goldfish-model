@@ -1,0 +1,16 @@
+{
+  "contributor_id": "sample-eecs481-student",
+  "repository": "eecs481-hw3-benchmark",
+  "pr_number": 7,
+  "ground_truth_is_bad": true,
+  "decision": "REJECT",
+  "detected_defects": [
+    {
+      "file": "src/parser.c",
+      "line": 142,
+      "severity": "CRITICAL",
+      "explanation": "Unbounded memcpy on user-supplied chunk length causes heap buffer overflow."
+    }
+  ],
+  "review_summary": "Goldfish fresh-context review rejected PR 7 due to an unchecked length parameter in chunk parsing."
+}
