@@ -8,6 +8,7 @@ operational guardrails.
 | :------- | :----- | :---------------- |
 | [site_documentation.md](site_documentation.md)<br>Proposed multi-page guide, skill reference, and shared site interface. | [@n3wth](https://github.com/n3wth) | Website and documentation |
 | [triz_integration.md](triz_integration.md)<br>Draft Soviet TRIZ method integration introducing the Inventive Catalyst persona to eliminate false architectural compromises in `/egm-brainstorm` and Step 5 of `/egm-review`. | [@briansuchy](https://github.com/briansuchy) | [`egm-brainstorm`](../../skills/egm-brainstorm/SKILL.md), [`egm-review`](../../skills/egm-review/SKILL.md) (#37) |
+| [precommit_review.md](precommit_review.md)<br>Draft independent review of pending changes with explicit triage and a bounded fix loop. | [@vshvedov](https://github.com/vshvedov) | `egm-precommit-review` (#295) |
 | [ask.md](ask.md)<br>Draft read-only command that answers questions about EGM and suggests the next skill from workspace artifacts. | [@smituparmar01](https://github.com/smituparmar01) | `egm-ask` (#175) |
 | [skill_icons.md](skill_icons.md)<br>Canonical skill artwork shared by plugins, the README, and the website. | [@n3wth](https://github.com/n3wth) | Skill presentation |
 | [runtime_packaging.md](runtime_packaging.md)<br>Implemented runtime package boundaries, permissions, and validation. | [@n3wth](https://github.com/n3wth) | Runtime packaging implementation (#136) |
