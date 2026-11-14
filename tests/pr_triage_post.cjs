@@ -24,10 +24,12 @@ function createHarness(overrides = {}) {
   const state = {
     reviews: overrides.existingReviews ? [...overrides.existingReviews] : [],
     labels: new Set(overrides.initialLabels || []),
+    requestedReviewers: [],
     requestedTeams: [],
     warnings: [],
     infos: [],
     failed: null,
+    prAuthor: overrides.prAuthor || 'contributor',
     prState: overrides.prState || 'open',
     prHeadSha: overrides.prHeadSha || 'abc12345',
     rejectInline422: Boolean(overrides.rejectInline422),
@@ -44,7 +46,11 @@ function createHarness(overrides = {}) {
             throw Object.assign(new Error('Bad credentials'), { status: 401 })
           }
           return {
-            data: { state: state.prState, head: { sha: state.prHeadSha } },
+            data: {
+              state: state.prState,
+              head: { sha: state.prHeadSha },
+              user: { login: state.prAuthor },
+            },
           }
         },
         listReviews: async () => ({
@@ -56,13 +62,14 @@ function createHarness(overrides = {}) {
           }
           state.reviews.push(req)
         },
-        requestReviewers: async ({ team_reviewers }) => {
+        requestReviewers: async ({ reviewers = [], team_reviewers = [] }) => {
           if (state.rejectTeam422 || !isPrimary) {
             throw Object.assign(
               new Error('Could not resolve to a node with the global id'),
               { status: 422 },
             )
           }
+          state.requestedReviewers.push(...reviewers)
           state.requestedTeams.push(...team_reviewers)
         },
       },
@@ -92,13 +99,19 @@ function createHarness(overrides = {}) {
     },
   }
 
-  state.run = async (plan, allowedTeam = 'egm-maintainers') => {
+  state.run = async (
+    plan,
+    allowedTeam = 'egm-maintainers',
+    allowedReviewers = 'n3wth,briansuchy,eewing314',
+  ) => {
     writeFileSync(planPath, JSON.stringify(plan), 'utf8')
     const prevPlan = process.env.PLAN_PATH
     const prevTeam = process.env.ALLOWED_TEAM
+    const prevReviewers = process.env.ALLOWED_REVIEWERS
     const prevFallback = process.env.FALLBACK_TOKEN
     process.env.PLAN_PATH = planPath
     process.env.ALLOWED_TEAM = allowedTeam
+    process.env.ALLOWED_REVIEWERS = allowedReviewers
     process.env.FALLBACK_TOKEN = 'fallback-gh-token'
     try {
       await executePost(
@@ -113,6 +126,8 @@ function createHarness(overrides = {}) {
       else process.env.PLAN_PATH = prevPlan
       if (prevTeam === undefined) delete process.env.ALLOWED_TEAM
       else process.env.ALLOWED_TEAM = prevTeam
+      if (prevReviewers === undefined) delete process.env.ALLOWED_REVIEWERS
+      else process.env.ALLOWED_REVIEWERS = prevReviewers
       if (prevFallback === undefined) delete process.env.FALLBACK_TOKEN
       else process.env.FALLBACK_TOKEN = prevFallback
       rmSync(dir, { recursive: true, force: true })
@@ -236,4 +251,25 @@ test('concurrent trigger race skips duplicate review when SHA marker already exi
   assert.equal(state.reviews.length, 1)
   assert.equal(state.labels.size, 0)
   assert.ok(state.infos.some(msg => /already present/.test(msg)))
+})
+
+test('clean_handoff filters individual reviewers by allowlist and excludes PR author', async () => {
+  const state = createHarness({ prAuthor: 'briansuchy' })
+  await state.run({
+    action: 'clean_handoff',
+    pr_number: 42,
+    head_sha: 'abc12345',
+    add_labels: ['triage: passed'],
+    remove_labels: [],
+    reviewers: ['n3wth', 'briansuchy', 'untrusted-user'],
+    team_reviewers: [],
+    review_payload: {
+      commit_id: 'abc12345',
+      body: '<!-- egm-triage-review:sha=abc12345 -->\nClean pass.',
+      comments: [],
+    },
+  })
+  assert.equal(state.failed, null)
+  assert.deepEqual(state.requestedReviewers, ['n3wth'])
+  assert.deepEqual(state.requestedTeams, [])
 })

@@ -137,6 +137,7 @@ jobs:
         env:
           PLAN_PATH: ${{ runner.temp }}/plan/review-plan.json
           ALLOWED_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
+          ALLOWED_REVIEWERS: ${{ vars.EGM_ALLOWED_REVIEWERS || 'n3wth,briansuchy,eewing314,drensin,quinnjim,tearseb,emckean,amcasari,renaudd' }}
           FALLBACK_TOKEN: ${{ github.token }}
         with:
           github-token: ${{ secrets.EGM_TRIAGE_BOT_TOKEN || github.token }}
@@ -259,19 +260,32 @@ jobs:
             }
 
             const allowedTeams = new Set([process.env.ALLOWED_TEAM || "egm-maintainers"].filter(Boolean));
+            const allowedReviewers = new Set(
+              (process.env.ALLOWED_REVIEWERS || "n3wth,briansuchy,eewing314,drensin,quinnjim,tearseb,emckean,amcasari,renaudd")
+                .split(",")
+                .map(login => login.trim())
+                .filter(Boolean)
+            );
+            const prAuthor = String(pr.user?.login || "").toLowerCase();
+            const reviewers = (plan.reviewers || []).filter(
+              login => allowedReviewers.has(login) && login.toLowerCase() !== prAuthor
+            );
             const teamReviewers = (plan.team_reviewers || []).filter(team => allowedTeams.has(team));
-            if (teamReviewers.length > 0) {
+            if (reviewers.length > 0 || teamReviewers.length > 0) {
+              const reviewerRequest = { owner, repo, pull_number: prNumber };
+              if (reviewers.length > 0) {
+                reviewerRequest.reviewers = reviewers;
+              }
+              if (teamReviewers.length > 0) {
+                reviewerRequest.team_reviewers = teamReviewers;
+              }
               try {
-                await client.rest.pulls.requestReviewers({
-                  owner,
-                  repo,
-                  pull_number: prNumber,
-                  team_reviewers: teamReviewers
-                });
+                await client.rest.pulls.requestReviewers(reviewerRequest);
               } catch (error) {
+                const requested = [...reviewers, ...teamReviewers].join(", ");
                 core.warning(
-                  `Could not request team reviewers (${teamReviewers.join(", ")}): ${error.message}. ` +
-                  "Configure or rotate secrets.EGM_TRIAGE_BOT_TOKEN with Pull requests: Read/Write to enable team review delegation."
+                  `Could not request reviewers (${requested}): ${error.message}. ` +
+                  "Configure or rotate secrets.EGM_TRIAGE_BOT_TOKEN with Pull requests: Read/Write to enable review delegation."
                 );
               }
             }

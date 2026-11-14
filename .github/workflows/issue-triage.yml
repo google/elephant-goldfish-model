@@ -1,0 +1,93 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Issue Triage Routing
+
+on:
+  issues:
+    types: [opened, typed]
+
+permissions: {}
+
+jobs:
+  triage-issue:
+    name: "Route Feature and Platform Issues"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write # Required to assign maintainers to newly opened feature and platform issues
+    steps:
+      - name: "Assign maintainer based on issue scope"
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const issue = context.payload.issue;
+            if (!issue || issue.pull_request) {
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const author = String(issue.user?.login || "").toLowerCase();
+            const stripComments = text => String(text || "").replace(/<!--[\s\S]*?-->/g, "");
+            const cleanText = `${stripComments(issue.title)}\n${stripComments(issue.body)}`;
+            const labels = new Set((issue.labels || []).map(l => String(l.name || "").toLowerCase()));
+
+            const isPlatformOrSite =
+              /\begm\.dev\b/i.test(cleanText) ||
+              /\b(?:site\/|ai\s+platform\s+adapter|platform\s+adapter|new\s+(?:ai\s+)?(?:platform\s+)?adapter|harness\s+adapter|platform\s+handle)\b/i.test(cleanText) ||
+              /\b(?:claude|codex|copilot|cursor|gemini|windsurf|opencode)\b[\s\S]{0,40}\b(?:adapter|handle|plugin|extension)\b/i.test(cleanText) ||
+              labels.has("site") ||
+              labels.has("adapters") ||
+              labels.has("platform");
+
+            const isFeature =
+              String(issue.type?.name || "").toLowerCase() === "feature" ||
+              labels.has("enhancement") ||
+              labels.has("feature") ||
+              labels.has("design-ready") ||
+              /^\[?\s*feature\b/i.test(String(issue.title || "")) ||
+              /##\s*Proposed Scope\s*\(Goals vs\.\s*Non-Goals\)/i.test(String(issue.body || ""));
+
+            const currentAssignees = (issue.assignees || []).map(a => a.login);
+
+            if (author !== "n3wth" && isPlatformOrSite) {
+              if (!currentAssignees.includes("n3wth")) {
+                if (currentAssignees.length === 1 && currentAssignees[0] === "eewing314") {
+                  await github.rest.issues.removeAssignees({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    assignees: ["eewing314"]
+                  });
+                }
+                if (currentAssignees.length === 0 || (currentAssignees.length === 1 && currentAssignees[0] === "eewing314")) {
+                  await github.rest.issues.addAssignees({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    assignees: ["n3wth"]
+                  });
+                }
+              }
+              return;
+            }
+
+            if (isFeature && currentAssignees.length === 0) {
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: issue.number,
+                assignees: ["eewing314"]
+              });
+            }

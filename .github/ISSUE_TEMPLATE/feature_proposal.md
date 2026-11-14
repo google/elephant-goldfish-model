@@ -2,6 +2,7 @@
 name: "Feature / Architectural Inquiry"
 about: "Reach out to maintainers to align on a new feature, skill, or large change (> 100 lines) before opening a Design Doc PR"
 type: Feature
+assignees: eewing314
 license: "Copyright 2026 Google LLC. SPDX-License-Identifier: Apache-2.0"
 ---
 
