@@ -1,0 +1,164 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+skill: "egm-ask"
+description: "Behavioral evaluation scenario suite for egm-ask skill."
+
+scenarios:
+  - scenario_id: "empty_workspace_suggests_start"
+    description: "Empty workspace and no question: suggests egm-brainstorm or egm-bootstrap."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask (The workspace has no EGM artifacts and no docs/designs/ folder.)"
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-(brainstorm|bootstrap)"
+            message: "An empty workspace must point to egm-brainstorm or egm-bootstrap."
+
+  - scenario_id: "concepts_brief_suggests_draft"
+    description: "Only concepts_brief.md present: suggests egm-draft."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask What do I do now? (The workspace contains only concepts_brief.md.)"
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-draft"
+            message: "A concepts brief must lead to egm-draft."
+
+  - scenario_id: "review_reports_ask_completion"
+    description: "Review reports for the current target: asks whether that review finished before suggesting egm-resolve."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask What next? (The workspace has docs/designs/cache.md, zoom_out_report.md, and consolidated_review_report.md.)"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(did|has|have|was) .{0,60}(review|it) .{0,40}(finish|complete)"
+            message: "Review reports must lead to a question about whether the review finished."
+
+  - scenario_id: "unfinished_review_continues"
+    description: "critic_report.md present and the user says the review did not finish: suggests continuing egm-review."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask The review stopped halfway and did not finish. What now? (The workspace has docs/designs/cache.md and critic_report.md.)"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(continue|resume).{0,40}egm-review"
+            message: "An unfinished review must be continued, not restarted."
+
+  - scenario_id: "multiple_artifacts_listed"
+    description: "concepts_brief.md and docs/designs/x.md both present: names the latest stage and lists both files."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask Where am I? (The workspace has concepts_brief.md and docs/designs/x.md.)"
+        assertions:
+          - type: "required_pattern"
+            pattern: "concepts_brief\\.md"
+            message: "Every artifact seen must be listed."
+          - type: "required_pattern"
+            pattern: "docs/designs/x\\.md"
+            message: "Every artifact seen must be listed."
+
+  - scenario_id: "task_request_makes_no_edits"
+    description: "A request to fix a draft: makes no edits and names the skill that does that work."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask Please fix my draft for me."
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-(draft|resolve|review)"
+            message: "A task request must name the skill that does the work."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(I (have )?(edited|updated|fixed|changed|rewrote)|I'll (edit|fix|update))"
+            message: "egm-ask must not edit files or offer to."
+
+  - scenario_id: "unrelated_question_out_of_scope"
+    description: "Unrelated programming question: replies that it only covers EGM."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask How do I fix this TypeScript error: Type 'string' is not assignable to type 'number'?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)only (covers|answers|handles).{0,20}EGM"
+            message: "Out-of-scope questions must get the EGM-only reply."
+
+  - scenario_id: "pending_gate_untouched"
+    description: "Called while an egm-resolve gate is pending: answers the question, makes no edits, and picks no gate option."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "(egm-resolve is waiting at its resolution gate for: auto accept, continue, or interactive breakdown.) /egm-ask What does egm-resolve do?"
+        assertions:
+          - type: "forbidden_pattern"
+            pattern: "(?i)(applying|applied|I('ll| will) (apply|accept)|auto[- ]accepted|proceeding with)"
+            message: "egm-ask must not act on the pending resolve gate."
+
+  - scenario_id: "skill_choice_drift_report"
+    description: "Which skill compares designs with code: recommends egm-drift-report and cites its SKILL.md."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask Which skill compares my designs with code?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-drift-report"
+            message: "Must recommend egm-drift-report."
+          - type: "required_pattern"
+            pattern: "skills/egm-drift-report/SKILL\\.md"
+            message: "Must cite the skill's SKILL.md."
+
+  - scenario_id: "persona_read_failure_cites_claude_doc"
+    description: "Persona-read failure in Claude Code: cites docs/claude.md."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask In Claude Code, the reviewer says it cannot read its persona file."
+        assertions:
+          - type: "required_pattern"
+            pattern: "docs/claude\\.md"
+            message: "Must cite docs/claude.md for the permission fix."
+
+  - scenario_id: "resolved_report_confirms_target_and_approval"
+    description: "Resolved report and two checked-in designs, user names neither: asks the user to confirm the design and whether it was approved; does not suggest implementation."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask What next? (The workspace has docs/designs/a.md, docs/designs/b.md, and goldfish_review_report.md starting with 'Status: resolved' and '**Target:** `docs/designs/a.md`'.)"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)approv"
+            message: "Must ask whether the design was approved."
+          - type: "required_pattern"
+            pattern: "docs/designs/a\\.md"
+            message: "Must name the report's target for the user to confirm."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(start|begin|go ahead and|you can now) implement"
+            message: "Must not suggest implementation before the checks pass."

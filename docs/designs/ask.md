@@ -1,7 +1,7 @@
 # EGM Ask: Read-Only Contextual Help & Next-Step Guidance
 
 *   **Author:** Smit Parmar ([@smituparmar01](https://github.com/smituparmar01))
-*   **Status:** Draft
+*   **Status:** Current
 *   **Date:** 2026-10-28
 *   **Issue:** [#175](https://github.com/google/elephant-goldfish-model/issues/175)
 

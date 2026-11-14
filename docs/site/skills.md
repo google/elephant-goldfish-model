@@ -44,3 +44,11 @@ Document a codebase and check whether it matches the plan.
 - [Check for drift](/skills/egm-drift-report) `/egm-drift-report`
 
   Compare documents with the current source code.
+
+## Ask for help
+
+Find out what to run next without changing any files.
+
+- [Ask for help](/skills/egm-ask) `/egm-ask`
+
+  Get the next step or fix a setup problem.

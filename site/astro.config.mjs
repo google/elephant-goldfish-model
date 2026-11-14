@@ -49,6 +49,7 @@ export default defineConfig({
         { label: 'Custom review', slug: 'skills/egm-review-loop' },
         { label: 'Document a codebase', slug: 'skills/egm-bootstrap' },
         { label: 'Check for drift', slug: 'skills/egm-drift-report' },
+        { label: 'Ask for help', slug: 'skills/egm-ask' },
       ] },
     ],
     plugins: [starlightLlmsTxt({
@@ -63,7 +64,7 @@ export default defineConfig({
     '/docs/getting-started': '/getting-started',
     '/docs/workflow': '/workflow',
     '/docs/skills': '/skills',
-    ...Object.fromEntries(['bootstrap', 'brainstorm', 'draft', 'drift-report', 'resolve', 'review', 'review-loop'].map(skill => [`/docs/skills/egm-${skill}`, `/skills/egm-${skill}`])),
+    ...Object.fromEntries(['ask', 'bootstrap', 'brainstorm', 'draft', 'drift-report', 'resolve', 'review', 'review-loop'].map(skill => [`/docs/skills/egm-${skill}`, `/skills/egm-${skill}`])),
   },
 
   fonts: [
