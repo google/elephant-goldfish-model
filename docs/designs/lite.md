@@ -20,9 +20,11 @@ Running the full EGM lifecycle (`/egm-brainstorm` -> `/egm-draft` -> `/egm-revie
 
 ## Goals
 
-*   Audit `egm_lite_checklist.md` automatically in an isolated, fresh-context Goldfish subagent before modifying repository code or documents.
-*   Complete execution once local tests pass on a verified checklist while preserving an opt-in Goldfish diff re-review (`review` or `goldfish`).
-*   Triage both pre-implementation specification findings and post-implementation diff findings through one presentation-only resolution gate without mutating files during triage.
+*   Provide a lightweight, turn-gated Elephant-and-Goldfish workflow for small code iterations, targeted refactors, bug fixes, and specification updates that do not warrant a multi-document design lifecycle.
+*   Ground proposed changes in live source files, callers, tests, and external contracts—surfacing unverified boundaries (`[⚠️ UNVERIFIED]` and `[⏳ ACK]`) before planning or editing begins.
+*   Audit the execution plan (`egm_lite_checklist.md`) automatically in an isolated, fresh-context Goldfish subagent prior to implementation so design and scope flaws are caught before repository files are modified.
+*   Restrict implementation to approved checklist items verified by local tests, while keeping post-implementation Goldfish diff re-review optional (`review` or `goldfish`) to avoid redundant subagent passes on routine changes.
+*   Separate finding triage (`PROPOSE FIX` vs. `CONTEST`) from file mutation across both specification and diff reviews so developers explicitly approve what enters the checklist or codebase.
 
 ## Non-Goals
 
