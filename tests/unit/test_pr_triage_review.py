@@ -1043,8 +1043,6 @@ def test_repo_inventory_and_false_positive_filter_prevent_pr_410_regressions(
       styleguide_path=ROOT / ".gemini" / "styleguide.md",
       config_path=CONFIG_PATH,
       repo_root=ROOT,
-      platform_owners=("n3wth",),
-      design_reviewers=("briansuchy", "eewing314"),
       llm_caller=replay_pr_410_hallucinations,
   )
   assert len(prompts_seen) == 1
@@ -1346,16 +1344,7 @@ def test_handoff_routing_bug_fix_uses_area_map() -> None:
   assert stage1_pr is None
 
 
-def test_issue_triage_workflow_and_no_feature_issue_gating() -> None:
+def test_no_feature_issue_triage_or_design_gating() -> None:
   assert not (ROOT / ".github/ISSUE_TEMPLATE/feature_proposal.md").exists()
   assert not (ROOT / ".github/workflows/design-pr-merged.yml").exists()
-
-  wf_path = ROOT / ".github/workflows/issue-triage.yml"
-  wf = yaml.safe_load(wf_path.read_text())
-  assert wf["permissions"] == {}
-  job = wf["jobs"]["triage-issue"]
-  assert job["timeout-minutes"] == 5
-  assert job["permissions"] == {"contents": "read", "issues": "write"}
-  step = job["steps"][0]
-  assert "@" in step["uses"]
-  assert "FEATURE_REQUEST_TRIAGE" not in (step.get("env") or {})
+  assert not (ROOT / ".github/workflows/issue-triage.yml").exists()

@@ -1227,6 +1227,10 @@ def load_reviewers_config(
       if isinstance(max_raw, int) and not isinstance(max_raw, bool) and max_raw > 0
       else DEFAULT_MAX_INDIVIDUAL_REVIEWERS
   )
+  # `egm_maintainers` is maintained in `.github/reviewers.json` (protected by
+  # `.github/CODEOWNERS`) rather than fetched dynamically from the org team
+  # because repo-scoped GITHUB_TOKEN lacks org `members:read` permission and
+  # keeping it in git lets CI and offline tests share one source of truth.
   return ReviewersConfig(
       egm_maintainers=parse_login_list(raw.get("egm_maintainers")),
       fallback_team=str(raw.get("fallback_team") or MAINTAINERS_TEAM_SLUG).strip()
@@ -1656,8 +1660,6 @@ def select_handoff_reviewers(
     github_token: str = "",
     repo_root: pathlib.Path | None = None,
     reviewers_config: ReviewersConfig | None = None,
-    platform_owners: Sequence[str] = (),
-    design_reviewers: Sequence[str] = (),
 ) -> tuple[list[str], list[str], int | None]:
   """Routes clean-handoff PRs via `.github/reviewers.json` and Stage 1 continuity.
 
@@ -1673,7 +1675,6 @@ def select_handoff_reviewers(
   if 0 or more than `max_individual_reviewers` (default 3) remain, falls back
   to `fallback_team` (`egm-maintainers`).
   """
-  del platform_owners, design_reviewers  # Replaced by `.github/reviewers.json`.
   cfg = (
       reviewers_config
       if reviewers_config is not None
@@ -1758,8 +1759,6 @@ def build_clean_handoff_plan(
     github_token: str = "",
     repo_root: pathlib.Path | None = None,
     reviewers_config: ReviewersConfig | None = None,
-    platform_owners: Sequence[str] = (),
-    design_reviewers: Sequence[str] = (),
 ) -> dict[str, Any]:
   """Builds Stage-1-to-Stage-2 clean handoff plan for reviewers or team."""
   clean_team = team_slug.strip()
@@ -1781,8 +1780,6 @@ def build_clean_handoff_plan(
         github_token=github_token,
         repo_root=repo_root,
         reviewers_config=reviewers_config,
-        platform_owners=platform_owners,
-        design_reviewers=design_reviewers,
     )
   header = f"<!-- {REVIEW_MARKER_PREFIX}:sha={head_sha} -->"
   if reviewers:
@@ -2225,8 +2222,6 @@ def plan_pr_review(
     repo_root: pathlib.Path | None = None,
     default_branch: str = DEFAULT_BRANCH,
     maintainers_team: str = MAINTAINERS_TEAM_SLUG,
-    platform_owners: Sequence[str] = (),
-    design_reviewers: Sequence[str] = (),
     model: str = DEFAULT_MODEL,
     fallback_models: Sequence[str] = DEFAULT_FALLBACK_MODELS,
     force_manual: bool = False,
@@ -2356,8 +2351,6 @@ def plan_pr_review(
         files=files,
         github_token=github_token,
         repo_root=resolved_root,
-        platform_owners=platform_owners,
-        design_reviewers=design_reviewers,
     )
     handoff["depth"] = decision.depth
     handoff["reason"] = "NO_REVIEWABLE_DIFF_HANDOFF"
@@ -2454,8 +2447,6 @@ def plan_pr_review(
         files=files,
         github_token=github_token,
         repo_root=resolved_root,
-        platform_owners=platform_owners,
-        design_reviewers=design_reviewers,
     )
     handoff["depth"] = decision.depth
     handoff["model"] = selected_model
@@ -2494,14 +2485,6 @@ def main(argv: Sequence[str] | None = None) -> int:
   parser.add_argument("--repo", default=DEFAULT_REPO)
   parser.add_argument("--default-branch", default=DEFAULT_BRANCH)
   parser.add_argument("--maintainers-team", default=MAINTAINERS_TEAM_SLUG)
-  parser.add_argument(
-      "--platform-owners",
-      default=os.environ.get("PLATFORM_SITE_OWNERS", ""),
-  )
-  parser.add_argument(
-      "--design-reviewers",
-      default=os.environ.get("DESIGN_REVIEWERS", ""),
-  )
   parser.add_argument("--pr", type=int, default=0)
   parser.add_argument("--head-sha", default="")
   parser.add_argument("--model", default=DEFAULT_MODEL)
@@ -2548,8 +2531,6 @@ def main(argv: Sequence[str] | None = None) -> int:
       repo_root=args.repo_root,
       default_branch=(args.default_branch.strip() or DEFAULT_BRANCH),
       maintainers_team=args.maintainers_team.strip(),
-      platform_owners=parse_login_list(args.platform_owners),
-      design_reviewers=parse_login_list(args.design_reviewers),
       model=(args.model.strip() or DEFAULT_MODEL),
       fallback_models=parse_fallback_models(args.fallback_models),
       force_manual=args.force_manual,

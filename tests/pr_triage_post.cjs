@@ -128,19 +128,13 @@ function createHarness(overrides = {}) {
   state.run = async (
     plan,
     allowedTeam = 'egm-maintainers',
-    platformSiteOwners = 'n3wth',
-    designReviewers = 'briansuchy,eewing314',
   ) => {
     writeFileSync(planPath, JSON.stringify(plan), 'utf8')
     const prevPlan = process.env.PLAN_PATH
     const prevTeam = process.env.ALLOWED_TEAM
-    const prevPlatform = process.env.PLATFORM_SITE_OWNERS
-    const prevDesign = process.env.DESIGN_REVIEWERS
     const prevFallback = process.env.FALLBACK_TOKEN
     process.env.PLAN_PATH = planPath
     process.env.ALLOWED_TEAM = allowedTeam
-    process.env.PLATFORM_SITE_OWNERS = platformSiteOwners
-    process.env.DESIGN_REVIEWERS = designReviewers
     process.env.FALLBACK_TOKEN = 'fallback-gh-token'
     try {
       await executePost(
@@ -155,10 +149,6 @@ function createHarness(overrides = {}) {
       else process.env.PLAN_PATH = prevPlan
       if (prevTeam === undefined) delete process.env.ALLOWED_TEAM
       else process.env.ALLOWED_TEAM = prevTeam
-      if (prevPlatform === undefined) delete process.env.PLATFORM_SITE_OWNERS
-      else process.env.PLATFORM_SITE_OWNERS = prevPlatform
-      if (prevDesign === undefined) delete process.env.DESIGN_REVIEWERS
-      else process.env.DESIGN_REVIEWERS = prevDesign
       if (prevFallback === undefined) delete process.env.FALLBACK_TOKEN
       else process.env.FALLBACK_TOKEN = prevFallback
       rmSync(dir, { recursive: true, force: true })
@@ -284,9 +274,14 @@ test('concurrent trigger race skips duplicate review when SHA marker already exi
   assert.ok(state.infos.some(msg => /already present/.test(msg)))
 })
 
-test('clean_handoff filters reviewers by configured vars, Stage 1 PR reviews, and author exclusion', async () => {
+test('clean_handoff filters reviewers by .github/reviewers.json, Stage 1 PR reviews, and author exclusion', async () => {
   const state = createHarness({
     prAuthor: 'briansuchy',
+    reviewersConfig: {
+      egm_maintainers: ['briansuchy', 'drensin', 'n3wth'],
+      fallback_team: 'egm-maintainers',
+      routes: [{ name: 'site', paths: ['docs/**'], reviewers: ['n3wth'] }],
+    },
     pullsByNumber: {
       210: { user: { login: 'contributor' }, requested_reviewers: [] },
     },
@@ -341,8 +336,6 @@ test('clean_handoff validates reviewers against .github/reviewers.json on defaul
       },
     },
     'egm-maintainers',
-    '',
-    '',
   )
   assert.equal(state.failed, null)
   assert.deepEqual(state.requestedReviewers, ['eewing314', 'quinnjim'])

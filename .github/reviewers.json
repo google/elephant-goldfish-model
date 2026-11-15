@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "_egm_maintainers_comment": "Maintained in git here (protected by .github/CODEOWNERS) rather than queried from the @google/egm-maintainers GitHub team because repository-scoped GITHUB_TOKEN lacks org members:read permission, no repository variable holds the full roster, and keeping it in the repo lets review_pr.py and offline unit tests validate design-doc header authors and Stage 1 reviewers consistently.",
   "egm_maintainers": [
     "briansuchy",
     "drensin",
