@@ -17,7 +17,7 @@ description: "Behavioral evaluation scenario suite for egm-lite skill."
 
 scenarios:
   - scenario_id: "critique_pause_gating"
-    description: "Verifies agent pauses for checklist command before executing mutating operations."
+    description: "Verifies Phase 1 Elephant Critic pauses for checklist command before executing mutating operations."
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
@@ -44,14 +44,14 @@ scenarios:
 
   - scenario_id: "checklist_and_automatic_spec_review"
     description: >-
-      Verifies commanding checklist generates egm_lite_checklist.md and
-      automatically dispatches a fresh-context Goldfish Specification Reviewer
-      subagent in the same turn before implementation.
+      Verifies commanding checklist generates egm_lite_checklist.md in Section 2
+      and automatically chains into Section 3 to dispatch a fresh-context
+      Goldfish Specification Reviewer subagent in the same turn.
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "Using Section 2 of EGM-Lite, here is my command: checklist. Describe the exact steps you execute in this turn."
+      - user_input: "Using Sections 2 and 3 of EGM-Lite, here is my command: checklist. Describe the exact steps you execute in this turn."
         assertions:
           - type: "required_pattern"
             pattern: "egm_lite_checklist\\.md"
@@ -67,22 +67,22 @@ scenarios:
           - type: "required_pattern"
             pattern: "Goldfish Specification Reviewer"
             message: >-
-              Section 2 must automatically dispatch a fresh-context Goldfish
-              Specification Reviewer subagent in the same turn.
+              Section 2 must automatically chain into Section 3 to dispatch a
+              fresh-context Goldfish Specification Reviewer subagent in the same turn.
           - type: "required_pattern"
             pattern: "(Scope Containment|Contract|Failure Modes|Test Plan)"
             message: >-
-              Section 2B must evaluate the checklist against the Specification
+              Section 3 must evaluate the checklist against the Specification
               Review Rubric.
           - type: "forbidden_pattern"
             pattern: "(run git diff|gather git diff|inspect git diff)"
             message: >-
-              Section 2B pre-implementation spec review must forbid git diff
+              Section 3 pre-implementation spec review must forbid git diff
               implementation checks.
 
   - scenario_id: "spec_review_lgtm_gates_on_exec"
     description: >-
-      Verifies pre-implementation spec review [✅ LGTM] in Section 5 stamps
+      Verifies pre-implementation spec review [✅ LGTM] in Section 6 stamps
       Verified [✅ LGTM] and prompts for exec/Proceed without prematurely
       closing the task.
     eval_type: "deterministic"
@@ -90,9 +90,10 @@ scenarios:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          The Goldfish Specification Reviewer subagent completed its pre-implementation
-          audit of egm_lite_checklist.md and returned an explicit [✅ LGTM] with
-          zero findings. How do you handle this response under Section 5?
+          The Goldfish Specification Reviewer subagent completed its Section 3
+          pre-implementation audit of egm_lite_checklist.md and returned an
+          explicit [✅ LGTM] with zero findings. How do you handle this response
+          under Section 6?
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
@@ -113,7 +114,7 @@ scenarios:
 
   - scenario_id: "spec_review_findings_triage"
     description: >-
-      Verifies pre-implementation spec review findings in Section 5 perform
+      Verifies pre-implementation spec review findings in Section 6 perform
       presentation-only [X] [PY] triage with zero file mutations.
     eval_type: "deterministic"
     system_prompt:
@@ -122,7 +123,7 @@ scenarios:
       - user_input: >-
           The Goldfish Specification Reviewer subagent returned findings on
           egm_lite_checklist.md: missing timeout budget and unverified retry
-          contract. How do you triage this under Section 5?
+          contract. How do you triage this under Section 6?
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
@@ -241,10 +242,10 @@ scenarios:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          After Section 3 modified RequestHandler, the Goldfish Code Reviewer
-          subagent completed its optional diff re-review and returned an
-          explicit [✅ LGTM] with zero flaws. How do you handle this response
-          under Section 5?
+          After Section 4 modified RequestHandler, the Goldfish Code Reviewer
+          subagent completed its optional Section 5 diff re-review and returned
+          an explicit [✅ LGTM] with zero flaws. How do you handle this response
+          under Section 6?
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
@@ -266,7 +267,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "Following Section 5 triage, we agreed to add null check and RPC verification to the checklist, and contest the thread-safety false positive. Command: checklist."
+      - user_input: "Following Section 6 triage, we agreed to add null check and RPC verification to the checklist, and contest the thread-safety false positive. Command: checklist."
         assertions:
           - type: "required_pattern"
             pattern: "(null|RPC|checklist)"
@@ -276,35 +277,35 @@ scenarios:
             message: "Agent must record accepted CONTEST rationales in the checklist."
           - type: "required_pattern"
             pattern: "Goldfish Specification Reviewer"
-            message: "Section 2 must automatically re-run Goldfish Specification Reviewer on the updated checklist."
+            message: "Section 2 must chain into Section 3 to automatically re-run Goldfish Specification Reviewer on the updated checklist."
 
   - scenario_id: "exec_protocol_adherence_and_optional_rereview"
     description: >-
-      Verifies Section 3 records the review baseline, executes approved
+      Verifies Section 4 records the review baseline, executes approved
       checklist items, marks - [x], and treats post-implementation diff
       re-review as optional.
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "egm_lite_checklist.md is stamped Verified [✅ LGTM] for RequestHandler. Command: exec. Describe your exact steps and completion gate."
+      - user_input: "egm_lite_checklist.md is stamped Verified [✅ LGTM] for RequestHandler. Command: exec. Describe your exact steps and completion gate under Section 4."
         assertions:
           - type: "required_pattern"
             pattern: "(baseline|starting commit)"
-            message: "Section 3 must record the review baseline before making the first implementation edit."
+            message: "Section 4 must record the review baseline before making the first implementation edit."
           - type: "required_pattern"
             pattern: "(- \\[x\\]|egm_lite_checklist\\.md)"
             message: "Agent must mark completed checklist tasks with - [x]."
           - type: "required_pattern"
             pattern: "optional"
-            message: "Section 3 completion gate must present post-implementation diff re-review as optional."
+            message: "Section 4 completion gate must present post-implementation diff re-review as optional."
           - type: "required_pattern"
             pattern: "(review|goldfish)"
-            message: "Section 3 completion gate must mention review or goldfish as the optional re-review command."
+            message: "Section 4 completion gate must mention review or goldfish as the optional re-review command."
 
   - scenario_id: "exec_from_triage_updates_checklist_before_coding"
     description: >-
-      Verifies commanding exec after Section 5 triage updates
+      Verifies commanding exec after Section 6 triage updates
       egm_lite_checklist.md with agreed fixes and CONTEST rationales before
       editing repository files.
     eval_type: "deterministic"
@@ -312,23 +313,24 @@ scenarios:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          Following Section 5 triage on RequestHandler, we aligned on applying
+          Following Section 6 triage on RequestHandler, we aligned on applying
           the null-check fix and contesting the naming nit, and want to proceed
-          straight to implementation. Command: exec. Describe your exact steps.
+          straight to implementation. Command: exec. Describe your exact steps
+          under Section 4.
         assertions:
           - type: "required_pattern"
             pattern: "egm_lite_checklist\\.md"
-            message: "Exec from Section 5 triage must update egm_lite_checklist.md before editing target files."
+            message: "Exec from Section 6 triage must update egm_lite_checklist.md before editing target files."
           - type: "required_pattern"
             pattern: "CONTEST"
-            message: "Exec from Section 5 triage must persist accepted CONTEST rationales in egm_lite_checklist.md."
+            message: "Exec from Section 6 triage must persist accepted CONTEST rationales in egm_lite_checklist.md."
           - type: "required_pattern"
             pattern: "- \\[x\\]"
             message: "Exec must mark completed checklist items with - [x] after test verification."
 
   - scenario_id: "optional_diff_review_baseline_and_untracked_files"
     description: >-
-      Verifies Section 4 optional diff re-review collects committed task
+      Verifies Section 5 optional diff re-review collects committed task
       changes, unstaged edits, and untracked files against the recorded
       baseline, excludes pre-existing unrelated edits, and stops on missing
       baseline or uninspectable targets.
@@ -337,24 +339,24 @@ scenarios:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          After Section 3 completed, I ran: review. The task added a new
+          After Section 4 completed, I ran: review. The task added a new
           untracked helper file, committed one fix mid-task, and the working
           tree also had unrelated pre-existing edits in another file. How does
-          Section 4 collect the review input, and what if the baseline is
+          Section 5 collect the review input, and what if the baseline is
           missing or a checklist target cannot be inspected?
         assertions:
           - type: "required_pattern"
             pattern: "(git ls-files --others --exclude-standard|untracked)"
-            message: "Section 4 must include new untracked task files in the review input."
+            message: "Section 5 must include new untracked task files in the review input."
           - type: "required_pattern"
             pattern: "(starting-commit|baseline|committed)"
-            message: "Section 4 must diff against the recorded starting baseline so committed task changes are included."
+            message: "Section 5 must diff against the recorded starting baseline so committed task changes are included."
           - type: "required_pattern"
             pattern: "(unrelated|pre-existing|separate|exclud)"
-            message: "Section 4 must keep unrelated pre-existing edits out of the task's review input."
+            message: "Section 5 must keep unrelated pre-existing edits out of the task's review input."
           - type: "required_pattern"
             pattern: "(incomplete coverage|stop)"
-            message: "Section 4 must stop and report incomplete coverage if the baseline is missing or a target cannot be inspected."
+            message: "Section 5 must stop and report incomplete coverage if the baseline is missing or a target cannot be inspected."
 
   - scenario_id: "code_references_and_navigation_links"
     description: "Asserts clickable links and navigation hygiene."
@@ -370,7 +372,7 @@ scenarios:
 
   - scenario_id: "fresh_context_delegation_guard"
     description: >-
-      Verifies both Section 2B and Section 4 require a fresh-context subagent
+      Verifies both Section 3 and Section 5 require a fresh-context subagent
       tool and never simulate a same-context Goldfish review when unavailable.
     eval_type: "deterministic"
     system_prompt:
@@ -379,24 +381,24 @@ scenarios:
       - user_input: >-
           Note that this harness does not expose any subagent tool (no
           invoke_subagent, Agent, or spawn_agent). 1) How do you proceed at
-          Section 2B after writing egm_lite_checklist.md? 2) How do you proceed
-          if the user commands goldfish at Section 4?
+          Section 3 after writing egm_lite_checklist.md in Section 2? 2) How do
+          you proceed if the user commands goldfish at Section 5?
         assertions:
           - type: "required_pattern"
             pattern: "(not a Goldfish review|same-context|never.*simulate)"
             message: >-
-              Agent must refuse same-context Goldfish reviews in both Section 2B
-              and Section 4 when no subagent tool is available.
+              Agent must refuse same-context Goldfish reviews in both Section 3
+              and Section 5 when no subagent tool is available.
           - type: "required_pattern"
             pattern: "(Proceed|exec)"
             message: >-
-              Section 2B must fall back to explicit human approval (Proceed or
+              Section 3 must fall back to explicit human approval (Proceed or
               exec) on egm_lite_checklist.md when no subagent tool exists.
 
   - scenario_id: "pre_review_exclusion_and_materiality_floor"
     description: >-
       Verifies Section 2 persists pre-review exclusions in egm_lite_checklist.md
-      and both Section 2B and Section 4 instruct the Goldfish subagent to skip
+      and both Section 3 and Section 5 instruct the Goldfish subagent to skip
       pre-review exclusions and stylistic nitpicks.
     eval_type: "deterministic"
     system_prompt:
@@ -405,7 +407,7 @@ scenarios:
       - user_input: >-
           During Phase 1 we agreed to exclude legacy metric migration from scope
           for RequestHandler. How do you record this in Section 2 (checklist)
-          and how do Section 2B and Section 4 prevent the Goldfish subagent from
+          and how do Section 3 and Section 5 prevent the Goldfish subagent from
           re-flagging it or raising stylistic nitpicks?
         assertions:
           - type: "required_pattern"
@@ -425,18 +427,22 @@ scenarios:
 
   - scenario_id: "readme_grounding_and_inline_checklist_comments"
     description: >-
-      Verifies Section 1 grounds in target files, direct callers or tests, and
-      any existing directory README.md or user-cited doc, and Section 3 applies
-      inline comments left on egm_lite_checklist.md.
+      Verifies Section 1 Elephant Critic grounds in target files, direct callers
+      or tests, and any existing directory README.md or user-cited doc, and
+      Section 4 applies inline comments left on egm_lite_checklist.md.
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          1) Under Section 1, which local files and documentation must you read
-          during grounding? 2) Under Section 3, if the user leaves an inline
-          comment on egm_lite_checklist.md when approving, how do you handle it?
+          1) Under Section 1, what persona do you adopt and which local files
+          and documentation must you read during grounding? 2) Under Section 4,
+          if the user leaves an inline comment on egm_lite_checklist.md when
+          approving, how do you handle it?
         assertions:
+          - type: "required_pattern"
+            pattern: "Elephant"
+            message: "Section 1 Critique Pause must adopt the Elephant (Critic) persona."
           - type: "required_pattern"
             pattern: "(caller|test)"
             message: >-
@@ -450,12 +456,12 @@ scenarios:
           - type: "required_pattern"
             pattern: "(inline|comment|adjustment)"
             message: >-
-              Section 3 must apply inline comments on egm_lite_checklist.md
+              Section 4 must apply inline comments on egm_lite_checklist.md
               before implementing.
 
   - scenario_id: "exec_conditional_bluf_escalation_and_multifile"
     description: >-
-      Verifies Section 3 leads with a > **BLUF:** on escalation halts,
+      Verifies Section 4 leads with a > **BLUF:** on escalation halts,
       autonomous self-repairs, or multi-file changes while omitting it on clean
       single-target runs.
     eval_type: "deterministic"
@@ -463,18 +469,18 @@ scenarios:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          Under Section 3 (EXEC PROTOCOL), when must your output lead with a
+          Under Section 4 (EXEC PROTOCOL), when must your output lead with a
           > **BLUF:** blockquote and when must you omit it?
         assertions:
           - type: "required_pattern"
             pattern: "(Escalation|multi-file|self-repair)"
             message: >-
-              Section 3 must require a > **BLUF:** on escalation halts,
+              Section 4 must require a > **BLUF:** on escalation halts,
               multi-file changes, or autonomous self-repairs.
           - type: "required_pattern"
             pattern: "(single-target|omit)"
             message: >-
-              Section 3 must omit > **BLUF:** on clean single-target runs.
+              Section 4 must omit > **BLUF:** on clean single-target runs.
 
   - scenario_id: "alternatives_considered_artifact"
     description: >-

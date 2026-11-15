@@ -5,13 +5,14 @@ description: Fast-track small iterations, spec revisions, refactors, and bug fix
 
 ## What it does
 
-The assistant executes a rapid, decoupled 5-phase engineering protocol for small changes without the overhead of a full multi-document specification lifecycle:
+The assistant executes a rapid, six-phase engineering protocol separating in-session **Elephant** phases from isolated **Goldfish** subagent reviews without the overhead of a multi-document specification lifecycle:
 
-1. **Critique Pause**: Probes code invariants and tags untested assumptions before touching code.
-2. **Checklist & Automatic Spec Review**: Generates a lightweight task list in `egm_lite_checklist.md` and automatically spawns a fresh-context Goldfish subagent to audit the checklist before implementation begins.
-3. **Execution**: Records the starting review baseline, implements the approved checklist items, and verifies local test passes.
-4. **Optional Diff Re-Review**: On request (`review` or `goldfish`), spawns an isolated Goldfish subagent to audit the workspace changes against race conditions, edge cases, and missing tests.
-5. **Resolution Gate**: Triages pre-implementation specification findings or post-implementation diff findings into proposed fixes or evidence-backed contests before updating the checklist or executing changes.
+1. **Critique Pause (Elephant)**: Probes code invariants, callers, and external contracts in-session and tags untested assumptions before touching code.
+2. **Execution Checklist (Elephant)**: Generates a lightweight task list in `egm_lite_checklist.md` and chains automatically into Phase 3 in the same turn.
+3. **Automatic Specification Review (Goldfish Subagent)**: Audits `egm_lite_checklist.md` in a fresh subagent context before implementation begins.
+4. **Execution (Elephant)**: Records the starting review baseline, implements the approved checklist items, and verifies local test passes.
+5. **Optional Diff Re-Review (Goldfish Subagent)**: On request (`review` or `goldfish`), spawns an isolated Goldfish subagent to audit the workspace changes against race conditions, edge cases, and missing tests.
+6. **Resolution Gate (Elephant)**: Triages pre-implementation specification findings or post-implementation diff findings into proposed fixes or evidence-backed contests before updating the checklist or executing changes.
 
 ## When to use it
 

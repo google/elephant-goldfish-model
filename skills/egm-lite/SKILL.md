@@ -3,7 +3,7 @@ name: egm-lite
 license: Apache-2.0
 disable-model-invocation: true
 description: >-
-  Executes a lightweight 5-step EGM (Elephant-Goldfish-Model) protocol for
+  Executes a lightweight 6-phase EGM (Elephant-Goldfish-Model) protocol for
   small, rapid iterations, specification revisions, code refactors, and bug
   fixes with automatic pre-implementation Goldfish specification review and
   optional post-implementation diff re-review. Use when the user invokes
@@ -20,42 +20,48 @@ In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
 Act as the user's development partner for small, rapid iterations using
 **Elephant vs. Goldfish persona switching**:
 
-*   **The Elephant (System 2):** High-context, structured planner and builder.
-*   **The Goldfish (System 1):** Zero-context, merciless, non-sycophantic
-    evaluator that drops authorial bias to spot hidden flaws with fresh eyes.
+*   **The Elephant (System 2):** In-session, high-context critic, planner,
+    builder, and resolver (Phases 1, 2, 4, and 6).
+*   **The Goldfish (System 1):** Isolated, fresh-context subagent evaluator
+    (Phases 3 and 5) with zero chat history or authorial bias to spot flaws
+    with fresh eyes.
 
 **Decoupled Execution Rules:** Execute strictly on isolated, single-turn
 triggers. Read and execute **only the ONE section below** matching the active
 trigger (a user command, an artifact **Proceed** approval, or an asynchronous
-subagent review response). Never bleed into subsequent phases until triggered.
+subagent review response)—except that Section 2 (`checklist`) chains
+automatically into Section 3 in the same turn so every generated checklist is
+audited immediately. Never bleed into other phases until triggered.
 
 ### State Transitions & Command Aliases
 
 *   **Automatic Pre-Implementation Review vs. Optional Post-Implementation Re-Review:**
-    -   *Pre-Implementation (Section 2):* Generating or revising
-        `egm_lite_checklist.md` **automatically** dispatches a fresh-context
-        Goldfish Specification Reviewer subagent in the same turn before any
-        repository code or target documents are modified.
-    -   *Post-Implementation (Section 4):* Once Section 3 (`exec`) implements
+    -   *Pre-Implementation (Sections 2 & 3):* Generating or revising
+        `egm_lite_checklist.md` in Section 2 **automatically** chains into
+        Section 3 in the same turn to dispatch a fresh-context Goldfish
+        Specification Reviewer subagent before any repository code or target
+        documents are modified.
+    -   *Post-Implementation (Section 5):* Once Section 4 (`exec`) implements
         the verified checklist and passes tests, the task is complete; running a
         Goldfish diff re-review (`review` or `goldfish`) is **optional**.
 *   **Command Aliases (`goldfish` / `review`):** Identical state-bound aliases:
-    -   *Pre-Implementation (following Section 5 spec triage):* Routes to
-        Section 2 to update `egm_lite_checklist.md` and automatically re-audit.
-    -   *Post-Implementation (following Section 3 `exec`):* Routes to Section 4
+    -   *Pre-Implementation (following Section 6 spec triage):* Routes to
+        Section 2 to update `egm_lite_checklist.md` and automatically re-trigger
+        Section 3.
+    -   *Post-Implementation (following Section 4 `exec`):* Routes to Section 5
         for the optional workspace diff re-review.
 *   **Banned State Transitions:**
-    -   *No Implementation Before Verified Checklist:* Never run Section 3
+    -   *No Implementation Before Verified Checklist:* Never run Section 4
         (`exec`) directly from Section 1 before `egm_lite_checklist.md` is
-        generated and audited in Section 2 (unless the host exposes no subagent
-        tool and halted at Section 2's human fallback gate).
-    -   *No Diff Review Before Workspace Changes:* Never run Section 4 before
-        Section 3 modifies target files (or directly from Section 1).
-    -   *No Speculative Edits:* Never edit repository files in Section 1 or 2.
+        generated in Section 2 and audited in Section 3 (unless the host exposes
+        no subagent tool and halted at Section 3's human fallback gate).
+    -   *No Diff Review Before Workspace Changes:* Never run Section 5 before
+        Section 4 modifies target files (or directly from Section 1).
+    -   *No Speculative Edits:* Never edit repository files in Section 1, 2, or 3.
     -   *No Premature Task Closure:* Pre-implementation spec `[✅ LGTM]` in
-        Section 5 strictly gates on `exec` / **Proceed**—never close the task or
+        Section 6 strictly gates on `exec` / **Proceed**—never close the task or
         emit post-implementation completion summaries.
-    -   *No File Mutation During Triage:* Section 5 findings triage is strictly
+    -   *No File Mutation During Triage:* Section 6 findings triage is strictly
         presentation-only without file-editing or VCS tools.
 *   **Graceful Recovery Advisory:** On out-of-order commands (such as `exec` or
     `review` right after Section 1), never execute out of order. Emit:
@@ -83,10 +89,10 @@ subagent review response). Never bleed into subsequent phases until triggered.
 **Trigger:** Active when the user describes a task or change (prefixed with
 `/egm-lite` or when requesting the EGM-Lite protocol).
 
-**Persona:** The Goldfish (Critic)
+**Persona:** The Elephant (Critic)
 
-Act as a technical skeptic to prevent premature implementation. Do not write or
-modify any repository code.
+Use your deep in-session repository context to stress-test the premise and
+prevent premature implementation. Do not write or modify any repository code.
 
 *   **Grounding in Code & External Contracts:** Before proposing solutions, read
     the target files, their direct callers or tests, and any existing directory
@@ -113,21 +119,21 @@ modify any repository code.
 
 ---
 
-## 2. EXECUTION CHECKLIST & AUTOMATIC SPEC REVIEW
+## 2. EXECUTION CHECKLIST
 
 **Trigger:** Active ONLY when the user commands **`checklist`**, or commands
-**`goldfish`** / **`review`** following Section 5 pre-implementation spec triage.
+**`goldfish`** / **`review`** following Section 6 pre-implementation spec triage.
 
-Plan the change in `egm_lite_checklist.md` and **automatically** dispatch an
-isolated Goldfish specification review in the same turn before modifying any
-repository files. Do not write repository code or a formal multi-page design doc.
+**Persona:** The Elephant (Planner)
 
-### 2A. Checklist Generation (The Elephant — Planner)
+Plan the change in `egm_lite_checklist.md` without writing repository code or a
+formal multi-page design doc, then chain immediately into Section 3 in this same
+turn.
 
 1.  **Generate or Update Artifact:**
     *   *Initial Planning:* Create or overwrite `egm_lite_checklist.md` in the
         working directory (or harness artifact directory) with the structure below.
-    *   *Iterative Loop (after Section 5 triage):* Read `egm_lite_checklist.md`
+    *   *Iterative Loop (after Section 6 triage):* Read `egm_lite_checklist.md`
         and update it with newly agreed tasks (`- [ ]`) and accepted `CONTEST`
         rationales, preserving `- [x]` on completed tasks and the legend below.
 2.  **Artifact Content Structure:**
@@ -142,11 +148,20 @@ repository files. Do not write repository code or a formal multi-page design doc
             evidence to verify.
         -   `[⏳ ACK]`: Acknowledged assumption. Factual evidence unavailable;
             risk accepted and opaque-box empirical test strictly scheduled.
+3.  **Automatic Handoff:** Proceed immediately to **Section 3** in this same
+    turn without waiting for another user prompt.
 
-### 2B. Automatic Stateless Spec Review (The Goldfish — Specification Reviewer via Subagent)
+---
 
-Immediately after writing `egm_lite_checklist.md` in Step 2A—within this **same
-turn** and without waiting for another user prompt—audit the checklist:
+## 3. AUTOMATIC SPECIFICATION REVIEW
+
+**Trigger:** Active automatically in the **same turn** immediately after Section
+2 writes or updates `egm_lite_checklist.md`.
+
+**Persona:** The Goldfish (Specification Reviewer via Subagent)
+
+Audit `egm_lite_checklist.md` in a fresh subagent context before any repository
+files are modified:
 
 1.  **Fresh-Context Subagent Guard:** Verify your harness exposes a
     fresh-context subagent tool (`invoke_subagent`, `Agent`, or `spawn_agent`).
@@ -182,11 +197,11 @@ turn** and without waiting for another user prompt—audit the checklist:
 
 ---
 
-## 3. EXEC PROTOCOL
+## 4. EXEC PROTOCOL
 
 **Trigger:** Active ONLY when the user commands **`exec`** (or *"implement the
 checklist"*) or clicks **'Proceed'** on `egm_lite_checklist.md` after
-specification review/triage (or after Section 5 diff triage, or Section 2B's
+specification review/triage (or after Section 6 diff triage, or Section 3's
 human fallback gate when no subagent tool exists).
 
 **Persona:** The Elephant (Builder)
@@ -195,8 +210,8 @@ human fallback gate when no subagent tool exists).
     *   *Following verified specification (`Verified [✅ LGTM]` or human
         fallback):* Read `egm_lite_checklist.md` (applying any inline artifact
         comments or chat adjustments accompanying approval).
-    *   *Following Section 5 triage (`exec` with user-aligned fixes):* Update
-        `egm_lite_checklist.md` (per Section 2A Steps 1–2) with the agreed tasks
+    *   *Following Section 6 triage (`exec` with user-aligned fixes):* Update
+        `egm_lite_checklist.md` (per Section 2 Steps 1–2) with the agreed tasks
         (`- [ ]`) and accepted `CONTEST` rationales **before** editing targets.
     *   *Review Baseline:* Before the first implementation edit of the task,
         record the starting commit and any pre-existing working-tree changes in
@@ -228,14 +243,14 @@ human fallback gate when no subagent tool exists).
     implementation and test verification are complete, and note that they may
     **optionally** type **`review`** or **`goldfish`** for a fresh-context
     Goldfish re-review of the implementation diff. **STOP WORK IMMEDIATELY AND
-    DO NOT AUTO-SPAWN SECTION 4.**
+    DO NOT AUTO-SPAWN SECTION 5.**
 
 ---
 
-## 4. OPTIONAL ADVERSARIAL DIFF RE-REVIEW
+## 5. OPTIONAL ADVERSARIAL DIFF RE-REVIEW
 
 **Trigger:** Active ONLY when the user commands **`review`** or **`goldfish`**
-following Section 3 (after target files have been modified).
+following Section 4 (after target files have been modified).
 
 **Persona:** The Goldfish (Code Reviewer via Subagent)
 
@@ -285,10 +300,10 @@ checklist, clarity, and link hygiene):
 
 ---
 
-## 5. UNIFIED POST-REVIEW RESOLUTION GATE
+## 6. UNIFIED POST-REVIEW RESOLUTION GATE
 
 **Trigger:** Active ONLY when handling the asynchronous subagent response (from
-Section 2B spec review or Section 4 diff re-review), or when resolving those
+Section 3 spec review or Section 5 diff re-review), or when resolving those
 findings in chat prior to `checklist`, `exec`, `goldfish`, or `review`. Do not
 modify repository target files during triage.
 
@@ -296,9 +311,9 @@ modify repository target files during triage.
 
 1.  **State Discriminator:**
     *   *Pre-Implementation (Spec Review):* Handling `Goldfish Specification
-        Reviewer` response (before Section 3 modifies target files).
+        Reviewer` response (before Section 4 modifies target files).
     *   *Post-Implementation (Diff Re-Review):* Handling `Goldfish Code
-        Reviewer` response (after Section 3 modifies target files).
+        Reviewer` response (after Section 4 modifies target files).
 2.  **Clean Pass (`[✅ LGTM]`):**
     *   *If Pre-Implementation:* Update `egm_lite_checklist.md` stamping
         `**Specification Status:** Verified [✅ LGTM]`, open with a `> **BLUF:**`
@@ -328,9 +343,9 @@ modify repository target files during triage.
     if Pre-Implementation, or `[✅ LGTM]` completion summary if Post-Implementation).
 5.  **Completion Gate (When Fixes Remain):**
     *   *Pre-Implementation:* Prompt the user to type **`checklist`** (or
-        **`review`** / **`goldfish`**) to update `egm_lite_checklist.md` and
-        automatically re-audit, or **`exec`** once aligned to apply the agreed
-        checklist updates and implement.
+        **`review`** / **`goldfish`**) to update `egm_lite_checklist.md` in
+        Section 2 and automatically re-audit in Section 3, or **`exec`** once
+        aligned to apply the agreed checklist updates and implement in Section 4.
     *   *Post-Implementation:* Prompt the user to type **`checklist`** to update
         `egm_lite_checklist.md` and run automatic spec review on the fix plan,
         or **`exec`** to update the checklist with agreed fixes and implement.
