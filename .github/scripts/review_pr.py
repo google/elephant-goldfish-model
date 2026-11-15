@@ -55,8 +55,6 @@ MAX_PROMPT_DIFF_BYTES = 120_000
 MAX_FILE_PATCH_BYTES = 24_000
 CLEAN_PASS_LABEL = "triage: passed"
 MAINTAINERS_TEAM_SLUG = "egm-maintainers"
-N3WTH_LOGIN = "n3wth"
-DESIGN_REVIEWERS: tuple[str, ...] = ("briansuchy", "eewing314")
 SITE_PATH_PREFIXES: tuple[str, ...] = ("site/", "docs/site/")
 PLATFORM_PATH_PREFIXES: tuple[str, ...] = (
     "adapters/",
@@ -1094,6 +1092,22 @@ def _strip_html_comments(text: str) -> str:
   return HTML_COMMENT_RE.sub("", text or "")
 
 
+def parse_login_list(raw: str | Sequence[str] | None) -> tuple[str, ...]:
+  """Parses a comma-separated string or sequence of GitHub logins."""
+  if raw is None:
+    return ()
+  items = raw.split(",") if isinstance(raw, str) else raw
+  seen: set[str] = set()
+  logins: list[str] = []
+  for item in items:
+    login = str(item or "").strip().lstrip("@")
+    lowered = login.lower()
+    if login and lowered not in seen:
+      seen.add(lowered)
+      logins.append(login)
+  return tuple(logins)
+
+
 def parse_pr_track(body: str) -> str:
   """Extracts the single selected Contribution Type track from a PR body."""
   cleaned = _strip_html_comments(body)
@@ -1185,6 +1199,7 @@ def _reviewer_from_pr_reviews(
     reviews: Sequence[Mapping[str, Any]],
     *,
     stage2_author: str,
+    design_reviewers: Sequence[str] = (),
 ) -> str:
   stage1_author = str(
       (target_pr.get("user") or target_pr.get("author") or {}).get("login", "")
@@ -1210,7 +1225,7 @@ def _reviewer_from_pr_reviews(
 
   preferred: list[str] = []
   others: list[str] = []
-  design_pool = {login.lower() for login in DESIGN_REVIEWERS}
+  design_pool = {login.lower() for login in design_reviewers}
   for req in target_pr.get("requested_reviewers") or ():
     if _is_bot_actor(req):
       continue
@@ -1258,6 +1273,7 @@ def _lookup_pr_reviewer(
     repo: str,
     github_token: str,
     stage2_author: str,
+    design_reviewers: Sequence[str] = (),
     require_design_pr: bool = False,
 ) -> str:
   try:
@@ -1290,7 +1306,10 @@ def _lookup_pr_reviewer(
   except RuntimeError:
     return ""
   return _reviewer_from_pr_reviews(
-      pull_data, pull_reviews, stage2_author=stage2_author
+      pull_data,
+      pull_reviews,
+      stage2_author=stage2_author,
+      design_reviewers=design_reviewers,
   )
 
 
@@ -1327,9 +1346,10 @@ def _resolve_stage1_reviewer(
     *,
     repo: str,
     github_token: str,
-) -> str:
+    design_reviewers: Sequence[str] = (),
+) -> tuple[str, int | None]:
   if not github_token:
-    return ""
+    return "", None
   stage2_author = str(
       (pr_data.get("user") or pr_data.get("author") or {}).get("login", "")
   )
@@ -1342,10 +1362,11 @@ def _resolve_stage1_reviewer(
         repo=repo,
         github_token=github_token,
         stage2_author=stage2_author,
+        design_reviewers=design_reviewers,
         require_design_pr=True,
     )
     if reviewer:
-      return reviewer
+      return reviewer, ref_num
 
   for ref_num in refs[:3]:
     for cand_pr in _search_merged_design_prs(
@@ -1356,10 +1377,11 @@ def _resolve_stage1_reviewer(
           repo=repo,
           github_token=github_token,
           stage2_author=stage2_author,
+          design_reviewers=design_reviewers,
           require_design_pr=True,
       )
       if reviewer:
-        return reviewer
+        return reviewer, cand_pr
 
   design_slugs: list[str] = []
   for file_info in files:
@@ -1380,12 +1402,13 @@ def _resolve_stage1_reviewer(
           repo=repo,
           github_token=github_token,
           stage2_author=stage2_author,
+          design_reviewers=design_reviewers,
           require_design_pr=False,
       )
       if reviewer:
-        return reviewer
+        return reviewer, cand_pr
 
-  return ""
+  return "", None
 
 
 def select_handoff_reviewers(
@@ -1396,24 +1419,31 @@ def select_handoff_reviewers(
     repo: str = DEFAULT_REPO,
     team_slug: str = MAINTAINERS_TEAM_SLUG,
     github_token: str = "",
-) -> tuple[list[str], list[str]]:
+    platform_owners: Sequence[str] = (),
+    design_reviewers: Sequence[str] = (),
+) -> tuple[list[str], list[str], int | None]:
   """Routes clean-handoff PRs to individual reviewers or the maintainer team.
 
-  Returns `(reviewers, team_reviewers)` matching the maintainer routing rules:
-  1. Non-n3wth PRs touching `egm.dev` (`site/`) or AI platform handles/adapters -> `n3wth`
-  2. Core/skills Stage-1 design reviews -> `briansuchy` or `eewing314`
-  3. Core/skills Stage-2 implementations -> Stage-1 design reviewer (fallback to design pool)
-  4. Bug fixes / default -> `team_slug` (`egm-maintainers`) round-robin
+  Returns `(reviewers, team_reviewers, stage1_pr_number)`:
+  1. Non-platform-owner PRs touching `egm.dev` or AI platform handles -> `platform_owners`
+  2. Core/skills Stage-1 design reviews -> round-robin from `design_reviewers`
+  3. Core/skills Stage-2 implementations -> Stage-1 reviewer (fallback to `design_reviewers`)
+  4. Bug fixes / default -> `team_slug` round-robin
   """
   clean_team = team_slug.strip()
+  clean_platform_owners = parse_login_list(platform_owners)
+  clean_design_reviewers = parse_login_list(design_reviewers)
   author_login = str(
       (pr_data.get("user") or pr_data.get("author") or {}).get("login", "")
   )
+  platform_owner_set = {login.lower() for login in clean_platform_owners}
 
-  if author_login.lower() != N3WTH_LOGIN and _is_site_or_platform_pr(
-      pr_data, files
+  if (
+      clean_platform_owners
+      and author_login.lower() not in platform_owner_set
+      and _is_site_or_platform_pr(pr_data, files)
   ):
-    return [N3WTH_LOGIN], []
+    return list(clean_platform_owners), [], None
 
   track = parse_pr_track(str(pr_data.get("body") or ""))
   labels = {
@@ -1431,25 +1461,31 @@ def select_handoff_reviewers(
       or bool(labels & DESIGN_LABELS)
   ):
     reviewer = _pick_from_pool(
-        pr_number, DESIGN_REVIEWERS, exclude=author_login
+        pr_number, clean_design_reviewers, exclude=author_login
     )
     if reviewer:
-      return [reviewer], []
-    return [], ([clean_team] if clean_team else [])
+      return [reviewer], [], None
+    return [], ([clean_team] if clean_team else []), None
 
   if track == STAGE2_TRACK:
-    reviewer = _resolve_stage1_reviewer(
-        pr_number, pr_data, files, repo=repo, github_token=github_token
+    reviewer, stage1_pr_number = _resolve_stage1_reviewer(
+        pr_number,
+        pr_data,
+        files,
+        repo=repo,
+        github_token=github_token,
+        design_reviewers=clean_design_reviewers,
     )
     if not reviewer or reviewer.lower() == author_login.lower():
       reviewer = _pick_from_pool(
-          pr_number, DESIGN_REVIEWERS, exclude=author_login
+          pr_number, clean_design_reviewers, exclude=author_login
       )
+      stage1_pr_number = None
     if reviewer:
-      return [reviewer], []
-    return [], ([clean_team] if clean_team else [])
+      return [reviewer], [], stage1_pr_number
+    return [], ([clean_team] if clean_team else []), None
 
-  return [], ([clean_team] if clean_team else [])
+  return [], ([clean_team] if clean_team else []), None
 
 
 def build_clean_handoff_plan(
@@ -1462,6 +1498,8 @@ def build_clean_handoff_plan(
     team_slug: str = MAINTAINERS_TEAM_SLUG,
     files: Sequence[Mapping[str, Any]] = (),
     github_token: str = "",
+    platform_owners: Sequence[str] = (),
+    design_reviewers: Sequence[str] = (),
 ) -> dict[str, Any]:
   """Builds Stage-1-to-Stage-2 clean handoff plan for reviewers or team."""
   clean_team = team_slug.strip()
@@ -1471,14 +1509,17 @@ def build_clean_handoff_plan(
   )
   reviewers: list[str] = []
   team_reviewers: list[str] = []
+  stage1_pr_number: int | None = None
   if request_assignment:
-    reviewers, team_reviewers = select_handoff_reviewers(
+    reviewers, team_reviewers, stage1_pr_number = select_handoff_reviewers(
         pr_number,
         pr_data,
         files,
         repo=repo,
         team_slug=clean_team,
         github_token=github_token,
+        platform_owners=platform_owners,
+        design_reviewers=design_reviewers,
     )
   header = f"<!-- {REVIEW_MARKER_PREFIX}:sha={head_sha} -->"
   if reviewers:
@@ -1506,7 +1547,7 @@ def build_clean_handoff_plan(
   }
   if head_sha:
     review_payload["commit_id"] = head_sha
-  return {
+  plan: dict[str, Any] = {
       "action": "clean_handoff",
       "reason": "CLEAN_HANDOFF_TO_MAINTAINERS",
       "pr_number": pr_number,
@@ -1517,6 +1558,9 @@ def build_clean_handoff_plan(
       "team_reviewers": team_reviewers,
       "review_payload": review_payload,
   }
+  if stage1_pr_number is not None:
+    plan["stage1_pr_number"] = stage1_pr_number
+  return plan
 
 
 def _wrap_untrusted_block(label: str, content: str, nonce: str) -> str:
@@ -1918,6 +1962,8 @@ def plan_pr_review(
     repo_root: pathlib.Path | None = None,
     default_branch: str = DEFAULT_BRANCH,
     maintainers_team: str = MAINTAINERS_TEAM_SLUG,
+    platform_owners: Sequence[str] = (),
+    design_reviewers: Sequence[str] = (),
     model: str = DEFAULT_MODEL,
     fallback_models: Sequence[str] = DEFAULT_FALLBACK_MODELS,
     force_manual: bool = False,
@@ -2045,6 +2091,8 @@ def plan_pr_review(
         team_slug=maintainers_team,
         files=files,
         github_token=github_token,
+        platform_owners=platform_owners,
+        design_reviewers=design_reviewers,
     )
     handoff["depth"] = decision.depth
     handoff["reason"] = "NO_REVIEWABLE_DIFF_HANDOFF"
@@ -2139,6 +2187,8 @@ def plan_pr_review(
         team_slug=maintainers_team,
         files=files,
         github_token=github_token,
+        platform_owners=platform_owners,
+        design_reviewers=design_reviewers,
     )
     handoff["depth"] = decision.depth
     handoff["model"] = selected_model
@@ -2177,6 +2227,14 @@ def main(argv: Sequence[str] | None = None) -> int:
   parser.add_argument("--repo", default=DEFAULT_REPO)
   parser.add_argument("--default-branch", default=DEFAULT_BRANCH)
   parser.add_argument("--maintainers-team", default=MAINTAINERS_TEAM_SLUG)
+  parser.add_argument(
+      "--platform-owners",
+      default=os.environ.get("PLATFORM_SITE_OWNERS", ""),
+  )
+  parser.add_argument(
+      "--design-reviewers",
+      default=os.environ.get("DESIGN_REVIEWERS", ""),
+  )
   parser.add_argument("--pr", type=int, default=0)
   parser.add_argument("--head-sha", default="")
   parser.add_argument("--model", default=DEFAULT_MODEL)
@@ -2223,6 +2281,8 @@ def main(argv: Sequence[str] | None = None) -> int:
       repo_root=args.repo_root,
       default_branch=(args.default_branch.strip() or DEFAULT_BRANCH),
       maintainers_team=args.maintainers_team.strip(),
+      platform_owners=parse_login_list(args.platform_owners),
+      design_reviewers=parse_login_list(args.design_reviewers),
       model=(args.model.strip() or DEFAULT_MODEL),
       fallback_models=parse_fallback_models(args.fallback_models),
       force_manual=args.force_manual,

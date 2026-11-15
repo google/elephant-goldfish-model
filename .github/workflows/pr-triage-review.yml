@@ -80,6 +80,8 @@ jobs:
           REPO: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           MAINTAINERS_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
+          PLATFORM_SITE_OWNERS: ${{ vars.PLATFORM_SITE_OWNERS }}
+          DESIGN_REVIEWERS: ${{ vars.DESIGN_REVIEWERS }}
           PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || '' }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha || '' }}
           REVIEW_MODEL: ${{ vars.EGM_REVIEW_MODEL || 'gemini-4-argon' }}
@@ -92,6 +94,8 @@ jobs:
             --repo "$REPO"
             --default-branch "$DEFAULT_BRANCH"
             --maintainers-team "$MAINTAINERS_TEAM"
+            --platform-owners "$PLATFORM_SITE_OWNERS"
+            --design-reviewers "$DESIGN_REVIEWERS"
             --model "$REVIEW_MODEL"
             --fallback-models "$FALLBACK_MODELS"
             --out "$PLAN_OUT"
@@ -137,7 +141,8 @@ jobs:
         env:
           PLAN_PATH: ${{ runner.temp }}/plan/review-plan.json
           ALLOWED_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
-          ALLOWED_REVIEWERS: ${{ vars.EGM_ALLOWED_REVIEWERS || 'n3wth,briansuchy,eewing314,drensin,quinnjim,tearseb,emckean,amcasari,renaudd' }}
+          PLATFORM_SITE_OWNERS: ${{ vars.PLATFORM_SITE_OWNERS }}
+          DESIGN_REVIEWERS: ${{ vars.DESIGN_REVIEWERS }}
           FALLBACK_TOKEN: ${{ github.token }}
         with:
           github-token: ${{ secrets.EGM_TRIAGE_BOT_TOKEN || github.token }}
@@ -260,15 +265,51 @@ jobs:
             }
 
             const allowedTeams = new Set([process.env.ALLOWED_TEAM || "egm-maintainers"].filter(Boolean));
-            const allowedReviewers = new Set(
-              (process.env.ALLOWED_REVIEWERS || "n3wth,briansuchy,eewing314,drensin,quinnjim,tearseb,emckean,amcasari,renaudd")
+            const parseLogins = raw =>
+              String(raw || "")
                 .split(",")
                 .map(login => login.trim())
-                .filter(Boolean)
-            );
+                .filter(Boolean);
+            const configuredReviewers = new Set([
+              ...parseLogins(process.env.PLATFORM_SITE_OWNERS),
+              ...parseLogins(process.env.DESIGN_REVIEWERS)
+            ]);
+            const stage1TrustedReviewers = new Set();
+            const stage1PrNumber = Number(plan.stage1_pr_number);
+            if (Number.isInteger(stage1PrNumber) && stage1PrNumber > 0) {
+              try {
+                const { data: stage1Pr } = await client.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: stage1PrNumber
+                });
+                const stage1Author = String(stage1Pr.user?.login || "").toLowerCase();
+                const stage1Reviews = typeof client.paginate === "function"
+                  ? await client.paginate(client.rest.pulls.listReviews, { owner, repo, pull_number: stage1PrNumber, per_page: 100 })
+                  : (await client.rest.pulls.listReviews({ owner, repo, pull_number: stage1PrNumber, per_page: 100 })).data;
+                const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+                for (const rev of stage1Reviews) {
+                  const login = String(rev.user?.login || "");
+                  const assoc = String(rev.author_association || "").toUpperCase();
+                  if (login && login.toLowerCase() !== stage1Author && trustedAssociations.has(assoc)) {
+                    stage1TrustedReviewers.add(login);
+                  }
+                }
+                for (const req of stage1Pr.requested_reviewers || []) {
+                  const login = String(req?.login || "");
+                  if (login && req.type !== "Bot" && login.toLowerCase() !== stage1Author) {
+                    stage1TrustedReviewers.add(login);
+                  }
+                }
+              } catch (error) {
+                core.warning(`Could not verify Stage 1 PR #${stage1PrNumber} reviewers: ${error.message}`);
+              }
+            }
             const prAuthor = String(pr.user?.login || "").toLowerCase();
             const reviewers = (plan.reviewers || []).filter(
-              login => allowedReviewers.has(login) && login.toLowerCase() !== prAuthor
+              login =>
+                login.toLowerCase() !== prAuthor &&
+                (configuredReviewers.has(login) || stage1TrustedReviewers.has(login))
             );
             const teamReviewers = (plan.team_reviewers || []).filter(team => allowedTeams.has(team));
             if (reviewers.length > 0 || teamReviewers.length > 0) {

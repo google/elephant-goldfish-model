@@ -30,12 +30,24 @@ jobs:
     steps:
       - name: "Assign maintainer based on issue scope"
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PLATFORM_SITE_OWNERS: ${{ vars.PLATFORM_SITE_OWNERS }}
+          FEATURE_REQUEST_TRIAGE: ${{ vars.FEATURE_REQUEST_TRIAGE }}
         with:
           script: |
             const issue = context.payload.issue;
             if (!issue || issue.pull_request) {
               return;
             }
+
+            const parseLogins = raw =>
+              String(raw || "")
+                .split(",")
+                .map(login => login.trim())
+                .filter(Boolean);
+
+            const platformOwners = parseLogins(process.env.PLATFORM_SITE_OWNERS);
+            const featureTriage = parseLogins(process.env.FEATURE_REQUEST_TRIAGE);
 
             const { owner, repo } = context.repo;
             const author = String(issue.user?.login || "").toLowerCase();
@@ -60,34 +72,25 @@ jobs:
               /##\s*Proposed Scope\s*\(Goals vs\.\s*Non-Goals\)/i.test(String(issue.body || ""));
 
             const currentAssignees = (issue.assignees || []).map(a => a.login);
+            const platformSet = new Set(platformOwners.map(login => login.toLowerCase()));
 
-            if (author !== "n3wth" && isPlatformOrSite) {
-              if (!currentAssignees.includes("n3wth")) {
-                if (currentAssignees.length === 1 && currentAssignees[0] === "eewing314") {
-                  await github.rest.issues.removeAssignees({
-                    owner,
-                    repo,
-                    issue_number: issue.number,
-                    assignees: ["eewing314"]
-                  });
-                }
-                if (currentAssignees.length === 0 || (currentAssignees.length === 1 && currentAssignees[0] === "eewing314")) {
-                  await github.rest.issues.addAssignees({
-                    owner,
-                    repo,
-                    issue_number: issue.number,
-                    assignees: ["n3wth"]
-                  });
-                }
+            if (platformOwners.length > 0 && !platformSet.has(author) && isPlatformOrSite) {
+              if (currentAssignees.length === 0) {
+                await github.rest.issues.addAssignees({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  assignees: platformOwners
+                });
               }
               return;
             }
 
-            if (isFeature && currentAssignees.length === 0) {
+            if (featureTriage.length > 0 && isFeature && currentAssignees.length === 0) {
               await github.rest.issues.addAssignees({
                 owner,
                 repo,
                 issue_number: issue.number,
-                assignees: ["eewing314"]
+                assignees: featureTriage
               });
             }

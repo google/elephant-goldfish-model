@@ -23,6 +23,8 @@ function createHarness(overrides = {}) {
   const planPath = join(dir, 'review-plan.json')
   const state = {
     reviews: overrides.existingReviews ? [...overrides.existingReviews] : [],
+    reviewsByPr: overrides.reviewsByPr || {},
+    pullsByNumber: overrides.pullsByNumber || {},
     labels: new Set(overrides.initialLabels || []),
     requestedReviewers: [],
     requestedTeams: [],
@@ -41,9 +43,12 @@ function createHarness(overrides = {}) {
   const makeClient = isPrimary => ({
     rest: {
       pulls: {
-        get: async () => {
+        get: async ({ pull_number }) => {
           if (isPrimary && state.rejectPrimary401) {
             throw Object.assign(new Error('Bad credentials'), { status: 401 })
+          }
+          if (pull_number && state.pullsByNumber[pull_number]) {
+            return { data: state.pullsByNumber[pull_number] }
           }
           return {
             data: {
@@ -53,8 +58,12 @@ function createHarness(overrides = {}) {
             },
           }
         },
-        listReviews: async () => ({
-          data: [...state.reviews],
+        listReviews: async ({ pull_number } = {}) => ({
+          data: [
+            ...(pull_number && state.reviewsByPr[pull_number]
+              ? state.reviewsByPr[pull_number]
+              : state.reviews),
+          ],
         }),
         createReview: async req => {
           if (state.rejectInline422 && req.comments && req.comments.length > 0) {
@@ -102,16 +111,19 @@ function createHarness(overrides = {}) {
   state.run = async (
     plan,
     allowedTeam = 'egm-maintainers',
-    allowedReviewers = 'n3wth,briansuchy,eewing314',
+    platformSiteOwners = 'n3wth',
+    designReviewers = 'briansuchy,eewing314',
   ) => {
     writeFileSync(planPath, JSON.stringify(plan), 'utf8')
     const prevPlan = process.env.PLAN_PATH
     const prevTeam = process.env.ALLOWED_TEAM
-    const prevReviewers = process.env.ALLOWED_REVIEWERS
+    const prevPlatform = process.env.PLATFORM_SITE_OWNERS
+    const prevDesign = process.env.DESIGN_REVIEWERS
     const prevFallback = process.env.FALLBACK_TOKEN
     process.env.PLAN_PATH = planPath
     process.env.ALLOWED_TEAM = allowedTeam
-    process.env.ALLOWED_REVIEWERS = allowedReviewers
+    process.env.PLATFORM_SITE_OWNERS = platformSiteOwners
+    process.env.DESIGN_REVIEWERS = designReviewers
     process.env.FALLBACK_TOKEN = 'fallback-gh-token'
     try {
       await executePost(
@@ -126,8 +138,10 @@ function createHarness(overrides = {}) {
       else process.env.PLAN_PATH = prevPlan
       if (prevTeam === undefined) delete process.env.ALLOWED_TEAM
       else process.env.ALLOWED_TEAM = prevTeam
-      if (prevReviewers === undefined) delete process.env.ALLOWED_REVIEWERS
-      else process.env.ALLOWED_REVIEWERS = prevReviewers
+      if (prevPlatform === undefined) delete process.env.PLATFORM_SITE_OWNERS
+      else process.env.PLATFORM_SITE_OWNERS = prevPlatform
+      if (prevDesign === undefined) delete process.env.DESIGN_REVIEWERS
+      else process.env.DESIGN_REVIEWERS = prevDesign
       if (prevFallback === undefined) delete process.env.FALLBACK_TOKEN
       else process.env.FALLBACK_TOKEN = prevFallback
       rmSync(dir, { recursive: true, force: true })
@@ -253,15 +267,26 @@ test('concurrent trigger race skips duplicate review when SHA marker already exi
   assert.ok(state.infos.some(msg => /already present/.test(msg)))
 })
 
-test('clean_handoff filters individual reviewers by allowlist and excludes PR author', async () => {
-  const state = createHarness({ prAuthor: 'briansuchy' })
+test('clean_handoff filters reviewers by configured vars, Stage 1 PR reviews, and author exclusion', async () => {
+  const state = createHarness({
+    prAuthor: 'briansuchy',
+    pullsByNumber: {
+      210: { user: { login: 'contributor' }, requested_reviewers: [] },
+    },
+    reviewsByPr: {
+      210: [
+        { user: { login: 'drensin' }, author_association: 'MEMBER', state: 'APPROVED' },
+      ],
+    },
+  })
   await state.run({
     action: 'clean_handoff',
     pr_number: 42,
     head_sha: 'abc12345',
+    stage1_pr_number: 210,
     add_labels: ['triage: passed'],
     remove_labels: [],
-    reviewers: ['n3wth', 'briansuchy', 'untrusted-user'],
+    reviewers: ['n3wth', 'drensin', 'briansuchy', 'untrusted-user'],
     team_reviewers: [],
     review_payload: {
       commit_id: 'abc12345',
@@ -270,6 +295,6 @@ test('clean_handoff filters individual reviewers by allowlist and excludes PR au
     },
   })
   assert.equal(state.failed, null)
-  assert.deepEqual(state.requestedReviewers, ['n3wth'])
+  assert.deepEqual(state.requestedReviewers, ['n3wth', 'drensin'])
   assert.deepEqual(state.requestedTeams, [])
 })

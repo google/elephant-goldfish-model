@@ -1041,6 +1041,8 @@ def test_repo_inventory_and_false_positive_filter_prevent_pr_410_regressions(
       styleguide_path=ROOT / ".gemini" / "styleguide.md",
       config_path=CONFIG_PATH,
       repo_root=ROOT,
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
       llm_caller=replay_pr_410_hallucinations,
   )
   assert len(prompts_seen) == 1
@@ -1089,16 +1091,19 @@ def test_handoff_routing_site_and_platform_adapters_to_n3wth() -> None:
       ".gemini/extensions/egm.json",
       "docs/designs/windsurf-adapter.md",
   ):
-    reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+    reviewers, team_reviewers, stage1_pr = review_pr.select_handoff_reviewers(
         501,
         {"user": {"login": "contributor"}, "title": "Update integration", "body": ""},
         [{"filename": filename}],
+        platform_owners=("n3wth",),
+        design_reviewers=("briansuchy", "eewing314"),
     )
     assert reviewers == ["n3wth"], filename
     assert team_reviewers == []
+    assert stage1_pr is None
 
-  # New AI platform adapter proposal from a non-n3wth author routes to n3wth.
-  reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+  # New AI platform adapter proposal from a non-n3wth author routes to platform owner.
+  reviewers, team_reviewers, _ = review_pr.select_handoff_reviewers(
       502,
       {
           "user": {"login": "contributor"},
@@ -1109,15 +1114,19 @@ def test_handoff_routing_site_and_platform_adapters_to_n3wth() -> None:
           ),
       },
       [{"filename": "docs/designs/windsurf.md"}],
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
   )
   assert reviewers == ["n3wth"]
   assert team_reviewers == []
 
-  # n3wth's own PRs never route back to n3wth.
-  reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+  # Platform owner's own PRs never route back to themselves.
+  reviewers, team_reviewers, _ = review_pr.select_handoff_reviewers(
       503,
       {"user": {"login": "n3wth"}, "title": "Update egm.dev landing page", "body": ""},
       [{"filename": "site/src/pages/index.astro"}],
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
   )
   assert "n3wth" not in reviewers
   assert team_reviewers == ["egm-maintainers"]
@@ -1131,15 +1140,19 @@ def test_handoff_routing_design_review_and_template_comments() -> None:
       "Track: Feature / Architectural Change -- Stage 1: Design Doc PR\n"
       "<!-- For harness support... -->\n"
   )
-  r_even, t_even = review_pr.select_handoff_reviewers(
+  r_even, t_even, _ = review_pr.select_handoff_reviewers(
       100,
       {"user": {"login": "contributor"}, "title": "Add skill X", "body": core_design_body},
       [{"filename": "docs/designs/skill-x.md"}],
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
   )
-  r_odd, t_odd = review_pr.select_handoff_reviewers(
+  r_odd, t_odd, _ = review_pr.select_handoff_reviewers(
       101,
       {"user": {"login": "contributor"}, "title": "Add skill Y", "body": core_design_body},
       [{"filename": "docs/designs/skill-y.md"}],
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
   )
   assert r_even == ["briansuchy"]
   assert r_odd == ["eewing314"]
@@ -1147,10 +1160,12 @@ def test_handoff_routing_design_review_and_template_comments() -> None:
   assert t_odd == []
 
   # Author exclusion prevents requesting PR author as design reviewer.
-  r_brian, _ = review_pr.select_handoff_reviewers(
+  r_brian, _, _ = review_pr.select_handoff_reviewers(
       100,
       {"user": {"login": "briansuchy"}, "title": "Design skill Z", "body": core_design_body},
       [{"filename": "docs/designs/skill-z.md"}],
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
   )
   assert r_brian == ["eewing314"]
 
@@ -1169,7 +1184,7 @@ def test_handoff_routing_implementation_follows_design_reviewer(monkeypatch) -> 
   }
   stage1_reviews = [
       {
-          "user": {"login": "eewing314", "type": "User"},
+          "user": {"login": "drensin", "type": "User"},
           "author_association": "MEMBER",
           "state": "APPROVED",
       }
@@ -1202,17 +1217,20 @@ def test_handoff_routing_implementation_follows_design_reviewer(monkeypatch) -> 
       ),
       "labels": [],
   }
-  reviewers, team_reviewers = review_pr.select_handoff_reviewers(
+  reviewers, team_reviewers, stage1_pr_num = review_pr.select_handoff_reviewers(
       215,
       stage2_via_issue,
       [{"filename": "skills/egm-design/SKILL.md"}],
       github_token="tok",
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
   )
-  assert reviewers == ["eewing314"]
+  assert reviewers == ["drensin"]
   assert team_reviewers == []
+  assert stage1_pr_num == 210
 
-  # Unresolved Stage 2 implementation falls back to core design reviewers.
-  reviewers_fb, team_fb = review_pr.select_handoff_reviewers(
+  # Unresolved Stage 2 implementation falls back to configured design reviewers.
+  reviewers_fb, team_fb, stage1_pr_fb = review_pr.select_handoff_reviewers(
       216,
       {
           "user": {"login": "contributor"},
@@ -1225,9 +1243,12 @@ def test_handoff_routing_implementation_follows_design_reviewer(monkeypatch) -> 
       },
       [{"filename": "skills/egm-design/SKILL.md"}],
       github_token="",
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
   )
   assert reviewers_fb == ["briansuchy"]
   assert team_fb == []
+  assert stage1_pr_fb is None
 
 
 def test_handoff_routing_bug_fix_uses_maintainers_round_robin() -> None:
@@ -1240,16 +1261,21 @@ def test_handoff_routing_bug_fix_uses_maintainers_round_robin() -> None:
       ),
       "labels": [],
   }
-  reviewers, team_reviewers = review_pr.select_handoff_reviewers(
-      300, bug_pr, [{"filename": "skills/egm-review/SKILL.md"}]
+  reviewers, team_reviewers, stage1_pr = review_pr.select_handoff_reviewers(
+      300,
+      bug_pr,
+      [{"filename": "skills/egm-review/SKILL.md"}],
+      platform_owners=("n3wth",),
+      design_reviewers=("briansuchy", "eewing314"),
   )
   assert reviewers == []
   assert team_reviewers == ["egm-maintainers"]
+  assert stage1_pr is None
 
 
 def test_feature_proposal_template_and_issue_triage_workflow() -> None:
   template_text = (ROOT / ".github/ISSUE_TEMPLATE/feature_proposal.md").read_text()
-  assert "assignees: eewing314" in template_text
+  assert "assignees:" not in template_text
 
   wf_path = ROOT / ".github/workflows/issue-triage.yml"
   wf = yaml.safe_load(wf_path.read_text())
@@ -1257,7 +1283,10 @@ def test_feature_proposal_template_and_issue_triage_workflow() -> None:
   job = wf["jobs"]["triage-issue"]
   assert job["timeout-minutes"] == 5
   assert job["permissions"] == {"issues": "write"}
-  assert "@" in job["steps"][0]["uses"]
+  step = job["steps"][0]
+  assert "@" in step["uses"]
+  assert step["env"]["PLATFORM_SITE_OWNERS"] == "${{ vars.PLATFORM_SITE_OWNERS }}"
+  assert step["env"]["FEATURE_REQUEST_TRIAGE"] == "${{ vars.FEATURE_REQUEST_TRIAGE }}"
 
 
 def test_design_pr_merged_workflow_hardening() -> None:
