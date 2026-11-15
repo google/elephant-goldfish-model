@@ -40,7 +40,7 @@ sequenceDiagram
     participant Elephant as Root Elephant Context
     participant Synth as Synthesizer Persona (Intermediate Orchestrator)
     participant Swarm as Goldfish Swarm (Parallel Subagents, optional A/B)
-    participant Artifact as Artifact File (report file named by the caller)
+    participant Artifact as Artifact File (caller-named, default: goldfish_review_report.md)
 
     Elephant->>Synth: invoke_subagent (TargetFile, Reviewers, Standards)
     Note over Synth: Inspect Mode: REVIEW vs BRAINSTORM
