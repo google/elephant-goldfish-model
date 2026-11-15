@@ -1,59 +1,42 @@
 # EGM-Lite: Rapid Ad-Hoc Engineering Protocol
 
-*   **Author:** Jonathan Njeunje ([@njeunje](https://github.com/njeunje)), Elise Ewing ([@eewing314](https://github.com/eewing314))
+*   **Authors:** Jonathan Njeunje ([@njeunje](https://github.com/njeunje)), Elise Ewing ([@eewing314](https://github.com/eewing314))
 *   **Status:** Proposed
 *   **Date:** 2026-11-14
 
---------------------------------------------------------------------------------
-
 ## Overview
 
-**EGM-Lite** (`/egm-lite`) adapts the Elephant-Goldfish Model (EGM) for small, rapid iterations,
-specification revisions, code refactors, and bug fixes without requiring a full multi-document
-lifecycle. It enforces a decoupled 5-phase state machine with explicit **Elephant and Goldfish
-persona switching** aligned to EGM's shift-left verification principle:
+**EGM-Lite** (`/egm-lite`) adapts the Elephant-Goldfish Model (EGM) for small iterations, specification revisions, targeted refactors, and bug fixes that do not warrant a multi-document design lifecycle. Rather than deferring independent review until code is already written, `/egm-lite` shifts verification upstream: generating an execution checklist in `egm_lite_checklist.md` automatically dispatches a fresh-context Goldfish subagent to audit the plan before any repository files are modified.
 
-1.  **Phase 1: Critique Pause** — Goldfish (Critic) challenges premises and probes code invariants in-session.
-2.  **Phase 2: Execution Checklist & Automatic Spec Review** — Elephant (Planner) writes `egm_lite_checklist.md` and **automatically** dispatches a fresh-context Goldfish Specification Reviewer subagent before any implementation edits occur.
-3.  **Phase 3: Scope-Contained Execution** — Elephant (Builder) records the review baseline, implements the verified checklist items, and runs local tests, completing the task while offering an **optional** post-implementation diff re-review.
-4.  **Phase 4: Optional Adversarial Diff Re-Review** — Goldfish (Code Reviewer via Subagent) audits the workspace changes on user request (`review` or `goldfish`).
-5.  **Phase 5: Unified Post-Review Resolution Gate** — Elephant (Resolver) triages either pre-implementation specification findings or post-implementation diff findings in presentation-only mode.
+Once the checklist passes specification review and the developer approves execution, the Elephant builder records the starting workspace baseline, implements the approved items, and runs local tests. Because specification flaws are caught upstream, the task finishes once local tests pass; a post-implementation Goldfish re-review of the workspace diff remains available on demand (`review` or `goldfish`).
 
 ## The Problem
 
-Executing the full EGM lifecycle (`/egm-brainstorm` -> `/egm-draft` -> `/egm-review`) for small
-changes introduces unnecessary process overhead. Conversely, unconstrained agent execution defaults
-to:
+Running the full EGM lifecycle (`/egm-brainstorm` -> `/egm-draft` -> `/egm-review`) for localized fixes introduces multi-stage artifact overhead disproportionate to small changes. Skipping EGM altogether, however, exposes three recurring failure modes in single-session coding agents:
 
-1.  Ungrounded code edits without verifying upstream contracts.
-2.  Speculative abstractions and out-of-scope refactoring (YAGNI).
-3.  Downstream-only review or self-validation that catches architectural flaws only after code has already been written.
-
-EGM-Lite provides an on-rails middle ground that shifts independent Goldfish verification upstream onto the execution checklist automatically, while keeping post-implementation diff re-review optional.
+1.  Agents edit source files before verifying callers, tests, or external contracts.
+2.  Agents introduce unrequested abstractions and out-of-scope edits (YAGNI violations).
+3.  Same-context self-review or downstream-only diff review surfaces design mistakes only after implementation work is already sunk.
 
 ## Goals
 
-*   **Automatic Pre-Implementation Specification Review:** Audit `egm_lite_checklist.md` automatically in an isolated, fresh-context Goldfish subagent before repository code or documents are modified.
-*   **Optional Post-Implementation Diff Re-Review:** Complete routine executions cleanly once local tests pass on a verified checklist, while preserving an on-demand isolated Goldfish diff audit (`review` / `goldfish`) when desired.
-*   **Unified Presentation-Only Triage:** Resolve both pre-implementation specification findings and post-implementation diff findings through a single deterministic resolution gate without mutating files during triage.
+*   Audit `egm_lite_checklist.md` automatically in an isolated, fresh-context Goldfish subagent before modifying repository code or documents.
+*   Complete execution once local tests pass on a verified checklist while preserving an opt-in Goldfish diff re-review (`review` or `goldfish`).
+*   Triage both pre-implementation specification findings and post-implementation diff findings through one presentation-only resolution gate without mutating files during triage.
 
 ## Non-Goals
 
 *   Replace the full EGM design lifecycle (`/egm-brainstorm`, `/egm-draft`, `/egm-review`) for large or multi-component architectural changes.
-*   Perform or simulate a same-context Goldfish review when the host exposes no isolated, fresh-context subagent tool.
-*   Expand implementation beyond the approved checklist or force a mandatory post-implementation diff re-review after execution succeeds.
+*   Simulate a same-context Goldfish review when the host environment exposes no isolated subagent tool.
+*   Expand implementation beyond approved checklist items or require a mandatory post-implementation diff re-review after execution succeeds.
 
-## System Architecture & Decoupled State Machine
+## System Architecture & State Machine
 
-Transitions between phases occur strictly upon explicit user command triggers and asynchronous
-subagent completion:
+`/egm-lite` executes as a decoupled five-phase state machine. Each turn runs only the single phase matching the active trigger—a user command (`checklist`, `exec`, `review`, `goldfish`), an artifact **Proceed** action, or an asynchronous subagent response—preventing phase bleed across turns.
 
-*   **State-Bound Command Aliases (`goldfish` / `review`):** `goldfish` and `review` are interchangeable aliases bound to execution state—prior to implementation they update and re-audit `egm_lite_checklist.md` (Phase 2), and following execution they trigger the optional workspace diff re-review (Phase 4).
-*   **Banned Transitions & Graceful State Advisories:** Attempting implementation (`exec`) before `egm_lite_checklist.md` has been generated and audited in Phase 2 (unless the host lacks a subagent tool and halted at the human fallback gate), or requesting a diff review before workspace changes exist, emits a `> **BLUF:** [State Advisory]` blockquote guiding the developer to the valid next action rather than executing out of order.
-*   **Subagent Integrity Guard:** Both Phase 2B (automatic specification review) and Phase 4 (optional diff re-review) require a fresh-context subagent tool (`invoke_subagent`, `Agent`, or `spawn_agent`). When unavailable, the protocol refuses same-context self-review—falling back to explicit human checklist approval in Phase 2 and stopping with an explanation in Phase 4.
-*   **Code References & IDE Navigation:** All phases link referenced local files, symbols, and line ranges using clickable links, and cite external contracts via symbol or definition queries.
-*   **Plain-English `> **BLUF:**` Blockquotes:** Phases that require a `> **BLUF:**` open with a concise single-paragraph blockquote (followed by `---`) stating the plain-English takeaway and recommended action without raw IDs, code literals, or line links.
-*   **Non-Sycophantic Posture:** All phases lead with technical risks, trade-offs, or defects and forbid flattering adjectives or polite apologies.
+`goldfish` and `review` act as state-bound aliases: prior to implementation (following specification triage) they update and re-audit `egm_lite_checklist.md` in Phase 2, whereas after Phase 3 modifies workspace files they invoke the optional diff re-review in Phase 4. Out-of-order commands—such as invoking `exec` or `review` directly after Phase 1 before a checklist has been generated and audited—do not execute; instead, the agent emits a `> **BLUF:** [State Advisory]` blockquote naming the invalid transition and valid next command.
+
+All phases enforce three cross-cutting output rules: local files and line ranges use clickable links while external contracts cite symbol or repository definitions; required `> **BLUF:**` openings appear as a single plain-English blockquote paragraph followed by `---` without raw IDs or code literals; and responses maintain an objective, non-sycophantic engineering tone that leads with risks or defects.
 
 ```mermaid
 flowchart TD
@@ -78,97 +61,74 @@ flowchart TD
     P5Diff -- All Contested / Dismissed --> Done
 ```
 
+| Phase | Active Persona | Entry Trigger | Primary Responsibility | Exit Gate |
+| :---- | :------------- | :------------ | :--------------------- | :-------- |
+| **1. Critique Pause** | Goldfish (Critic) | `/egm-lite <task>` | Probe target files, callers, tests, `README.md`, and external contracts; challenge premises. | Awaits `checklist`. |
+| **2A. Checklist** | Elephant (Planner) | `checklist` (or pre-impl `review` / `goldfish`) | Write or update `egm_lite_checklist.md` with `- [ ]` targets, exclusions, and `CONTEST` rationales. | Hands off in-turn to Phase 2B. |
+| **2B. Spec Review** | Goldfish (Spec Subagent) | Automatic after 2A | Audit `egm_lite_checklist.md` in a fresh subagent context against the Specification Review Rubric. | Awaits subagent response (or human fallback if no subagent tool exists). |
+| **3. Execution** | Elephant (Builder) | `exec` / **Proceed** | Record review baseline, implement approved checklist items, run local tests, and mark `- [x]`. | Task complete; offers optional `review` / `goldfish`. |
+| **4. Diff Re-Review** | Goldfish (Code Subagent) | `review` / `goldfish` post-exec | Collect baseline-scoped workspace changes (including task commits and untracked files) for fresh audit. | Awaits subagent response. |
+| **5. Resolution Gate** | Elephant (Resolver) | Subagent response | Present `[X] [PY]` triage (`PROPOSE FIX` vs. `CONTEST`) without file edits; gate next transition by state. | Pre-impl: `exec` or re-audit. Post-impl: Done, `checklist`, or `exec`. |
+
 ### Phase 1: Critique Pause (`/egm-lite`)
 
-*   **Persona**: Goldfish (Critic) — Adversarial, skeptical.
-*   **Grounding & BLUF**: Probes target files, direct callers or tests, any existing directory `README.md` or user-cited doc, and repository definitions before proposing solutions, leading with a `> **BLUF:**` on whether the approach is ready for `checklist` or blocked.
-*   **Contract Tracking**: Tags assumptions as `[⚠️ UNVERIFIED]` (untested contracts) or `[⏳ ACK]` (scheduled for empirical test).
-*   **Alternatives Considered**: When multiple viable approaches exist, documents trade-offs in `egm_lite_alternatives.md` (led by a `> **BLUF:**` on the recommended option and trade-off) and links the artifact in chat without inline discussion (omitting it for trivial or single-path tasks).
-*   **Completion Gate**: Halts execution and awaits the `checklist` command so pre-implementation specification review runs before any edits.
+Phase 1 adopts an in-session Goldfish critic posture before any planning or file edits occur. The agent reads the target files, their direct callers or tests, any directory `README.md` or user-cited document, and underlying definitions for external dependencies. When an external boundary cannot be verified from source or documentation, the agent flags it as `[⚠️ UNVERIFIED]` and agrees with the developer either to verify it upfront or to defer it as `[⏳ ACK]` paired with a scheduled empirical test.
+
+The response opens with a `> **BLUF:**` stating whether the approach is ready for `checklist` or blocked on open risks. When multiple viable designs exist, trade-offs are written to `egm_lite_alternatives.md` (opened by a `> **BLUF:**` naming the recommended option) and linked in chat rather than argued inline; single-path fixes omit this file. Phase 1 then halts and prompts for `checklist` so pre-implementation specification review always precedes code changes.
 
 ### Phase 2: Execution Checklist & Automatic Spec Review (`checklist`)
 
-*   **Phase 2A — Checklist Generation (Elephant Planner)**:
-    *   Writes or updates `egm_lite_checklist.md` structured into three canonical sections plus the Assumption Lifecycle Legend:
-        1.  *Targets & Tasks*: Ordered checklist items as GFM checkboxes (`- [ ]`) linking exact file paths and line ranges or tooling commands with brief rationales (covering code, specifications, or design documents).
-        2.  *Pre-Review Exclusions*: Explicitly agreed scope boundaries suppressed from review.
-        3.  *Accepted CONTEST Rationales*: Settled false-positive findings retained across iteration loops to prevent redundant review flags.
-*   **Phase 2B — Automatic Stateless Spec Review (Goldfish Specification Reviewer via Subagent)**:
-    *   **Automatic Same-Turn Dispatch**: Immediately after writing `egm_lite_checklist.md`—without pausing for an intermediate user prompt—constructs a stripped specification-review prompt containing the full checklist markdown and task requirements, and spawns a fresh-context `Goldfish Specification Reviewer` subagent (`invoke_subagent`, `Agent`, or `spawn_agent`). If no fresh-context subagent tool exists, halts without simulating a same-context review and requests human `Proceed` / `exec` approval on `egm_lite_checklist.md`.
-    *   **Specification Review Rubric**: Enforces a strictly binary output contract (`[✅ LGTM]` on zero findings, otherwise findings tagged `[PY]`) across four dimensions while skipping pre-review exclusions and accepted `CONTEST` rationales, suppressing stylistic nitpicks, and forbidding AST or git diff code checks:
-        1.  *Scope Containment & YAGNI*: Change targets stay within task bounds without speculative abstractions.
-        2.  *Contract & Invariant Tagging*: External dependencies and untested boundaries carry `[⚠️ UNVERIFIED]` or `[⏳ ACK]` tags with concrete verification plans.
-        3.  *Edge Cases & Failure Modes*: Error handling, timeouts, and boundary conditions are accounted for in the plan.
-        4.  *Test Plan Actionability*: Test targets or empirical validation steps are concrete and runnable.
-    *   **Completion Gate**: Halts execution immediately after spawning the subagent and awaits its asynchronous response.
+Commanding `checklist` runs checklist generation (Phase 2A) followed in the same turn by automatic specification review (Phase 2B).
+
+In Phase 2A, the Elephant planner creates or updates `egm_lite_checklist.md` (covering code, specification, or documentation targets). Each target appears as a GFM checkbox (`- [ ]`) with clickable file and line-range links or tooling commands and a short rationale, followed by any deferred empirical tests, `[⚠️ UNVERIFIED]` / `[⏳ ACK]` risks, user-agreed pre-review exclusions, accepted `CONTEST` rationales carried across loops, and the Assumption Lifecycle Legend.
+
+In Phase 2B, without pausing for another user prompt, the agent constructs a conversation-stripped prompt containing the full markdown of `egm_lite_checklist.md`, core task requirements, and target file paths, then spawns a fresh-context `Goldfish Specification Reviewer` subagent (`invoke_subagent`, `Agent`, or `spawn_agent`) and halts until the subagent responds. If the host environment exposes no fresh-context subagent tool, the agent refuses to simulate a same-context Goldfish review, explains the host limitation after writing `egm_lite_checklist.md`, and falls back to human **Proceed** / `exec` approval on the checklist.
 
 ### Phase 3: Scope-Contained Execution (`exec` / `Proceed`)
 
-*   **Persona**: Elephant (Builder) — Focused implementer.
-*   **Checklist Synchronization & Review Baseline**: Reads the verified `egm_lite_checklist.md` (applying any inline comments or user-approved triage adjustments from Phase 5 before editing). Records the starting commit and any pre-existing working-tree edits in `egm_lite_checklist.md` before the first task edit so optional post-implementation reviews capture committed and untracked task changes while keeping unrelated pre-existing edits separate.
-*   **Boundary Enforcement**: Implements only approved items and targets in the checklist across code, specifications, or documentation; zero speculative logic (No YAGNI).
-*   **Code Standards**: Adds inline comments on non-obvious or complex logic blocks.
-*   **Test Verification & Self-Repair**: Runs local tests covering affected targets with autonomous monotonic convergence (or markdown/lint validation for pure documentation tasks).
-*   **Checklist Progress & Optional Re-Review Gate**: Updates `egm_lite_checklist.md` marking completed tasks with `- [x]`, outputs a concise completion and test summary (leading with `> **BLUF:**` on escalation halts, autonomous self-repairs, or multi-file summaries while omitting it on clean single-target runs), and halts—informing the developer that execution is complete and that `review` or `goldfish` is available as an **optional** post-implementation diff re-review.
+Phase 3 runs once the checklist is verified (or after the developer aligns on triage fixes in Phase 5 and commands `exec`, in which case Phase 3 updates `egm_lite_checklist.md` with the agreed tasks and `CONTEST` rationales before editing any target files). Prior to the first task edit, the builder records the starting commit and any pre-existing working-tree modifications in `egm_lite_checklist.md` (or starting target snapshots outside Git) and preserves that baseline across subsequent resolution loops without staging or committing user files merely to collect a diff.
+
+Implementation is restricted to unchecked (`- [ ]`) items in `egm_lite_checklist.md`, applying any inline checklist comments accompanying approval and adding explanatory comments only on non-obvious logic. The agent runs local tests covering affected targets (or link/markdown validation for documentation tasks), resolving mechanical compile, import, or assertion failures only while making monotonic progress within approved targets without weakening assertions. Repeated failures, regressions, stalled convergence, or out-of-scope fixes halt execution with a `> **BLUF:**` escalation summary. Once tests pass, completed items are marked `- [x]`, a completion summary is printed (using a `> **BLUF:**` only for multi-file changes or self-repairs), and execution halts—noting that `review` or `goldfish` may be run optionally to audit the diff.
 
 ### Phase 4: Optional Adversarial Diff Re-Review (`review` / `goldfish`)
 
-*   **Persona**: Goldfish (Code Reviewer via Subagent) — Isolated, zero-context auditor.
-*   **Opt-In Post-Implementation Trigger**: Runs only when explicitly requested by the developer after Phase 3 modifies workspace files.
-*   **Baseline-Aware Change Collection & Subagent Isolation**: Collects every task change against the recorded baseline in `egm_lite_checklist.md`—including task commits, staged and unstaged edits, deletions, and new untracked files (`git diff <starting-commit>` plus `git ls-files --others --exclude-standard`, or before/after snapshots outside Git)—while excluding unrelated pre-existing changes. Stops and reports incomplete coverage if the baseline is missing or any checklist target cannot be inspected. Spawns a fresh-context `Goldfish Code Reviewer` subagent (stopping if no subagent tool is available) with zero conversational history.
-*   **Adversarial Review Rubric**: Enforces the binary output contract (findings only vs. explicit `[✅ LGTM]` on zero findings), skipping pre-review exclusions and accepted `CONTEST` rationales and suppressing stylistic nitpicks across five dimensions (for documentation-only diffs, items 1–3 are replaced by factual consistency against the checklist, clarity, and link hygiene):
-    1.  *Thread & State Safety*: Race conditions, deadlocks, async mutations.
-    2.  *Boundary Conditions*: Null checks, off-by-one, unhandled errors.
-    3.  *Test Coverage & Regression Audit*: Unit test coverage of all new branches.
-    4.  *YAGNI Audit*: Pruning unneeded abstractions.
-    5.  *Contract & Tag Audit*: Verification that `[⚠️ UNVERIFIED]` and `[⏳ ACK]` tags are tested and removed.
-*   **Completion Gate**: Halts execution after spawning the subagent and awaits its asynchronous response.
+When the developer opts into a post-implementation audit after Phase 3, the agent collects all task changes against the recorded baseline in `egm_lite_checklist.md`: tracked diffs from `git diff <starting-commit>` (including intermediate task commits and staged/unstaged edits), deletions, and new untracked files from `git ls-files --others --exclude-standard`, while excluding unrelated pre-existing edits recorded in the baseline. Every checklist target (including gitignored targets) is verified in the collected inventory; if the baseline is missing or any target cannot be inspected, the agent stops and reports incomplete coverage rather than requesting an LGTM. Otherwise, it passes the checklist and collected change content to a fresh `Goldfish Code Reviewer` subagent (or stops if no subagent tool exists) and awaits its response.
+
+Both Phase 2B and Phase 4 enforce a binary review contract—returning `[✅ LGTM]` only on zero findings, and otherwise returning prioritized `[PY]` findings while skipping pre-review exclusions, honoring accepted `CONTEST` rationales, and suppressing stylistic nitpicks:
+
+| Pass | Subagent Role | Input Artifact | Evaluation Rubric |
+| :--- | :------------ | :------------- | :---------------- |
+| **Phase 2B (Automatic Pre-Impl)** | `Goldfish Specification Reviewer` | `egm_lite_checklist.md` + task requirements + target paths (AST/`git diff` checks forbidden) | 1. Scope containment & YAGNI<br>2. External contract & `[⚠️ UNVERIFIED]` / `[⏳ ACK]` tagging<br>3. Error paths, timeouts, & boundary conditions<br>4. Concrete, runnable test plan |
+| **Phase 4 (Optional Post-Impl)** | `Goldfish Code Reviewer` | `egm_lite_checklist.md` + baseline-scoped task diff & untracked files | 1. Thread & async state safety*<br>2. Null, off-by-one, & exception boundaries*<br>3. Unit test coverage of new branches*<br>4. YAGNI pruning<br>5. Resolution & removal of `[⚠️ UNVERIFIED]` / `[⏳ ACK]` tags<br>*(Replaced on doc-only diffs by checklist consistency, clarity, and link hygiene)* |
 
 ### Phase 5: Unified Post-Review Resolution Gate (Subagent Response)
 
-*   **Persona**: Elephant (Resolver) — Contextual triage.
-*   **Deterministic State Discriminator**: Determines whether the incoming subagent response belongs to the **Pre-Implementation Specification Review** (`Goldfish Specification Reviewer` / prior to Phase 3) or the **Optional Post-Implementation Diff Re-Review** (`Goldfish Code Reviewer` / after Phase 3).
-*   **Strict Non-Mutating Triage**: Operates in presentation-only mode during findings triage without modifying repository source files. Cross-references subagent findings against the codebase or checklist, opening with a `> **BLUF:**` led by **`[🛠️ X FIX | 🛡️ Y CONTEST]`** before presenting numbered and priority-tagged items (`[X] [PY]`, e.g., `[1] [P0]`, `[2] [P1]`) sorted within each group in descending severity order (`P0` > `P1` > `P2` > `P3`), grouping `PROPOSE FIX` items ahead of evidence-backed `CONTEST` false alarms.
-*   **State-Specific Completion & Synchronization Gates**:
-    *   *Pre-Implementation (Spec Review)*: On `[✅ LGTM]` (or when all findings are contested/dismissed), stamps `**Specification Status:** Verified [✅ LGTM]` in `egm_lite_checklist.md`, opens with `> **BLUF:**` led by **`[✅ LGTM]`**, and prompts the developer to click **Proceed** or type **`exec`** to begin Phase 3 implementation—strictly forbidding premature task closure. When findings remain, prompts `checklist` (or `review` / `goldfish`) to update `egm_lite_checklist.md` and automatically re-audit, or `exec` once aligned to apply the agreed checklist updates and implement.
-    *   *Post-Implementation (Diff Re-Review)*: On `[✅ LGTM]` (or when all findings are contested/dismissed), updates `egm_lite_checklist.md`, opens with `> **BLUF:**` led by **`[✅ LGTM]`**, and summarizes modified files and passing tests; otherwise prompts `checklist` (re-plan with automatic spec review) or `exec` (record agreed diff-fix tasks in `egm_lite_checklist.md` and implement).
+Phase 5 handles responses from both `Goldfish Specification Reviewer` (pre-implementation) and `Goldfish Code Reviewer` (post-implementation), discriminating the active stage from the subagent role and whether Phase 3 has modified target files.
 
-## Implementation Files
+When the subagent reports findings, triage is presentation-only—no file-editing or VCS tools may run during the turn. The resolver cross-references each claim against the codebase or checklist, opens with a `> **BLUF:**` led by `[🛠️ X FIX | 🛡️ Y CONTEST]`, and lists sequentially numbered `[X] [PY]` items (`P0`–`P3`, sorted highest severity first within each group) split into `PROPOSE FIX` patches/revisions and evidence-backed `CONTEST` false alarms. The developer may override any classification in chat.
 
-The EGM-Lite capability is implemented across the following package files:
+Clean `[✅ LGTM]` verdicts (or turns where all findings are contested or dismissed after recording `CONTEST` rationales in `egm_lite_checklist.md`) branch by stage. Pre-implementation specification passes stamp `**Specification Status:** Verified [✅ LGTM]` in `egm_lite_checklist.md`, open with a `> **BLUF:**` led by `[✅ LGTM]`, and prompt the developer to click **Proceed** or type `exec`—never closing the task prematurely. Post-implementation diff passes update `egm_lite_checklist.md`, open with `[✅ LGTM]`, and summarize modified files and passing test targets. When unresolved fixes remain, pre-implementation triage prompts for `checklist` / `review` / `goldfish` (to update and automatically re-audit) or `exec` (to apply agreed checklist revisions and implement), whereas post-implementation triage prompts for `checklist` or `exec`.
 
-| File Path | Type | Purpose & Reason for Existence |
-| :-------- | :--- | :----------------------------- |
-| `skills/egm-lite/SKILL.md` | Skill Definition | Implements the decoupled 5-phase state machine with automatic pre-implementation spec review and optional post-implementation diff re-review. |
-| `skills/egm-lite/agents/openai.yaml` | Host Metadata | Declares extension interface, display names, and brand styling for OpenAI/Codex. |
-| `skills/egm-lite/assets/icon.svg` | Vector Artwork | Self-contained 24x24 dual-facet icon (Checklist Spark) adhering to the EGM design system. |
-| `skills/egm-lite/TEST.md` | Verification Guide | Interactive verification checklist testing decoupled phase gating, automatic spec review, and persona switching. |
-| `skills/egm-lite/test_scenarios.yaml` | Evaluation Benchmark | Declarative scenario suite evaluating model adherence to the 5-phase EGM-Lite protocol. |
+## Implementation & Verification
 
-### Verification Plan
+| File Path | Role | Purpose |
+| :-------- | :--- | :------ |
+| `skills/egm-lite/SKILL.md` | Skill Definition | Five-phase state machine with automatic pre-implementation spec review and optional post-implementation diff re-review. |
+| `skills/egm-lite/agents/openai.yaml` | Host Metadata | OpenAI/Codex extension interface and display metadata. |
+| `skills/egm-lite/assets/icon.svg` | Vector Icon | 24x24 dual-facet Checklist Spark keyline icon. |
+| `skills/egm-lite/TEST.md` | Verification Guide | Interactive walkthrough checklist covering phase gating, automatic spec review, and persona transitions. |
+| `skills/egm-lite/test_scenarios.yaml` | Scenario Suite | 19 declarative evaluation scenarios checking protocol invariants. |
 
-The EGM-Lite protocol is validated through deterministic behavioral evaluation
-suites (`skills/egm-lite/test_scenarios.yaml`), protocol checklists
-(`skills/egm-lite/TEST.md`), and unit tests (`pytest tests/unit`).
+Offline validation runs through the repository unit suite (`pytest tests/unit`; see [Testing Guidelines](../../TESTING.md)) alongside the declarative scenarios in `skills/egm-lite/test_scenarios.yaml`, checking six protocol invariants:
 
-Verification enforces six core behavioral invariants:
-
-1.  **Critique Pause & Premature-Execution Guard (Phase 1):** Asserts that mutating operations pause for `checklist`, competing architectures are recorded in `egm_lite_alternatives.md`, and out-of-order `exec` or `review` commands emit a `[State Advisory]` blockquote rather than bypassing specification review.
-2.  **Automatic Pre-Implementation Specification Review (Phase 2):** Asserts that `checklist` writes `egm_lite_checklist.md` with GFM checkboxes and immediately spawns a fresh-context `Goldfish Specification Reviewer` subagent in the same turn using the Specification Review Rubric (forbidding AST/diff checks).
-3.  **Scope-Contained Execution & Optional Re-Review (Phase 3):** Verifies that execution records the review baseline before editing, stays strictly within approved checklist items, runs local tests with monotonic convergence, marks tasks `- [x]`, and treats post-implementation diff re-review (`review` / `goldfish`) as optional.
-4.  **Fresh-Context Subagent Isolation & Baseline Coverage (Phases 2B & 4):** Enforces true context separation via a fresh-context subagent tool (refusing same-context reviews when unavailable) and verifies Phase 4 inspects committed task changes, unstaged edits, and untracked files against the recorded baseline while keeping unrelated pre-existing edits separate.
-5.  **Binary Review Contract (Phases 2B & 4):** Asserts that any defect suppresses `LGTM` and outputs prioritized findings (`P0`–`P3`), while zero-finding passes return an explicit `[✅ LGTM]`.
-6.  **State-Discriminated Resolution Gate (Phase 5):** Validates presentation-only triage (`[🛠️ X FIX | 🛡️ Y CONTEST]`), verifies pre-implementation spec LGTM gates on `exec` without premature task closure, and verifies persistence of `CONTEST` rationales across loops.
-
-#### Test Execution
-
-```bash
-# Run unit tests, packaging validation, and harness discovery
-pytest tests/unit
-
-# Validate markdown link integrity
-pytest tests/unit/test_link_integrity.py
-```
+| Invariant | Phases | Verified Behavior |
+| :-------- | :----- | :---------------- |
+| **Premature-Execution Guard** | 1, Global | Phase 1 gates on `checklist`, multi-option trade-offs land in `egm_lite_alternatives.md`, and premature `exec` or `review` commands emit `[State Advisory]` without bypassing spec review. |
+| **Automatic Spec Review** | 2A, 2B | `checklist` writes GFM checkboxes to `egm_lite_checklist.md` and dispatches `Goldfish Specification Reviewer` in the same turn without AST or `git diff` checks. |
+| **Baseline & Optional Re-Review** | 3 | Execution records the starting baseline before editing, stays within approved targets, marks completed items `- [x]`, and leaves Phase 4 diff re-review optional. |
+| **Subagent Isolation & Coverage** | 2B, 4 | Both review passes refuse same-context review when subagent tools are absent; Phase 4 captures task commits and untracked files against the baseline while excluding pre-existing unrelated edits. |
+| **Binary Review Contract** | 2B, 4 | Any defect suppresses `LGTM` in favor of `[P0]`–`[P3]` findings; `[✅ LGTM]` is emitted only on zero findings. |
+| **State-Discriminated Triage** | 5 | Findings triage makes zero file mutations, pre-implementation spec LGTM gates on `exec` rather than closing the task, and accepted `CONTEST` rationales persist across loops. |
 
 ## References
 
