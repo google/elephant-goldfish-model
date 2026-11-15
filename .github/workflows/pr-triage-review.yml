@@ -80,8 +80,6 @@ jobs:
           REPO: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           MAINTAINERS_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
-          PLATFORM_SITE_OWNERS: ${{ vars.PLATFORM_SITE_OWNERS }}
-          DESIGN_REVIEWERS: ${{ vars.DESIGN_REVIEWERS }}
           PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || '' }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha || '' }}
           REVIEW_MODEL: ${{ vars.EGM_REVIEW_MODEL || 'gemini-4-argon' }}
@@ -94,8 +92,7 @@ jobs:
             --repo "$REPO"
             --default-branch "$DEFAULT_BRANCH"
             --maintainers-team "$MAINTAINERS_TEAM"
-            --platform-owners "$PLATFORM_SITE_OWNERS"
-            --design-reviewers "$DESIGN_REVIEWERS"
+            --repo-root .
             --model "$REVIEW_MODEL"
             --fallback-models "$FALLBACK_MODELS"
             --out "$PLAN_OUT"
@@ -127,6 +124,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
+      contents: read
       pull-requests: write
       issues: write
     steps:
@@ -273,7 +271,38 @@ jobs:
             const configuredReviewers = new Set([
               ...parseLogins(process.env.PLATFORM_SITE_OWNERS),
               ...parseLogins(process.env.DESIGN_REVIEWERS)
-            ]);
+            ].map(login => login.toLowerCase()));
+            if (typeof client.rest.repos?.getContent === "function") {
+              try {
+                const defaultBranch = context.payload?.repository?.default_branch || "main";
+                const { data: cfgFile } = await client.rest.repos.getContent({
+                  owner,
+                  repo,
+                  path: ".github/reviewers.json",
+                  ref: defaultBranch
+                });
+                const cfg = JSON.parse(Buffer.from(cfgFile.content, "base64").toString("utf8"));
+                if (cfg.fallback_team) {
+                  allowedTeams.add(String(cfg.fallback_team).trim());
+                }
+                for (const login of cfg.egm_maintainers || []) {
+                  if (login) configuredReviewers.add(String(login).trim().toLowerCase());
+                }
+                for (const login of [
+                  ...(cfg.new_design_docs_reviewers || []),
+                  ...(cfg.new_root_dir_or_skill_reviewers || [])
+                ]) {
+                  if (login) configuredReviewers.add(String(login).trim().toLowerCase());
+                }
+                for (const route of cfg.routes || []) {
+                  for (const login of route.reviewers || []) {
+                    if (login) configuredReviewers.add(String(login).trim().toLowerCase());
+                  }
+                }
+              } catch (error) {
+                core.warning(`Could not load .github/reviewers.json: ${error.message}`);
+              }
+            }
             const stage1TrustedReviewers = new Set();
             const stage1PrNumber = Number(plan.stage1_pr_number);
             if (Number.isInteger(stage1PrNumber) && stage1PrNumber > 0) {
@@ -292,13 +321,13 @@ jobs:
                   const login = String(rev.user?.login || "");
                   const assoc = String(rev.author_association || "").toUpperCase();
                   if (login && login.toLowerCase() !== stage1Author && trustedAssociations.has(assoc)) {
-                    stage1TrustedReviewers.add(login);
+                    stage1TrustedReviewers.add(login.toLowerCase());
                   }
                 }
                 for (const req of stage1Pr.requested_reviewers || []) {
                   const login = String(req?.login || "");
                   if (login && req.type !== "Bot" && login.toLowerCase() !== stage1Author) {
-                    stage1TrustedReviewers.add(login);
+                    stage1TrustedReviewers.add(login.toLowerCase());
                   }
                 }
               } catch (error) {
@@ -307,9 +336,14 @@ jobs:
             }
             const prAuthor = String(pr.user?.login || "").toLowerCase();
             const reviewers = (plan.reviewers || []).filter(
-              login =>
-                login.toLowerCase() !== prAuthor &&
-                (configuredReviewers.has(login) || stage1TrustedReviewers.has(login))
+              login => {
+                const lowered = String(login || "").toLowerCase();
+                return (
+                  lowered &&
+                  lowered !== prAuthor &&
+                  (configuredReviewers.has(lowered) || stage1TrustedReviewers.has(lowered))
+                );
+              }
             );
             const teamReviewers = (plan.team_reviewers || []).filter(team => allowedTeams.has(team));
             if (reviewers.length > 0 || teamReviewers.length > 0) {

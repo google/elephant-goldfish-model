@@ -22,17 +22,15 @@ permissions: {}
 
 jobs:
   triage-issue:
-    name: "Route Feature and Platform Issues"
+    name: "Route Platform and Site Issues"
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
-      issues: write # Required to assign maintainers to newly opened feature and platform issues
+      contents: read # Required to read .github/reviewers.json on default branch
+      issues: write # Required to assign maintainers to platform/site bug and task issues
     steps:
       - name: "Assign maintainer based on issue scope"
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          PLATFORM_SITE_OWNERS: ${{ vars.PLATFORM_SITE_OWNERS }}
-          FEATURE_REQUEST_TRIAGE: ${{ vars.FEATURE_REQUEST_TRIAGE }}
         with:
           script: |
             const issue = context.payload.issue;
@@ -40,16 +38,30 @@ jobs:
               return;
             }
 
-            const parseLogins = raw =>
-              String(raw || "")
-                .split(",")
-                .map(login => login.trim())
-                .filter(Boolean);
-
-            const platformOwners = parseLogins(process.env.PLATFORM_SITE_OWNERS);
-            const featureTriage = parseLogins(process.env.FEATURE_REQUEST_TRIAGE);
-
             const { owner, repo } = context.repo;
+            const defaultBranch = context.payload.repository?.default_branch || "main";
+            let platformOwners = [];
+            try {
+              const { data } = await github.rest.repos.getContent({
+                owner,
+                repo,
+                path: ".github/reviewers.json",
+                ref: defaultBranch
+              });
+              const cfg = JSON.parse(Buffer.from(data.content, "base64").toString("utf8"));
+              const route = (cfg.routes || []).find(r => r.name === "site_and_platform_adapters");
+              const maintainerSet = new Set((cfg.egm_maintainers || []).map(l => l.toLowerCase()));
+              platformOwners = (route?.reviewers || []).filter(
+                l => maintainerSet.size === 0 || maintainerSet.has(String(l).toLowerCase())
+              );
+            } catch (error) {
+              core.warning(`Could not load .github/reviewers.json: ${error.message}`);
+            }
+
+            if (platformOwners.length === 0) {
+              return;
+            }
+
             const author = String(issue.user?.login || "").toLowerCase();
             const stripComments = text => String(text || "").replace(/<!--[\s\S]*?-->/g, "");
             const cleanText = `${stripComments(issue.title)}\n${stripComments(issue.body)}`;
@@ -63,34 +75,14 @@ jobs:
               labels.has("adapters") ||
               labels.has("platform");
 
-            const isFeature =
-              String(issue.type?.name || "").toLowerCase() === "feature" ||
-              labels.has("enhancement") ||
-              labels.has("feature") ||
-              labels.has("design-ready") ||
-              /^\[?\s*feature\b/i.test(String(issue.title || "")) ||
-              /##\s*Proposed Scope\s*\(Goals vs\.\s*Non-Goals\)/i.test(String(issue.body || ""));
-
             const currentAssignees = (issue.assignees || []).map(a => a.login);
             const platformSet = new Set(platformOwners.map(login => login.toLowerCase()));
 
-            if (platformOwners.length > 0 && !platformSet.has(author) && isPlatformOrSite) {
-              if (currentAssignees.length === 0) {
-                await github.rest.issues.addAssignees({
-                  owner,
-                  repo,
-                  issue_number: issue.number,
-                  assignees: platformOwners
-                });
-              }
-              return;
-            }
-
-            if (featureTriage.length > 0 && isFeature && currentAssignees.length === 0) {
+            if (!platformSet.has(author) && isPlatformOrSite && currentAssignees.length === 0) {
               await github.rest.issues.addAssignees({
                 owner,
                 repo,
                 issue_number: issue.number,
-                assignees: featureTriage
+                assignees: platformOwners
               });
             }

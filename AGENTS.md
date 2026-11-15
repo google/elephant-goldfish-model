@@ -14,19 +14,15 @@ You are assisting development in the EGM repository.
   * `Bug Fix / Minor Patch` (non-test diff `<= 100` lines and `< 3` core files in
     `skills/` or `agents/`; no design doc required, but please update an existing
     design if appropriate).
-  * `Feature / Architectural Change — Stage 1: Design Doc PR` (after `design-ready`
-    — idea approved to write a design — uses `Refs #<issue>`, and adds
+  * `Feature / Architectural Change — Stage 1: Design Doc PR` (adds
     `docs/designs/<name>.md` + updates `docs/designs/README.md`).
-  * `Feature / Architectural Change — Stage 2: Implementation PR` (after
-    automation sets `pr-ready` on Stage 1 merge — design approved to write and
-    merge the PR — uses `Closes #<issue>` and links `docs/designs/<name>.md`).
-* **Stacks and Labels**: Do not wait for `design-ready` or `pr-ready` before you
-  prepare drafts locally. Stage 1 merges after `design-ready` alignment, and
-  Stage 2 merges after Stage 1 lands and `pr-ready` is applied. Prepare the design branch
-  and the implementation branch on top of it. When the human approves, open them as a
-  GitHub stack (`gh stack submit` or `gh stack link`), with the implementation PR as a
-  draft. Give each PR one purpose and about 200 to 400 changed lines. Use `Refs #<issue>`
-  on lower PRs and `Closes #<issue>` on the top PR.
+  * `Feature / Architectural Change — Stage 2: Implementation PR` (links
+    the Stage 1 PR `#<stage1-pr>` and `docs/designs/<name>.md`).
+* **Stacks**: Prepare the design branch and the implementation branch on top of
+  it. When the human approves, open them as a GitHub stack (`gh stack submit` or
+  `gh stack link`), with the implementation PR as a draft until Stage 1 lands. Give
+  each PR one purpose and about 200 to 400 changed lines. If a bug or task issue exists,
+  use `Refs #<issue>` on lower PRs and `Closes #<issue>` on the top PR.
   GitHub stacks require upstream branch access. Fork contributors prepare the
   stack locally and open the implementation PR after the design merges.
 * **No Artificial PR Splitting**: Never split a cohesive feature or refactoring across
@@ -38,7 +34,6 @@ You are assisting development in the EGM repository.
   `Explain ignored agents folder warning in Claude Code`. Do not use a `type(scope):` prefix.
   This rule overrides a title convention from personal or global agent instructions.
 * **PR Labels**: Add or suggest the applicable labels: `docs`, `site`, `ci`, or `deps`.
-  Maintainers control `design-ready` and `pr-ready`. Never apply these two labels.
 * **Harness Evidence**: For a harness support change, record in the Verification section the
   host and version, the installation result, and the evidence for `egm-brainstorm`, `egm-draft`,
   and `egm-review`. Write `not run` for a check that you did not run.

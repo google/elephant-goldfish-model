@@ -90,6 +90,23 @@ function createHarness(overrides = {}) {
           }
         },
       },
+      ...(overrides.reviewersConfig
+        ? {
+            repos: {
+              getContent: async ({ path }) => {
+                assert.equal(path, '.github/reviewers.json')
+                return {
+                  data: {
+                    content: Buffer.from(
+                      JSON.stringify(overrides.reviewersConfig),
+                      'utf8',
+                    ).toString('base64'),
+                  },
+                }
+              },
+            },
+          }
+        : {}),
     },
   })
 
@@ -296,5 +313,38 @@ test('clean_handoff filters reviewers by configured vars, Stage 1 PR reviews, an
   })
   assert.equal(state.failed, null)
   assert.deepEqual(state.requestedReviewers, ['n3wth', 'drensin'])
+  assert.deepEqual(state.requestedTeams, [])
+})
+
+test('clean_handoff validates reviewers against .github/reviewers.json on default branch', async () => {
+  const state = createHarness({
+    prAuthor: 'contributor',
+    reviewersConfig: {
+      egm_maintainers: ['briansuchy', 'eewing314', 'quinnjim', 'tearseb'],
+      fallback_team: 'egm-maintainers',
+      routes: [{ name: 'draft', paths: ['skills/egm-draft/**'], reviewers: ['eewing314', 'quinnjim'] }],
+    },
+  })
+  await state.run(
+    {
+      action: 'clean_handoff',
+      pr_number: 43,
+      head_sha: 'abc12345',
+      add_labels: ['triage: passed'],
+      remove_labels: [],
+      reviewers: ['eewing314', 'quinnjim', 'unauthorized-user'],
+      team_reviewers: [],
+      review_payload: {
+        commit_id: 'abc12345',
+        body: '<!-- egm-triage-review:sha=abc12345 -->\nClean pass.',
+        comments: [],
+      },
+    },
+    'egm-maintainers',
+    '',
+    '',
+  )
+  assert.equal(state.failed, null)
+  assert.deepEqual(state.requestedReviewers, ['eewing314', 'quinnjim'])
   assert.deepEqual(state.requestedTeams, [])
 })

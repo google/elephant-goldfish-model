@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "egm_maintainers": [
+    "briansuchy",
+    "drensin",
+    "eewing314",
+    "jpettitt",
+    "kolla",
+    "n3wth",
+    "njeunje",
+    "quinnjim",
+    "seanstappas",
+    "tearseb"
+  ],
+  "fallback_team": "egm-maintainers",
+  "max_individual_reviewers": 3,
+  "new_design_docs_reviewers": [
+    "eewing314"
+  ],
+  "existing_design_docs_mode": "doc_authors_filtered",
+  "new_root_dir_or_skill_reviewers": [
+    "eewing314"
+  ],
+  "ignore_for_area_matching": [
+    "distributions/**",
+    "README.md",
+    "docs/designs/README.md"
+  ],
+  "routes": [
+    {
+      "name": "github_ci_and_gemini_review_config",
+      "paths": [
+        ".github/**",
+        ".gemini/config.yaml",
+        ".gemini/styleguide.md",
+        "pyproject.toml"
+      ],
+      "reviewers": [
+        "briansuchy"
+      ]
+    },
+    {
+      "name": "bootstrap_and_brainstorm",
+      "paths": [
+        "skills/egm-bootstrap/**",
+        "agents/bootstrap_orchestrator.md",
+        "skills/egm-brainstorm/**",
+        "agents/inventive_catalyst.md"
+      ],
+      "reviewers": [
+        "briansuchy"
+      ]
+    },
+    {
+      "name": "review_and_resolve_skills",
+      "paths": [
+        "skills/egm-review/**",
+        "skills/egm-review-loop/**",
+        "skills/egm-resolve/**",
+        "agents/synthesizer.md",
+        "agents/codebase_details.md",
+        "agents/comprehension.md",
+        "agents/design_critic.md",
+        "agents/implementation_readiness.md",
+        "agents/structural.md",
+        "agents/style.md",
+        "agents/zoom_out.md"
+      ],
+      "reviewers": [
+        "briansuchy",
+        "tearseb"
+      ]
+    },
+    {
+      "name": "draft_skill",
+      "paths": [
+        "skills/egm-draft/**"
+      ],
+      "reviewers": [
+        "eewing314",
+        "quinnjim"
+      ]
+    },
+    {
+      "name": "drift_report_skill",
+      "paths": [
+        "skills/egm-drift-report/**"
+      ],
+      "reviewers": [
+        "quinnjim"
+      ]
+    },
+    {
+      "name": "tests_and_contributions",
+      "paths": [
+        "TESTING.md",
+        "tests/**",
+        "contributions/**"
+      ],
+      "reviewers": [
+        "eewing314"
+      ]
+    },
+    {
+      "name": "site_and_platform_adapters",
+      "paths": [
+        "site/**",
+        "docs/site/**",
+        "docs/assets/**",
+        "docs/verification/**",
+        "docs/claude.md",
+        "docs/codex.md",
+        "docs/copilot.md",
+        "docs/cursor.md",
+        "docs/directory.md",
+        "docs/faq.md",
+        "docs/getting_started.md",
+        "docs/harnesses.md",
+        "docs/index.md",
+        "docs/muse.md",
+        "docs/opencode.md",
+        "docs/privacy.md",
+        "docs/releases.md",
+        "adapters/**",
+        ".claude-plugin/**",
+        ".codex-plugin/**",
+        ".cursor-plugin/**",
+        ".plugin/**",
+        ".windsurf/**",
+        ".agents/**",
+        ".gemini/**",
+        "com.github.copilot/**",
+        "plugin.json",
+        "gemini-extension.json",
+        "scripts/**",
+        "assets/**",
+        "resources/**"
+      ],
+      "exclude": [
+        ".gemini/config.yaml",
+        ".gemini/styleguide.md"
+      ],
+      "reviewers": [
+        "n3wth"
+      ]
+    }
+  ]
+}
