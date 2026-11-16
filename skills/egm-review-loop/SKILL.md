@@ -77,6 +77,13 @@ When resolving names in `Reviewers` and `Standards`:
 *   **Custom Paths**: If the name contains a slash (`/`), treat it as an
     absolute or workspace-relative path and read it directly.
 
+*   **Plugin Root**: `agents/{name}.md` and
+    `resources/document_standards/{name}.md` sit at the plugin root, two
+    directories above this skill's folder. In omp, `skill://` reads cannot
+    leave the skill's folder, so run `realpath skill://egm-review-loop`
+    and go two directories up. Pass each spawned reviewer the absolute
+    paths of its persona file and its standard.
+
 ## Execution Workflow
 
 ### Step 1: Intake & Configuration UX

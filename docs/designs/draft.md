@@ -202,6 +202,12 @@ The drafting capability is implemented across the following skill and reference 
 | `skills/egm-draft/references/design_doc.md` | Document Template | Canonical markdown design document template defining required sections and layout. |
 | `resources/execution_instructions.md` | Execution Instructions | Core execution rules enforcing no-code guardrails, silent compliance, and one-question-at-a-time pacing. |
 
+`resources/execution_instructions.md` sits at the plugin root, two
+directories above the skill folder. omp confines `skill://` reads to the
+skill's own folder. `skills/egm-draft/SKILL.md` therefore tells the agent to
+resolve the physical plugin root first (`realpath skill://egm-draft` or the
+header of `read skill://egm-draft`). When the agent cannot resolve the file,
+the skill tells it to stop, not draft.
 --------------------------------------------------------------------------------
 
 ## References

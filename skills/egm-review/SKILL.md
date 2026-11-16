@@ -27,6 +27,11 @@ and wait for the report. If your harness cannot nest subagents,
 use direct dispatch instead of the synthesizer. See `docs/harnesses.md`.
 If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
 
+Bundled personas (`agents/<file>.md`) and standards
+(`resources/document_standards/<standard>.md`) sit at the plugin root, not
+inside this skill's folder. Resolve them per
+[references/plugin_paths.md](references/plugin_paths.md).
+
 ## Execution Constraints (CRITICAL)
 
 1.  **Artifact-First Delivery (MANDATORY)**: You are **STRICTLY FORBIDDEN** from
@@ -129,18 +134,12 @@ If your harness has no subagent tool, stop and tell the user: a review in the sa
         Pipeline Presets single-select gate to the user (using a structured
         question tool such as `ask_question` if your harness has one, or plain
         chat).
-2.  **Modal Invariants & Wire Payload**:
-
-    *   The question payload **MUST** contain strictly one question object
-        (`len(questions) == 1`). Multi-question payloads are strictly forbidden.
-    *   The question tool **MUST** be the sole tool call in this turn payload.
-        You **MUST** yield execution immediately upon invocation.
-    *   `is_multi_select` **MUST** be `false`. Combinatorial multi-select
-        checklists are strictly prohibited to protect topological dependencies
-        (5 → 6 → 7 → 8 → 9).
-    *   Option 0 **MUST** be the primary default action (without a
-        `(Recommended)` prefix).
-    *   Payload specification:
+2.  **Modal Invariants & Wire Payload**: The question gate follows the
+    Interaction Invariants (constraint 11: one question, sole tool call,
+    no `(Recommended)` prefix). Option 0 is the primary default action.
+    Set `is_multi_select` to `false`. Combinatorial checklists break the
+    stage order (5 → 6 → 7 → 8 → 9). You **MUST** yield execution when you
+    invoke the question tool. Payload specification:
 
         ```json
         {
