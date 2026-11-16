@@ -4,6 +4,7 @@
 """Offline packaging and isolation contracts for shared and host manifests."""
 
 import json
+import os
 from pathlib import Path
 import re
 import runpy
@@ -127,13 +128,17 @@ def test_marketplace_resolves_shared_package(path: str) -> None:
   entry = marketplace["plugins"][0]
   assert entry["name"] == canonical["name"]
   package = (ROOT / entry["source"]).resolve()
-  expected = ROOT / "distributions/claude" if path == ".claude-plugin/marketplace.json" else ROOT
-  assert package == expected
+  assert package == ROOT
   if path == ".claude-plugin/marketplace.json":
     # Cowork rejects a plugin root with a second, nested Claude manifest.
-    assert list(package.rglob(".claude-plugin/plugin.json")) == [
-        package / ".claude-plugin/plugin.json",
-    ]
+    # Untracked tool and dependency folders can hold other checkouts; skip them.
+    untracked = {".git", ".claude", ".venv", "venv", "node_modules"}
+    roots = []
+    for folder, names, _ in os.walk(package):
+      names[:] = [name for name in names if name not in untracked]
+      if (Path(folder) / ".claude-plugin/plugin.json").is_file():
+        roots.append(Path(folder))
+    assert roots == [package]
     manifest = json.loads((package / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
     assert manifest["name"] == entry["name"]
     assert manifest["version"] == canonical["version"]

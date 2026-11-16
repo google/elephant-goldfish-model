@@ -24,6 +24,7 @@ Minor patches: at most 100 non-test lines and fewer than 3 core files in
 skills/ or agents/. No design doc required.
 Stage 1: use Refs #<issue> with design-ready. Add the design and update its index.
 Stage 2: use Closes #<issue> with pr-ready and link the merged design.
+The labels are needed to merge. You can open Stage 2 early as a draft stacked on Stage 1.
 -->
 
 ## Verification

@@ -24,6 +24,11 @@ review, understand, and explain every submitted change.
      maintainers can apply `pr-ready` to the Feature Inquiry Issue.
    * **c)** Submit and merge an implementation PR of the approved design into
      the codebase (`Closes #<issue>`).
+
+   A contributor can open (b) and (c) before the labels are applied, as a stack
+   of pull requests. Each one needs its label to merge. See
+   [CONTRIBUTING.md](CONTRIBUTING.md#stacked-pull-requests-and-size).
 4. **No Artificial PR Splitting**: Do not artificially split a single logical
    feature or refactoring into multiple smaller pull requests (e.g., two 60-line PRs)
-   to bypass the 100-line scope threshold.
+   to bypass the 100-line scope threshold. A stack of small pull requests under
+   one issue and one design is not artificial splitting.

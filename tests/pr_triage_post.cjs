@@ -22,7 +22,7 @@ function createHarness(overrides = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'egm-post-test-'))
   const planPath = join(dir, 'review-plan.json')
   const state = {
-    reviews: [],
+    reviews: overrides.existingReviews ? [...overrides.existingReviews] : [],
     labels: new Set(overrides.initialLabels || []),
     requestedTeams: [],
     warnings: [],
@@ -47,6 +47,9 @@ function createHarness(overrides = {}) {
             data: { state: state.prState, head: { sha: state.prHeadSha } },
           }
         },
+        listReviews: async () => ({
+          data: [...state.reviews],
+        }),
         createReview: async req => {
           if (state.rejectInline422 && req.comments && req.comments.length > 0) {
             throw Object.assign(new Error('Unprocessable Entity'), { status: 422 })
@@ -209,4 +212,28 @@ test('expired EGM_TRIAGE_BOT_TOKEN (HTTP 401) falls back to GITHUB_TOKEN via get
   assert.equal(state.reviews.length, 1)
   assert.deepEqual([...state.labels], ['triage: passed'])
   assert.ok(state.warnings.some(msg => /HTTP 401/.test(msg)))
+})
+
+test('concurrent trigger race skips duplicate review when SHA marker already exists', async () => {
+  const state = createHarness({
+    existingReviews: [{ body: '<!-- egm-triage-review:sha=abc12345 -->\nClean pass.' }],
+  })
+  await state.run({
+    action: 'clean_handoff',
+    pr_number: 42,
+    head_sha: 'abc12345',
+    force_manual: false,
+    add_labels: ['triage: passed'],
+    remove_labels: [],
+    team_reviewers: ['egm-maintainers'],
+    review_payload: {
+      commit_id: 'abc12345',
+      body: '<!-- egm-triage-review:sha=abc12345 -->\nClean pass.',
+      comments: [],
+    },
+  })
+  assert.equal(state.failed, null)
+  assert.equal(state.reviews.length, 1)
+  assert.equal(state.labels.size, 0)
+  assert.ok(state.infos.some(msg => /already present/.test(msg)))
 })

@@ -23,10 +23,12 @@ No workflow configuration ships.
 The runtime guide list is explicit. New host guides do not enter these archives
 until their package requirements are reviewed.
 
-For Anthropic, the generated runtime is checked in at `distributions/claude`.
-Submit that subfolder through the directory portal. After source changes,
-build into a fresh temporary directory, replace `distributions/claude` with
-the generated `egm-claude/` folder, and run `pytest tests/unit`. The freshness
-test compares every published path and byte to a new build. Do not commit ZIPs.
+Do not commit the generated runtime or ZIPs to `main`. The Claude marketplace
+catalog installs from the repository root, so a second copy would add a nested
+Claude manifest that Cowork rejects. For Anthropic's directory, the portal reads
+a repository, plugin path, and tracked branch. It does not accept a ZIP. Publish
+the runtime to a generated branch as described in
+[Claude release-branch distribution](designs/claude_release_branch_distribution.md)
+before submitting.
 For OpenAI, upload `egm-openai.zip`. Build output
 alone does not establish installation, workflow support, or directory approval.
