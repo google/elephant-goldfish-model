@@ -75,23 +75,34 @@ read a document standard. The cost grows with these factors:
     round and writes every report. An interactive review also waits for your
     answer at each checkpoint.
 
-One measured run: on 2026-10-22, Antigravity CLI 1.4.5 ran brainstorm, draft,
-and review on a test design for a tool that counts nonblank lines. Approvals
-were given in advance, and the review ran in uninterrupted mode, one pass per
-stage, with reviewers dispatched directly. The session used the CLI's default
-model. The whole run, brainstorm and draft included, took 1,398.7 seconds and
-reported 309,915 tokens. The five review stages took 17 minutes 56 seconds,
-from the first Stage 5 reviewer start to the last Stage 9 reviewer finish. Its
-review stages ran 9 reviewers; Stage 5 has since added
-`egm-inventive-catalyst`. See the
-[run report](https://github.com/google/elephant-goldfish-model/pull/103#issuecomment-6350669488).
-This is one run, not an average.
+Two measured runs follow. Each is one run, not an average.
 
-The run report does not record the model name, the size of the test design, or
-whether its token count includes the reviewers' own sessions, and it gives no
-token count for the review alone. No other recorded run gives a token count,
-no run measures an interactive review or `egm-review-loop`, and no record gives
-a cost in money.
+*   **Antigravity CLI, 2026-10-22**: Antigravity CLI 1.4.5 ran brainstorm,
+    draft, and review on a test design for a tool that counts nonblank lines.
+    Approvals were given in advance, and the review ran in uninterrupted mode,
+    one pass per stage, with reviewers dispatched directly. The session used the
+    CLI's default model. The whole run, brainstorm and draft included, took
+    1,398.7 seconds and reported 309,915 tokens. The five review stages took 17
+    minutes 56 seconds, from the first Stage 5 reviewer start to the last Stage
+    9 reviewer finish. Its review stages ran 9 reviewers; Stage 5 has since
+    added `egm-inventive-catalyst`. See the
+    [run report](https://github.com/google/elephant-goldfish-model/pull/103#issuecomment-6350669488).
+*   **Claude Code, 2026-11-15**: Claude Code 2.1.325 reviewed a 169-line
+    design with no implementation plan, in uninterrupted mode, one pass per
+    stage, with reviewers dispatched directly. The main session used Opus 5.5.
+    The reviewers were set to Sonnet by hand instead of using the main
+    session's model. `GoldfishContext` held `README.md` and `docs/harnesses.md`.
+    That EGM version did not yet add `egm-inventive-catalyst` to Stage 5, so
+    Stages 5 to 8 ran 6 reviewers. Claude Code reported 20,196 to 38,044 tokens
+    per reviewer, 176,520 in total, and each reviewer took 27 to 44 seconds. A
+    Stage 7 re-run on the revised 176-line design used another 84,505 tokens.
+    See the
+    [run report](https://github.com/google/elephant-goldfish-model/pull/412#issuecomment-6892400593).
+
+The run reports do not record the Antigravity run's model name or design size,
+whether its token count includes the reviewers' own sessions, or the Claude
+Code run's main-session tokens and total duration. No run measures an
+interactive review or `egm-review-loop`, and no record gives a cost in money.
 
 On a plan with a usage limit, such as a subscription plan, a review can reach
 the limit before it finishes. On 2026-10-22, a Claude Cowork run of brainstorm,
