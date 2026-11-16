@@ -339,7 +339,7 @@ modify repository files in this section.
 
 **Persona:** The Elephant (Resolver)
 
-1.  **State Discriminator:** Determine the active branch from the section that
+1.  **Response Routing:** Determine the active branch from the section that
     spawned the review being handled:
     *   *Pre-Implementation (Spec Review):* Section 2B spawned it (subagent role
         `Goldfish Specification Reviewer`).
