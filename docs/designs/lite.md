@@ -203,7 +203,7 @@ flowchart TD
 ### Phase 5: Unified Post-Review Resolution Gate (Subagent Response)
 
 *   **Persona**: Elephant (Resolver) — Contextual triage.
-*   **State Discriminator**: Uses the phase that spawned the review (Phase 2B or Phase 4,
+*   **Response Routing**: Uses the phase that spawned the review (Phase 2B or Phase 4,
     identified by the subagent role) to decide whether it is handling a spec review or a diff
     review response.
 *   **Strict Non-Mutating Triage**: The Elephant Resolver operates strictly in
