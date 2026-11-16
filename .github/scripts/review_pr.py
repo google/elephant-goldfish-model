@@ -83,6 +83,7 @@ BARE_MENTION_RE = re.compile(
     r"(?<![\w`])@([A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)?)"
 )
 INLINE_CODE_SPLIT_RE = re.compile(r"(`[^`]+`)")
+FENCED_CODE_SPLIT_RE = re.compile(r"(```.*?```)", re.DOTALL)
 HUNK_HEADER_RE = re.compile(r"^@@\s+-\d+(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@")
 
 TRUSTED_REVIEW_ASSOCIATIONS: frozenset[str] = frozenset({
@@ -834,10 +835,17 @@ def build_diff_context(
 
 def _neutralize_bare_mentions(text: str) -> str:
   """Wraps bare @user and @org/team handles in backticks to block ping abuse."""
-  parts = INLINE_CODE_SPLIT_RE.split(text)
-  for idx in range(0, len(parts), 2):
-    parts[idx] = BARE_MENTION_RE.sub(r"`@\1`", parts[idx])
-  return "".join(parts)
+  # Fenced blocks are split out first: a stray single backtick inside one
+  # (e.g. prose about shell quoting) would otherwise pair with an unrelated
+  # backtick later in the text, and everything in between, including a
+  # real bare mention, would be misclassified as inline code and skipped.
+  fenced_parts = FENCED_CODE_SPLIT_RE.split(text)
+  for idx in range(0, len(fenced_parts), 2):
+    parts = INLINE_CODE_SPLIT_RE.split(fenced_parts[idx])
+    for inner_idx in range(0, len(parts), 2):
+      parts[inner_idx] = BARE_MENTION_RE.sub(r"`@\1`", parts[inner_idx])
+    fenced_parts[idx] = "".join(parts)
+  return "".join(fenced_parts)
 
 
 def sanitize_comment_body(text: str) -> str:

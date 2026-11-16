@@ -162,8 +162,10 @@ asking, inside `/egm-review`, for each reviewer to save its own notes.
 
 ### Recorded CLI evidence (2026-11-10)
 
-The Windsurf IDE now ships as Devin Desktop. It was not installed for these
-runs. The author drove the Devin CLI 3000.12.43 from a Muse 1.4.15 session on
+Cognition renamed Windsurf to Devin Desktop on 2026-06-02. Devin Local
+replaced Cascade as the local agent, and the legacy Cascade agent ended on
+2026-07-01. Devin Desktop and the Devin CLI run the same Devin Local agent.
+Devin Desktop was not installed for these runs. The author drove the Devin CLI 3000.12.43 from a Muse 1.4.15 session on
 macOS 27.2, headless and interactively in `tmux`, against the
 [#379](https://github.com/google/elephant-goldfish-model/pull/379) adapter. The
 CLI lists `.windsurf/rules/egm.md` as a Windsurf rule. It does not list
@@ -234,7 +236,7 @@ removes `.windsurf/`, the status note in [harnesses](../harnesses.md), and
   [Recorded CLI evidence](#recorded-cli-evidence-2026-11-10). No contributor
   has run them in the Windsurf IDE (Devin Desktop) or to a final artifact.
 - Maintainers decide whether Devin CLI evidence counts toward the promotion
-  gates or only IDE evidence does.
+  gates or only IDE evidence does. Both surfaces run Devin Local.
 - The author ran the EGM Structural, Style, and Design Critic Goldfish
   reviewers on 2026-11-10 against the feature specification standard and
   resolved all Blocker and Major findings in this draft and in
@@ -245,6 +247,8 @@ removes `.windsurf/`, the status note in [harnesses](../harnesses.md), and
 Reviewed 2026-11-10. These links document Windsurf surfaces rather than EGM
 verification evidence:
 
+- [Windsurf is now Devin Desktop](https://devin.ai/blog/windsurf-is-now-devin-desktop)
+- [Devin Desktop FAQ](https://docs.devin.ai/desktop/devin-desktop-faq)
 - [Windsurf Cascade workflows](https://docs.windsurf.com/windsurf/cascade/workflows)
 - [Windsurf Cascade memories and rules](https://docs.windsurf.com/windsurf/cascade/memories)
 - [Additional coding-agent harness support](additional-harnesses.md)
