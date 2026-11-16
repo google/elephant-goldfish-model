@@ -94,6 +94,7 @@ flowchart TD
     SpecResolution -->|"exec / Proceed"| ExecPhase
     DiffResolution -->|"checklist"| ChecklistPhase
     DiffResolution -->|"LGTM, or all findings contested"| Done(["Complete"])
+    ExecPhase -->|"no review requested"| Done
     ExistingDiff(["review / goldfish on an existing diff"]) --> DiffReview
 ```
 
@@ -173,7 +174,8 @@ flowchart TD
     after test verification passes, leading with a `> **BLUF:**` on escalation halts, autonomous
     self-repairs, or multi-file summaries while omitting it on clean single-target runs.
 *   **Completion Gate**: Prompts for `review` or `goldfish` and halts execution with a strict
-    negative constraint forbidding subsequent phases until triggered.
+    negative constraint forbidding subsequent phases until triggered. The diff review is optional:
+    the gate recommends it whenever Phase 3 edited files, and the user can end the task without it.
 
 ### Phase 4: Adversarial Diff Review (`review` / `goldfish`)
 
