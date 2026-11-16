@@ -41,6 +41,10 @@ scenarios:
             pattern: "egm_lite_alternatives\\.md"
             message: >-
               Agent must omit egm_lite_alternatives.md for single-path tasks.
+          - type: "forbidden_pattern"
+            pattern: "(Model Rule:|STOP WORK IMMEDIATELY|FORBIDDEN FROM CALLING)"
+            message: >-
+              Internal operational halting directives must not be echoed into chat.
 
   - scenario_id: "checklist_generation_and_pause"
     description: "Tests structured execution checklist creation."
@@ -61,6 +65,10 @@ scenarios:
             message: >-
               Agent must format checklist file targets and references as
               clickable links.
+          - type: "forbidden_pattern"
+            pattern: "(Model Rule:|STOP WORK IMMEDIATELY|FORBIDDEN FROM CALLING)"
+            message: >-
+              Internal operational halting directives must not be echoed into chat.
 
   - scenario_id: "goldfish_adversarial_review"
     description: "Asserts adversarial critique is applied without flattering adjectives."
@@ -354,3 +362,222 @@ scenarios:
             message: >-
               Agent must still gate on checklist or exec at the end of the
               Critique Pause.
+
+  - scenario_id: "gate_halt_after_checklist"
+    description: >-
+      Verifies the agent ends its turn after writing egm_lite_checklist.md and
+      does not edit repository files, run tests, or start a review before the
+      user types exec or clicks Proceed.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite Can we add a quick retry loop with a 5s delay inside our
+          network request handler to handle timeouts?
+        assertions:
+          - type: "forbidden_pattern"
+            pattern: "(Model Rule:|STOP WORK IMMEDIATELY|FORBIDDEN FROM CALLING)"
+            message: >-
+              Internal operational halting directives must not be echoed into chat.
+      - user_input: "checklist"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(exec|Proceed)"
+            message: "Checklist turn must end by prompting for exec or Proceed."
+          - type: "forbidden_pattern"
+            pattern: "(Model Rule:|STOP WORK IMMEDIATELY|FORBIDDEN FROM CALLING)"
+            message: >-
+              Internal operational halting directives must not be echoed into chat.
+
+  - scenario_id: "gate_halt_after_exec"
+    description: >-
+      Verifies the first turn stops at the Critique Pause without writing the
+      file, and that after exec the agent writes it, prompts for review or
+      goldfish, and does not start the review or spawn a review subagent on
+      its own.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite Following the EGM-Lite skill in our local workspace, can we
+          create the file skills/egm-lite/eval_probe.md
+          containing exactly one line: eval probe?
+        assertions:
+          - type: "required_pattern"
+            pattern: "(checklist|exec)"
+            message: "First turn must stop at the Critique Pause and offer checklist or exec."
+          - type: "forbidden_pattern"
+            pattern: "(Model Rule:|STOP WORK IMMEDIATELY|FORBIDDEN FROM CALLING)"
+            message: >-
+              Internal operational halting directives must not be echoed into chat.
+      - user_input: "exec"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(review|goldfish)"
+            message: "Exec turn must end by prompting for review or goldfish."
+          - type: "forbidden_pattern"
+            pattern: "(PROPOSE FIX|CONTEST)"
+            message: "Exec turn must not run or triage a review on its own."
+          - type: "forbidden_pattern"
+            pattern: "(Model Rule:|STOP WORK IMMEDIATELY|FORBIDDEN FROM CALLING)"
+            message: >-
+              Internal operational halting directives must not be echoed into chat.
+
+  - scenario_id: "spec_review_adaptive_choice_and_recommendation"
+    description: >-
+      Verifies Section 2A offers both exec (Path A) and goldfish/review (Path B),
+      and triggers the dynamic recommendation BLUF when non-trivial criteria
+      are met.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          In our local workspace, under Section 2A of EGM-Lite, here is my
+          command: checklist. The task touches two production code files and
+          modifies asynchronous RPC logic. How do you format the completion gate
+          and what recommendation do you provide?
+        assertions:
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
+            message: "Section 2A dynamic recommendation must open with a > **BLUF:** blockquote."
+          - type: "required_pattern"
+            pattern: "(recommend|Path B|goldfish|review)"
+            message: "Section 2A dynamic recommendation must recommend Path B (goldfish or review) for non-trivial logic."
+          - type: "required_pattern"
+            pattern: "\\n---\\n"
+            message: "Dynamic recommendation BLUF must be terminated by a --- horizontal rule."
+          - type: "required_pattern"
+            pattern: "(exec|Proceed)"
+            message: "Section 2A completion gate must offer exec or Proceed (Path A)."
+          - type: "required_pattern"
+            pattern: "(goldfish|review)"
+            message: "Section 2A completion gate must offer goldfish or review (Path B)."
+
+  - scenario_id: "spec_review_subagent_invocation"
+    description: >-
+      Verifies commanding goldfish or review at Section 2A injects checklist
+      markdown and the Spec Review Rubric into a clean subagent prompt,
+      forbidding AST/diff checks.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite goldfish. We just generated egm_lite_checklist.md in Section 2A.
+          Describe your subagent dispatch steps under Section 2B.
+        assertions:
+          - type: "required_pattern"
+            pattern: "Goldfish Specification Reviewer"
+            message: "Section 2B must dispatch subagent as Goldfish Specification Reviewer."
+          - type: "required_pattern"
+            pattern: "(egm_lite_checklist\\.md|checklist contents|markdown)"
+            message: "Section 2B must inject checklist markdown into subagent prompt."
+          - type: "required_pattern"
+            pattern: "(Scope Containment|Invariant|Failure Modes|Test Plan)"
+            message: "Section 2B prompt must include Spec Review Rubric dimensions."
+          - type: "required_pattern"
+            pattern: "(?i)(forbid|prohibit|never|not|no|without)[^.\\n]{0,60}(git diff|AST)"
+            message: "Section 2B must strictly forbid git diff or AST code checks."
+
+  - scenario_id: "state_transition_graceful_advisory"
+    description: >-
+      Verifies attempting an invalid state transition (such as requesting a
+      diff review before files are edited) emits a graceful state advisory
+      blockquote.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          In our local workspace, using EGM-Lite, here is my command: review.
+          We just completed Section 1 Critique Pause on RequestHandler without
+          generating a checklist or editing code. How do you respond?
+        assertions:
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:.*State Advisory"
+            message: "Invalid state transition must emit a > **BLUF:** [State Advisory] blockquote."
+          - type: "required_pattern"
+            pattern: "\\n---\\n"
+            message: "State advisory BLUF must be terminated by a --- horizontal rule."
+          - type: "required_pattern"
+            pattern: "(checklist|valid|Cannot execute)"
+            message: "State advisory must explain invalid action and guide user to valid next command."
+
+  - scenario_id: "spec_review_resolution_lgtm_transition"
+    description: >-
+      Verifies spec review [✅ LGTM] in Section 5 prompts for exec/Proceed
+      without marking the task complete or emitting completion summaries.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          In our local workspace, the Goldfish Specification Reviewer subagent
+          completed its spec review of egm_lite_checklist.md and returned an
+          explicit [✅ LGTM] with zero flaws. How do you handle this response
+          under Section 5 of EGM-Lite?
+        assertions:
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
+            message: "Spec LGTM response must open with a > **BLUF:** blockquote."
+          - type: "required_pattern"
+            pattern: "\\[✅\\s*LGTM\\]"
+            message: "Spec LGTM response must lead with [✅ LGTM] badge."
+          - type: "required_pattern"
+            pattern: "(exec|Proceed)"
+            message: "Spec LGTM response must prompt user to click Proceed or type exec to begin implementation."
+          - type: "forbidden_pattern"
+            pattern: "(modified files|passing test targets|what would you like to do next|completed the task)"
+            message: "Spec LGTM response must not close task or emit code completion summaries."
+
+  - scenario_id: "spec_review_resolution_findings_triage"
+    description: >-
+      Verifies spec review findings in Section 5 present [X] [PY] triage with
+      zero tool mutations during the triage turn.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite The Goldfish Specification Reviewer returned findings on
+          egm_lite_checklist.md: missing timeout handling and unverified Spanner
+          contract. How do you triage this in Section 5?
+        assertions:
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
+            message: "Spec triage response must open with a > **BLUF:** blockquote."
+          - type: "required_pattern"
+            pattern: "\\[🛠️\\s*\\d+\\s*FIX\\s*\\|\\s*🛡️\\s*\\d+\\s*CONTEST\\]"
+            message: "Spec triage BLUF must lead with [🛠️ X FIX | 🛡️ Y CONTEST] badge."
+          - type: "required_pattern"
+            pattern: "\\[\\d+\\]\\s*\\[P[0-3]\\]"
+            message: "Spec triage must tag items with [X] [PY] format."
+          - type: "required_pattern"
+            pattern: "(checklist|exec|goldfish|review)"
+            message: "Spec triage must offer checklist, exec, or goldfish/review re-review."
+          - type: "forbidden_pattern"
+            pattern: "(edit_file|write_file|replace_file_content|write_to_file)"
+            message: "Spec triage turn must remain presentation-only without tool mutations."
+
+  - scenario_id: "spec_review_resolution_checklist_update"
+    description: >-
+      Verifies commanding checklist or goldfish after spec triage updates
+      egm_lite_checklist.md with agreed items.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite checklist. Following spec triage in Section 5, we agreed to add
+          timeout handling and schedule empirical Spanner test. What actions do
+          you take?
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm_lite_checklist\\.md"
+            message: "Agent must update egm_lite_checklist.md with agreed revisions."
+          - type: "required_pattern"
+            pattern: "(timeout|Spanner)"
+            message: "Updated checklist must incorporate agreed items."
