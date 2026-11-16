@@ -18,6 +18,8 @@ import pathlib
 import re
 from typing import Set
 
+import pytest
+
 # Vendored and generated trees. The test below checks site source routes.
 IGNORED_DIRS = ("node_modules", "dist")
 
@@ -68,6 +70,7 @@ def test_relative_markdown_links_resolve_on_disk(
           for part in p.relative_to(repo_root).parts
       )
   ]
+  target_headers: dict[pathlib.Path, Set[str]] = {}
 
   for md_file in markdown_files:
     content = md_file.read_text(encoding="utf-8", errors="ignore")
@@ -102,8 +105,8 @@ def test_relative_markdown_links_resolve_on_disk(
         )
         continue
 
-      # Strip fragment if target references another file with anchor
-      file_target = target.split("#")[0]
+      # Split off the fragment; it is checked against the target's headings
+      file_target, _, fragment = target.partition("#")
       if not file_target:
         continue
 
@@ -125,3 +128,26 @@ def test_relative_markdown_links_resolve_on_disk(
           f"Broken relative link '[{match.group(1)}]({target})' in {rel_path}: "
           f"resolved path '{resolved_path}' does not exist on disk."
       )
+      if fragment and resolved_path.is_file() and resolved_path.suffix == ".md":
+        # Parse each target once. Keep inline code: GitHub slugs include it.
+        if resolved_path not in target_headers:
+          target_content = resolved_path.read_text(encoding="utf-8", errors="ignore")
+          target_headers[resolved_path] = extract_headers(
+              re.sub(r"```[\s\S]*?```", "", target_content)
+          )
+        assert fragment.lower() in target_headers[resolved_path], (
+            f"Broken anchor '{target}' in {rel_path}: "
+            f"no matching heading in {resolved_path}"
+        )
+
+
+def test_cross_file_anchor_must_match_a_heading(tmp_path: pathlib.Path) -> None:
+  """Verifies a link to another Markdown file fails when its anchor is gone."""
+  (tmp_path / "b.md").write_text("## Present heading\n", encoding="utf-8")
+  source = tmp_path / "a.md"
+  source.write_text("[x](b.md#present-heading)\n", encoding="utf-8")
+  test_relative_markdown_links_resolve_on_disk(tmp_path)
+
+  source.write_text("[x](b.md#missing-heading)\n", encoding="utf-8")
+  with pytest.raises(AssertionError, match="Broken anchor"):
+    test_relative_markdown_links_resolve_on_disk(tmp_path)
