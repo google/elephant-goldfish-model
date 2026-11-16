@@ -28,6 +28,12 @@ to:
 
 EGM-Lite provides an on-rails middle ground with isolated verification gates and fast turnaround.
 
+## Non-Goals
+
+- Replace the full EGM design lifecycle for architectural changes.
+- Perform a same-context review when an isolated reviewer is unavailable.
+- Expand implementation beyond the approved checklist or make review mandatory.
+
 ## System Architecture & Decoupled State Machine
 
 Transitions between phases occur strictly upon explicit user command triggers and asynchronous
