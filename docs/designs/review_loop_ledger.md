@@ -2,7 +2,7 @@
 
 *   **Author:** [@mbachaud](https://github.com/mbachaud)
 *   **Status:** Draft
-*   **Date:** 2026-11-11
+*   **Date:** 2026-11-15
 
 --------------------------------------------------------------------------------
 
@@ -29,41 +29,61 @@ handled, or why the loop reported "converged".
 The Elephant also makes the judgments that decide convergence: which reviewer
 findings are the same finding, whether a new finding is "the same issue at the
 same scope" as an earlier one, whether a round is clean, and whether a change
-is churn. Today none of those judgments is written down.
+is churn. Moreover, `egm-resolve` pauses at Step 4 for human input across a
+turn that can last hours or compact before Step 5 returns, so any pre-resolve
+judgment kept only in context (`clean`, reviewer status, and `same-as` match
+reasons) can be lost before the round finishes. Today none of those judgments
+is written down.
 
 Proposed solution: write each round's files under round-numbered names in one
-folder per run, including the consolidated findings list with ids. Add a ledger
-that records each decision as a row, links a re-raised finding to its first id,
-and ends each round with a summary row.
+folder per run, including a consolidated findings file written before resolve
+that records finding ids, `same-as` root ids, match reasons, reviewer statuses,
+and the `clean` decision. Add a ledger that records each decision as a row,
+links a re-raised finding to its first id, and ends each round with a summary
+row.
 
 ## Goals
 
 *   Each round's reviewer report, consolidated findings list, and resolve
-    report survive the run under round-numbered names. None overwrites
-    another.
+    report (when resolve runs) survive the run under round-numbered names.
+    None overwrites another.
 *   Every finding id can be traced to the reviewer-written text it came from.
+*   Every judgment the Elephant makes before `egm-resolve` yields to the user
+    (`completed` and `not run` reviewers, `clean`, `same-as` root id, the
+    reason for each match, and any churn judgment) is written to
+    `round-NN-findings.md` before resolve starts.
 *   `ledger.md` records one row per decision: finding id, `same-as` id,
     severity, status, who decided, a short reason, and cited evidence for
     contests. Rows sit under a heading for their round.
 *   A finding raised again in a later round can be traced to its first id with
-    one text search.
+    one whole-cell text search (the root id followed by a space), avoiding
+    prefix collisions such as `1-1` matching `1-10`.
 *   Each round ends with one summary row: reviewer status, clean or not, the
     stop decision, and the count of findings by status. A reader can check that
     the counts add up without opening the round reports.
-*   The completion message says how many findings closed without a fix, so
-    "converged" cannot hide them.
-*   The convergence, cap, and churn rules in §2.4 keep their current wording.
-    The design only writes down which statuses count as settled (see Open
-    Questions).
+*   The completion message says how many findings closed without a fix and
+    how many were left undecided, so "converged" cannot hide them.
+*   This design does not change the convergence, cap, and churn rules in
+    §2.4. It records what those rules decide and writes down which statuses
+    count as settled (see Open Questions).
 
 ## Non-Goals
 
 *   Changing the convergence, cap, or churn rules.
 *   Hooks, scripts, hashes, or any new runtime piece. Read-only enforcement
-    stays with host tool limits (#261, #262).
+    stays with host tool limits
+    ([#261](https://github.com/google/elephant-goldfish-model/issues/261),
+    [#262](https://github.com/google/elephant-goldfish-model/issues/262)).
 *   Resume. The ledger is a record for a human to read, not state the loop
-    restores from. #63 keeps its own acceptance criteria.
-*   A new default output folder. #110 stays open as is.
+    restores from.
+    [#63](https://github.com/google/elephant-goldfish-model/issues/63) keeps
+    its own acceptance criteria.
+*   A new default output folder.
+    [#110](https://github.com/google/elephant-goldfish-model/issues/110) stays
+    open as is. If
+    [#448](https://github.com/google/elephant-goldfish-model/issues/448)
+    adds a folder per feature, the run folder goes inside it, with the same
+    name.
 *   K9, a read-only checker persona that audits the ledger. It could be a
     follow-up once this record exists.
 *   Changing `egm-resolve` when it runs on its own, outside the loop. This
@@ -72,14 +92,24 @@ and ends each round with a summary row.
 
 ## Open Questions
 
-*   **Settled statuses (needs a maintainer decision):** §2.4 settles findings
-    that are "contested or recorded without a fix". This design treats
-    `user-rejected` and user-confirmed `escalated` as settled for convergence.
-    An `escalated` finding that the user never saw (bypassed by auto accept
-    or "continue") stays unsettled. Is that the intended reading of §2.4? The
-    alternative is to leave `user-rejected` unsettled too, which means a
-    finding the user declined to fix blocks convergence every round it is
-    raised again.
+*   **Explicit rejections as settled (needs a maintainer decision):** §2.4
+    settles findings that are "contested or recorded without a fix". This
+    design treats an explicit per-item decision by the user as settled for
+    convergence: `user-rejected` (a PROPOSE FIX item the user skipped in the
+    breakdown, or declined by comment or custom instruction) and `escalated`
+    (an ESCALATE item the user confirmed needs no change). Is that the
+    intended reading of §2.4? The alternative is to leave both unsettled,
+    which means a finding the user explicitly declined to fix blocks
+    convergence every round it is raised again. Items the user never decided
+    are not part of this question: a PROPOSE FIX or ESCALATE item bypassed by
+    "continue", "no changes", or "auto accept" gets `passed-over` and stays
+    unsettled.
+    [#433](https://github.com/google/elephant-goldfish-model/issues/433) asks
+    a related question: whether an owner question, which it maps to ESCALATE
+    by default, counts against a clean round. Both answers decide when an
+    ESCALATE item blocks convergence, so they are best decided together. If
+    #433 decides that owner questions do not block, the `passed-over` rule
+    for ESCALATE items here follows that decision.
 *   **Re-raised settled findings:** §2.4 says not to re-open a settled finding
     that is raised again, but does not say whether it still goes to
     `egm-resolve`. This design records it in the ledger with the settled status
@@ -94,32 +124,40 @@ and ends each round with a summary row.
     rounds, and the Elephant's context was later compacted.
 *   **When**: The human opens the run folder named in the completion message.
 *   **Then**: `ledger.md` has four round blocks. The summary rows for rounds 3
-    and 4 have `yes` in the `clean` column. Every id in
-    `round-03-findings.md` and `round-04-findings.md` has one final-status row
-    in its round block. Each summary's counts match its rows, and each id's
-    `source` entry points to a heading in that round's `round-NN-review.md`.
+    and 4 have `yes` in the `clean` column, matching the `**Clean:** yes`
+    header in `round-03-findings.md` and `round-04-findings.md`. Every id in
+    those findings files has one final-status row in its round block. Each
+    summary's counts match its rows, and each id's `source` entry points to a
+    heading in that round's `round-NN-review.md`.
 
-### CUJ 2: Trace a re-opened finding
+### CUJ 2: Trace a re-opened finding without prefix collisions
 
-*   **Given**: `egm-design-1-2` was fixed in round 1. In round 3,
-    `egm-structural-3-1` raises the same issue at the same scope.
+*   **Given**: `egm-design-1-1` and `egm-design-1-10` were both raised in round
+    1, and `egm-design-1-1` was fixed. In round 3, `egm-structural-3-1` raises
+    the same issue at the same scope as `egm-design-1-1`.
 *   **When**: The Elephant consolidates round 3's findings.
-*   **Then**: The ledger gets a `re-opened` row for `egm-structural-3-1` with
-    `same-as: egm-design-1-2`, decided by `elephant`, with the reason for the
-    match. A second row records how resolve handled it this round. Searching
-    the ledger for `egm-design-1-2` returns the whole history, and the last
-    match is the current status.
+*   **Then**: `round-03-findings.md` records `same-as: egm-design-1-1` and the
+    reason for the match before resolve runs. After resolve, the ledger gets a
+    `re-opened` row for `egm-structural-3-1` with `same-as: egm-design-1-1`,
+    decided by `elephant`, copying that match reason, followed by a second row
+    recording how resolve handled it this round. Searching `ledger.md` for
+    `egm-design-1-1` followed by a space returns every row for
+    `egm-design-1-1` (where it sits in `id` in round 1 and in `same-as` in
+    later rounds) without matching `egm-design-1-10`, and the last matching
+    row is the current status.
 
 ### CUJ 3: A settled finding is raised again
 
 *   **Given**: `egm-style-1-4` was contested in round 1 with cited evidence.
     In round 2, `egm-style-2-1` raises the same issue.
 *   **When**: The Elephant consolidates round 2's findings.
-*   **Then**: The ledger gets one row for `egm-style-2-1` with
-    `same-as: egm-style-1-4`, status `contested`, decided by `elephant`, reason
-    "settled in round 1; not re-opened (§2.4)", and evidence
-    `see egm-style-1-4`. The finding is not sent to resolve, and it does not
-    make the round unclean.
+*   **Then**: `round-02-findings.md` records `egm-style-2-1` with
+    `same-as: egm-style-1-4` and reason "Settled in round 1; not re-opened
+    (§2.4)". The finding is not sent to resolve, and it does not make the round
+    unclean. After resolve finishes for the rest of the round, the ledger gets
+    one row for `egm-style-2-1` with `same-as: egm-style-1-4`, status
+    `contested`, decided by `elephant`, reason "Settled in round 1; not
+    re-opened (§2.4)", and evidence `see same-as`.
 
 ### CUJ 4: Direct dispatch
 
@@ -141,8 +179,8 @@ names another, per #118 and `docs/harnesses.md`):
 ```text
 <artifact dir>/review-loop-<target stem>-<YYYYMMDD-HHMMSS>/
   round-01-review.md     # reviewer-written report (self-reported in direct dispatch)
-  round-01-findings.md   # consolidated FindingsList with ids, written before resolve
-  round-01-resolved.md   # egm-resolve annotated report, with ids and Reviewer Status
+  round-01-findings.md   # consolidated FindingsList, match reasons, and clean/reviewer state
+  round-01-resolved.md   # egm-resolve annotated report, with finding ids
   round-02-review.md
   ...
   ledger.md              # append-only
@@ -155,10 +193,15 @@ whole run. It does not resolve the artifact directory again in later rounds.
 
 The synthesizer already writes to the report file its caller names
 (`agents/synthesizer.md`, REVIEW step 4), so the loop passes
-`round-NN-review.md` and the synthesizer needs no change.
+`round-NN-review.md` and the synthesizer needs no change. In direct dispatch,
+the Elephant writes that file in the synthesizer's REVIEW layout, with the
+self-reported line above the title.
 
-`egm-resolve` writes `round-NN-resolved.md` and keeps the finding ids and the
-Reviewer Status table. It also writes `goldfish_review_report.md` as today.
+`egm-resolve` writes `round-NN-resolved.md` and starts each finding's heading
+with its id (`### [<id>] <title>`). The ids arrive in the `FindingsList`.
+The report does not repeat the Reviewer Status table, because resolve does
+not receive reviewer status; `round-NN-findings.md` records it. Resolve also
+writes `goldfish_review_report.md` as today.
 `egm-review`'s resolve step names that file as its fallback source of findings,
 and the draft `egm-ask` design (`docs/designs/ask.md`) reads it to detect
 review state. That file is the latest view; the round files are the record.
@@ -166,25 +209,48 @@ review state. That file is the latest view; the round files are the record.
 ### Consolidated findings file
 
 The synthesizer's report has no ids, and the synthesizer deduplicates across
-reviewers. The Elephant assigns ids when it consolidates (§2.2 step 2). So
-before calling resolve, the loop writes `round-NN-findings.md`, one row per
-finding:
+reviewers. The Elephant assigns ids, matches against earlier rounds, checks
+failed reviewers, and decides `clean` when it consolidates (§2.2 steps 2–3 and
+§2.4) before calling `egm-resolve`. Because `egm-resolve` idles for human input
+at Step 4 across a turn that can last hours or compact, the loop writes all of
+those pre-resolve results to `round-NN-findings.md` before calling resolve:
 
 ```markdown
-| id | reviewer | severity | scope | source | same-as |
-| --- | --- | --- | --- | --- | --- |
-| egm-structural-3-1 | egm-structural | Major | §Goals | "Goals miss failure case" (review heading) | egm-design-1-2 |
-| egm-design-3-1 | egm-design | Major | §Technical Plan | "Scope note ignored", "Unclear scope" (merged) | |
+# Round 3 Findings
+
+**Completed:** egm-design, egm-structural, egm-style
+**Not run:** none
+**Clean:** no
+
+| id | reviewer | severity | scope | source | same-as | reason |
+| --- | --- | --- | --- | --- | --- | --- |
+| egm-structural-3-1 | egm-structural | Major | §Goals | "Goals miss failure case" (review heading) | egm-design-1-2 | Re-opened: same gap in §Goals after the round 1 fix |
+| egm-style-3-1 | egm-style | Major | §Overview | "Tone check" (review heading) | egm-style-1-4 | Settled in round 1; not re-opened (§2.4) |
+| egm-design-3-1 | egm-design | Major | §Technical Plan | "Scope note ignored", "Unclear scope" (merged) | | Merged duplicate headings in round 3 |
+| egm-design-3-2 | egm-design | Nit | §Overview | "Minor wording" (review heading) | | |
 ```
 
+*   `Completed`, `Not run`, and `Clean` record the reviewer status and the
+    pre-fix `clean` decision (§2.4) before resolve yields to the user. If a
+    reviewer is in `Not run`, `Clean` is `no`.
 *   `<reviewer>` in an id is the reviewer name the loop was given in
     `Reviewers` (for example `egm-design` when `egm-review` calls the loop).
 *   `source` names the heading or headings in `round-NN-review.md` the finding
     came from, so a reader can check the mapping against reviewer-written
     text. When the Elephant merges duplicates raised in the same round, it
     gives them one id and lists every source heading.
-*   This file is written before resolve yields to the user, so the ids and
-    matches survive compaction during resolve.
+*   `reason` records the Elephant's pre-resolve judgment: why a finding matched
+    an earlier root id in `same-as` (including whether it is re-opened or
+    already settled), why an ambiguous match was treated as new, why
+    headings from the same round were merged, or why a finding is churn
+    (naming the applied fix that would be reverted, §2.4).
+*   If #433 lands, the table gains a `basis` column copied from the
+    reviewer's report (document, referenced file, or owner question). No rule
+    in this design reads it, and a change of basis between rounds does not by
+    itself make a finding new: matching stays on issue and scope.
+*   This file is written before resolve yields to the user, so the ids,
+    `same-as` links, match and churn reasons, `not run` status, and `clean`
+    decision all survive compaction during resolve.
 
 ### Data flow per round
 
@@ -192,34 +258,56 @@ finding:
 2.2 swarm ──► round-NN-review.md (synthesizer, or Elephant in direct dispatch)
      │
      ▼
-consolidate: merge duplicates, assign ids, match against ledger (same-as),
-decide clean ──► round-NN-findings.md
+consolidate: merge duplicates, assign ids, match against ledger (same-as + reason),
+record completed/not-run, decide clean ──► round-NN-findings.md
      │                       │
-     │ new + re-opened       │ settled re-raises: ledger rows only
+     │ new, re-opened,       │ settled re-raises: kept in round-NN-findings.md
+     │ re-raised unsettled   │
      ▼                       │
 2.3 egm-resolve ──► round-NN-resolved.md + goldfish_review_report.md
      │ returns a decision per id (outcome, who decided, reason, evidence)
      ▼
-2.4 loop appends the round block to ledger.md, then decides stop/continue
+2.4 loop combines round-NN-findings.md + resolve decisions into ledger.md,
+    then decides stop/continue
 ```
 
 The loop is the only writer of `ledger.md`. Resolve returns decisions and the
-loop records them, so the ledger has one author per run.
+loop combines them with the pre-resolve state saved in `round-NN-findings.md`,
+so the ledger has one author per run and does not rely on in-context memory
+across the Step 4 human turn.
+
+**Nothing to resolve.** When a round has nothing to send to resolve (no
+findings, or only settled re-raises), the loop does not call `egm-resolve` and
+writes no `round-NN-resolved.md` for that round. It appends the round block to
+`ledger.md` right after it writes `round-NN-findings.md`, then decides stop or
+continue. It still asks the user before it starts another round (§2.4).
 
 ### Matching rules for `same-as`
 
-*   **Root id.** `same-as` holds the id the finding had when it was first
-    raised, never an intermediate one. One search for the root id returns the
-    full history, and the last matching row is the current status. It is empty
-    for a new finding.
+*   **Root id and whole-cell search.** `same-as` holds the id the finding had
+    when it was first raised, never an intermediate one. It is empty for a new
+    finding. In both `round-NN-findings.md` and `ledger.md`, `id` and `same-as`
+    each fill a Markdown table cell, so an id is always followed by a space
+    and never by a digit. Searching for the root id followed by a space
+    returns the finding's first row (via `id`) and every later row (via
+    `same-as`), without matching a longer id that shares the prefix
+    (`egm-design-1-1` vs. `egm-design-1-10`). This still works when a
+    formatter pads cells to align columns; a search that also requires both
+    pipes (`| <id> |`) does not. Only `<n>` can collide this way, because the
+    hyphen after `<round>` ends that number. The last matching row in
+    `ledger.md` is the current status.
 *   **One root per finding.** If a finding could match two roots, match the
     one with the same affected scope. If it is still ambiguous, treat the
-    finding as new and say so in the reason. A new finding is not settled, so
-    the doubt counts against convergence, not for it.
+    finding as new and say so in the `reason` column of `round-NN-findings.md`
+    (carried into the finding's ledger row; see "Pre-resolve reasons" under
+    Ledger format). A new finding is not settled, so the doubt counts against
+    convergence, not for it.
 *   **Splits.** If a later round raises two findings that each match one
     earlier finding, both get that root as `same-as`, with their own rows.
-*   **Stated judgment.** The match is the Elephant's judgment. The reason
-    column states why, so a later reader or checker can dispute it.
+    The root then has one current status per split id: the last row of each.
+*   **Stated judgment.** The match is the Elephant's judgment. The `reason`
+    column in `round-NN-findings.md` states why before resolve runs, and the
+    ledger preserves that reason so a later reader or checker can dispute it.
 
 ### Ledger format
 
@@ -236,13 +324,13 @@ loop records them, so the ledger has one author per run.
 | --- | --- | --- | --- | --- | --- | --- |
 | egm-structural-3-1 | egm-design-1-2 | Major | re-opened | elephant | Same gap in §Goals after the round 1 fix | |
 | egm-structural-3-1 | egm-design-1-2 | Major | fixed | user | Accepted proposed fix | |
-| egm-style-3-1 | egm-style-1-4 | Major | contested | elephant | Settled in round 1; not re-opened (§2.4) | see egm-style-1-4 |
+| egm-style-3-1 | egm-style-1-4 | Major | contested | elephant | Settled in round 1; not re-opened (§2.4) | see same-as |
 | egm-design-3-1 | | Major | contested | elephant | Reviewer missed the scope note | `skills/egm-review-loop/SKILL.md` §2.4 |
 | egm-design-3-2 | | Nit | accepted-risk | elephant | Nit declined | |
 
-| round | completed | not run | clean | stop | findings | fixed | contested | accepted-risk | escalated | user-rejected | re-opened |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 3 | egm-design, egm-structural, egm-style | | no | continue | 4 | 1 | 2 | 1 | 0 | 0 | 1 |
+| round | completed | not run | clean | stop | findings | fixed | contested | accepted-risk | escalated | user-rejected | passed-over | re-opened |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 3 | egm-design, egm-structural, egm-style | | no | continue | 4 | 1 | 2 | 1 | 0 | 0 | 0 | 1 |
 ```
 
 Round 3 is not clean: `egm-structural-3-1` is a re-opened Major, and
@@ -254,20 +342,32 @@ Rules:
 
 *   **Final status.** Each id in `round-NN-findings.md` gets exactly one row
     with a final status: `fixed`, `contested`, `accepted-risk`, `escalated`,
-    or `user-rejected`. A re-opened finding also gets one `re-opened` row
-    before its final row.
-*   **Summary row.** `findings` is the number of rows in
+    `user-rejected`, or `passed-over`. A re-opened finding also gets one
+    `re-opened` row before its final row, using the match `reason` recorded in
+    `round-NN-findings.md`. `decided by` is `user`, `elephant`, or `none`
+    (`passed-over` only).
+*   **Pre-resolve reasons.** A match or churn reason recorded in
+    `round-NN-findings.md` always reaches the ledger. A `re-opened` row or a
+    re-raised settled row carries it as its `reason`. For any other finding
+    with one (an ambiguous match treated as new, a re-raised `passed-over`
+    finding, or churn), the final row's `reason` starts with that reason,
+    followed by resolve's reason. Merge reasons stay in the findings file,
+    next to the `source` headings.
+*   **Summary row.** `completed`, `not run`, and `clean` are copied from the
+    header of `round-NN-findings.md`. `findings` is the number of rows in
     `round-NN-findings.md`. `fixed + contested + accepted-risk + escalated +
-    user-rejected` must equal `findings`. `re-opened` is counted separately.
-    `clean` is decided from the review results before fixes are applied, as
-    §2.4 already requires. `stop` is `continue`, `converged`, `cap`, or
-    `churn`. For churn, the reason column of the affected rows names the fix
-    that would be reverted.
+    user-rejected + passed-over` must equal `findings`. `re-opened` is counted
+    separately. `stop` is `continue`, `converged`, `cap`, or `churn`. For
+    churn, the reason column of the affected rows names the fix that would be
+    reverted, as recorded in `round-NN-findings.md` before resolve.
 *   **Evidence.** A `contested` row records the evidence the contest cited (a
     file and symbol, or a decision in the document). #344 needs that evidence
-    to survive compaction. A re-raised settled row may point to its root with
-    `see <root id>` instead of copying the evidence.
+    to survive compaction. A re-raised settled row writes `see same-as` in
+    `evidence` (since its `same-as` cell already holds the root id). This
+    column is the Elephant's contest evidence, not the reviewer's evidence
+    basis that #433 proposes.
 *   **Append-only.** The loop appends one round block after resolve returns
+    (or after the findings file is written, when there is nothing to resolve)
     and never edits earlier blocks.
 
 ### Mapping resolve outcomes to statuses
@@ -275,41 +375,64 @@ Rules:
 | Resolve outcome | Status | Decided by | Settled |
 | --- | --- | --- | --- |
 | PROPOSE FIX, applied (auto accept, accepted in breakdown, or custom instruction) | `fixed` | `user` | no |
-| PROPOSE FIX, skipped, or "continue / no changes" | `user-rejected` | `user` | yes (pending Open Question 1) |
+| PROPOSE FIX, skipped in the breakdown, or declined by comment or custom instruction | `user-rejected` | `user` | yes (pending Open Question 1) |
+| PROPOSE FIX, no per-item decision ("continue / no changes", or a comment or custom instruction that does not address it) | `passed-over` | `none` | no |
 | CONTEST, kept | `contested` | `elephant` | yes |
 | CONTEST, overruled and fixed | `fixed` | `user` | no |
-| ESCALATE, user confirmed no change | `escalated` | `user` | yes (pending Open Question 1) |
+| ESCALATE, user confirmed no change (breakdown, comment, or custom instruction) | `escalated` | `user` | yes (pending Open Question 1) |
 | ESCALATE, fact added to the document | `fixed` | `user` | no |
-| ESCALATE, bypassed by auto accept or "continue" | `escalated` | `elephant` | no |
+| ESCALATE, no per-item decision (auto accept, "continue / no changes", or a comment or custom instruction that does not address it) | `passed-over` | `none` | no |
 | DECLINE (Nit recorded without a fix) | `accepted-risk` | `elephant` | yes |
 | Re-raised settled finding (§2.4 match) | prior settled status | `elephant` | yes |
 | Re-raised fixed finding (§2.4 match) | `re-opened`, then its new final status | `elephant`, then per row above | per final status |
+| Re-raised unsettled, never-fixed finding (§2.4 match): `passed-over`, and `user-rejected` or `escalated` if Open Question 1 is answered no | its new final status, with `same-as` set and no `re-opened` row | per row above | per final status |
+
+**Settled depends on the status alone.** `contested` and `accepted-risk` are
+settled, and so are `user-rejected` and `escalated` if Open Question 1 is
+answered yes. `fixed` and `passed-over` are never settled. `decided by` adds
+detail and never changes whether a row is settled.
+
+**Why `passed-over` is a separate status.** In `egm-resolve` Step 4, "continue"
+and "no changes" skip the resolution phase as a whole, and "auto accept"
+bypasses every ESCALATE item. Only the interactive breakdown, or a comment or
+custom instruction that names the item, gives a per-item decision. An item
+with no decision gets `passed-over`, decided by `none`, whether its category
+was PROPOSE FIX or ESCALATE (the category stays in `round-NN-resolved.md`).
+So a user cannot converge the loop with nothing fixed by typing "continue"
+each round, and `user-rejected` and `escalated` always mean an explicit
+decision. A re-raised `passed-over` finding goes to resolve again with the new
+and re-opened findings, and a Blocker or Major one makes the round not clean.
+It gets no `re-opened` row, because no fix was applied.
 
 **Default rule.** Some outcomes have no row above, for example a custom
-instruction that touches a CONTEST item, or a comment on the report file. For
-these, if the target text changed for the finding, record `fixed` by `user`.
-If not, record the no-fix status of its category: PROPOSE FIX →
-`user-rejected`, CONTEST → `contested`, ESCALATE → `escalated` by `elephant`
-(unsettled), DECLINE → `accepted-risk`. Resolve does not exit while a
-breakdown item is still under "Discuss", so that case does not reach the
-ledger.
+instruction that touches a CONTEST item. For these, if the target text changed
+for the finding, record `fixed` by `user`. If not, and the user stated a
+decision on that finding, record `user-rejected` for PROPOSE FIX or
+`escalated` by `user` for ESCALATE. If the user stated no decision on that
+finding, whatever reply ended Step 4, record `passed-over` by `none` for
+PROPOSE FIX or ESCALATE, `contested` for CONTEST, and `accepted-risk` for
+DECLINE. Resolve does not exit while a breakdown item is still under
+"Discuss", so that case does not reach the ledger.
 
-**Completion message.** Step 3's summary adds one line: the counts of
-`user-rejected`, `escalated`, `contested`, and `accepted-risk` findings
-closed without a fix, and the run folder path.
+**Completion message.** Step 3's summary adds the run folder path and two
+counts: findings closed without a fix (`user-rejected`, `escalated`,
+`contested`, `accepted-risk`) and findings left undecided (`passed-over`).
+Each finding is counted once, by its current status: the last row for its
+root id, or the last row of each split id when a root was split.
 
-### Risks and Mitigations
+## Risks and Mitigations
 
 | Risk | Mitigation |
 | --- | --- |
 | Append-only is a written convention. The Elephant could edit an earlier block. | State it as a limit in the skill text. Earlier blocks are also checkable against the round files, which the ledger does not replace. A K9 checker could verify this later. |
 | In direct dispatch the Elephant writes `round-NN-review.md`, so the record shows the decisions are consistent with what was recorded, not what reviewers said. | Mark the file and the ledger header self-reported, and state the limit in the skill text. |
-| The Elephant makes a wrong `same-as` match. | Every match has a stated reason in the ledger, and ambiguous matches are treated as new (unsettled). A human can dispute a match from the ledger alone. |
-| Compaction or a session ending during resolve. Fixes may be applied with no ledger block for that round. | `round-NN-findings.md` is written before resolve, so ids and matches survive. A round with a findings file and no ledger block has no recorded decisions. The skill tells the reader to compare the target against that round's resolve report. Resuming the round is #63's scope. |
-| `user-rejected` findings let the loop converge with nothing fixed. | They are counted in every summary row and in the completion message. Whether they count as settled is Open Question 1. |
+| The Elephant makes a wrong `same-as` match. | Every match has a stated reason written to `round-NN-findings.md` before resolve and copied to the ledger, and ambiguous matches are treated as new (unsettled). A human can dispute a match from the ledger alone. |
+| Compaction or a session ending during resolve. Fixes may be applied with no ledger block for that round. | `round-NN-findings.md` is written before resolve with `Completed`, `Not run`, `Clean`, `same-as`, and `reason`, so all pre-resolve judgments survive. A round with a findings file and no ledger block has no recorded resolve decisions. The skill tells the reader to compare the target against that round's resolve report. Resuming the round is #63's scope. |
+| Typing "continue" at Step 4 each round could let the loop converge with nothing fixed. | Items with no per-item decision get `passed-over`, which is never settled, so a re-raised Blocker or Major still makes the round not clean. A `passed-over` finding that no later reviewer raises again does not block; the completion message counts it as undecided. Explicit `user-rejected` findings are counted in every summary row and in the completion message; whether they count as settled is Open Question 1. |
+| Prefix collisions when searching for an id (`egm-design-1-1` matching `egm-design-1-10`). | Every `id` and `same-as` value fills a table cell and is followed by a space, so searching for the root id plus a trailing space matches only that id, however the table is padded and however many findings a round has. |
 | Two runs on the same target start in the same second. | Numeric suffix on an existing folder name. |
 | `egm-review` calls `egm-resolve` again at its stage checkpoint, after the loop returns. Those decisions are not in the ledger. | State it as a limit. That call is outside the loop and out of scope here. |
-| #344 and #287 edit the same text (§2.4, `review.md`, `synthesizer.md`). | Whichever lands second rebases. The ledger's evidence field is designed to fit #344's rule, and the doc changes here are additive to #287's. |
+| #344, #287, and #433 edit the same text (§2.4, `review.md`, `synthesizer.md`, and the `egm-resolve` report template). | Whichever lands second rebases. The ledger's evidence field is designed to fit #344's rule, the doc changes here are additive to #287's, and the only change to the resolve report here is the id in each finding heading. |
 
 ## Alternatives Considered
 
@@ -329,7 +452,8 @@ closed without a fix, and the run folder path.
 *   **Cons**: Each update erases the earlier decision.
 *   **Reason for Rejection**: Rejected by author: it loses the decision history
     a check after compaction needs. With `same-as` on the root id, the
-    current status is still one search away in the append-only form.
+    current status is still one whole-cell search (the root id followed by a
+    space) away in the append-only form.
 
 ### Alternative C: `same-as` points to the previous id
 
@@ -346,19 +470,31 @@ closed without a fix, and the run folder path.
 *   **Reason for Rejection**: Rejected by author: the summary row costs one
     line per round and lets a reader check the counts from the ledger alone.
 
+### Alternative E: Fixed-width zero-padding on `<n>` instead of whole-cell search
+
+*   **Pros**: A bare substring search for `egm-design-1-01` does not match
+    `egm-design-1-10`, for up to 99 findings per reviewer in a round.
+*   **Cons**: Changes the existing `<reviewer>-<round>-<n>` id format in
+    `skills/egm-review-loop/SKILL.md` §2.2, and collides again past 99
+    findings unless `<n>` is padded wider.
+*   **Reason for Rejection**: Rejected by author: every `id` and `same-as`
+    already fills its own table cell, so searching for the id followed by a
+    space avoids prefix collisions at any count without changing §2.2's id
+    format.
+
 --------------------------------------------------------------------------------
 
 ## Non-Functional Requirements
 
 *   **Security & Privacy**: Round files and the ledger can quote confidential
-    target text, including in the ledger's `reason` and `evidence` columns.
-    They are kept until the user deletes them, like other EGM outputs.
-    `docs/privacy.md` gets one line naming the run folder and saying that it
-    can quote target text. When the artifact directory is inside a repository,
-    users may want to ignore run folders in version control. This design does
-    not change `.gitignore`.
-*   **Performance & Latency**: Three files per round plus the ledger, so 16
-    files for a 5-round run. Writing the findings file and the ledger block
+    target text, including in the findings file's `reason` column and the
+    ledger's `reason` and `evidence` columns. They are kept until the user
+    deletes them, like other EGM outputs. `docs/privacy.md` gets one line
+    naming the run folder and saying that it can quote target text. When the
+    artifact directory is inside a repository, users may want to ignore run
+    folders in version control. This design does not change `.gitignore`.
+*   **Performance & Latency**: Up to three files per round plus the ledger,
+    so at most 16 files for a 5-round run. Writing the findings file and the ledger block
     adds two short tables per round to the Elephant's output.
 *   **Rollout & Rollback**: Skill text only. Standalone `egm-resolve` and
     `egm-review` keep their current file names. Rollback is a revert of the
@@ -386,7 +522,15 @@ closed without a fix, and the run folder path.
     [#63](https://github.com/google/elephant-goldfish-model/issues/63)
     (resume),
     [#110](https://github.com/google/elephant-goldfish-model/issues/110)
-    (dedicated output folder)
+    (dedicated output folder),
+    [#433](https://github.com/google/elephant-goldfish-model/issues/433)
+    (evidence basis on each finding; edits the resolve report template and
+    asks whether an owner question blocks a clean round),
+    [#448](https://github.com/google/elephant-goldfish-model/issues/448)
+    (one folder per feature, which would hold the run folder),
+    [#408](https://github.com/google/elephant-goldfish-model/issues/408)
+    (give reviewers recorded decisions; the ledger's settled rows are one
+    such record)
 
 ### Future Improvements
 
@@ -407,38 +551,53 @@ closed without a fix, and the run folder path.
 *   **Type / Scope**: Skill instructions.
 *   **Proposed Changes**:
     *   New "Run Record" section: run folder name, location, and collision
-        suffix; file names; findings-file and ledger formats; matching rules;
-        summary row; status mapping with the default rule; and the stated
-        limits from Risks and Mitigations.
+        suffix; file names; findings-file format (`Completed`, `Not run`,
+        `Clean` header plus `reason` column) and ledger format; matching rules
+        with whole-cell search (the id followed by a space); summary row;
+        status mapping (including `passed-over` for items with no per-item
+        decision) with the default rule; and the stated limits from Risks and
+        Mitigations.
     *   §2.2: pass `round-NN-review.md` in the run folder to the synthesizer.
         In direct dispatch, the Elephant writes that file and marks it
         self-reported. When consolidating, merge duplicates, assign ids, match
-        against the ledger, and write `round-NN-findings.md`. Leave re-raised
-        settled findings out of the `FindingsList`.
+        against the ledger with stated reasons, decide `clean`, reviewer
+        status, and churn, and write `round-NN-findings.md` before calling
+        resolve. Leave re-raised settled findings out of the `FindingsList`,
+        and keep re-raised unsettled findings (such as `passed-over`) in it.
+        When nothing is left to send, skip resolve and append the round block.
     *   §2.3: pass `ReportPath` (`round-NN-resolved.md`) to `egm-resolve`.
-    *   §2.4: list the settled statuses. After resolve returns, append the
-        round block to `ledger.md`, then decide stop or continue.
-    *   Step 3: add the run folder path and the counts of findings closed
-        without a fix to the completion summary.
+    *   §2.4: list the settled statuses. After resolve returns, combine
+        `round-NN-findings.md` with resolve's decisions to append the round
+        block to `ledger.md`, then decide stop or continue.
+    *   Step 3: add the run folder path, the count of findings closed without
+        a fix, and the count left undecided to the completion summary.
 
 #### 2. `skills/egm-resolve/SKILL.md` (Modify)
 
 *   **Type / Scope**: Skill instructions.
 *   **Proposed Changes**: Optional input `ReportPath`. When it is given, write
-    the annotated report there, keep each finding's id and the Reviewer Status
-    table, and also write `goldfish_review_report.md`. The Step 5 handoff
-    returns, for each finding id, the outcome, who decided, a short reason,
-    and cited evidence for contests. Standalone behavior is unchanged.
+    the annotated report there, start each finding's heading with its id, and
+    also write `goldfish_review_report.md`. The Step 5 handoff
+    returns, for each finding id, the outcome (distinguishing an explicit
+    per-item decision from no decision), who decided, a short reason, and
+    cited evidence for contests. Standalone behavior is unchanged.
 
 #### 3. `skills/egm-review-loop/test_scenarios.yaml` (Modify)
 
 *   **Type / Scope**: Behavioral eval scenarios.
-*   **Proposed Changes**: Scenarios for: a re-opened finding gets a `same-as`
-    row with the root id; a settled re-raise is recorded and not sent to
-    resolve; an ambiguous match is treated as new; the summary counts add up
-    to the rows in the findings file; direct dispatch marks the round review
-    file self-reported; round files are not overwritten; the completion
-    message names the run folder and the no-fix counts.
+*   **Proposed Changes**: Scenarios for: `round-NN-findings.md` records
+    `Completed`, `Not run`, `Clean`, `same-as`, and `reason` before resolve; a
+    re-opened finding gets a `same-as` row with the root id and match reason; a
+    settled re-raise is recorded and not sent to resolve; an ambiguous match is
+    treated as new; "continue / no changes" records `passed-over` (unsettled)
+    for PROPOSE FIX and ESCALATE items; a custom instruction that names only
+    some items leaves the rest `passed-over`; a re-raised `passed-over`
+    finding goes to resolve with no `re-opened` row; a pre-resolve reason
+    reaches the ledger row; the summary counts add up to the rows in the
+    findings file; direct dispatch marks the round review file self-reported;
+    round files are not overwritten; a round with nothing to resolve skips
+    resolve and still gets a ledger block; the completion message names the
+    run folder and both counts.
 
 #### 4. `skills/egm-review-loop/TEST.md` (Modify)
 
@@ -448,9 +607,10 @@ closed without a fix, and the run folder path.
 #### 5. `skills/egm-resolve/test_scenarios.yaml` (Modify)
 
 *   **Type / Scope**: Behavioral eval scenarios.
-*   **Proposed Changes**: With `ReportPath`, the report keeps ids and the
-    Reviewer Status table, `goldfish_review_report.md` is also written, and
-    the handoff returns a decision per id. Without it, behavior matches today.
+*   **Proposed Changes**: With `ReportPath`, each finding heading in the
+    report starts with its id, `goldfish_review_report.md` is also written,
+    and the handoff returns a decision per id distinguishing an explicit
+    per-item decision from no decision. Without it, behavior matches today.
 
 #### 6. `skills/egm-resolve/TEST.md` (Modify)
 
@@ -481,18 +641,14 @@ closed without a fix, and the run folder path.
 *   **Type / Scope**: Design index.
 *   **Proposed Changes**: Register this document.
 
-#### 11. `distributions/claude/` (Modify)
-
-*   **Type / Scope**: Generated runtime copy.
-*   **Proposed Changes**: Regenerate with `scripts/pack_plugin.py` after items
-    1, 2, and 9. Do not edit the copies by hand.
-
 ### Verification Plan
 
-*   **Compilation/Build**: `python3 scripts/pack_plugin.py --target claude`,
-    then sync into `distributions/claude/`.
-*   **Unit Tests**: `pytest tests/unit`, including runtime bundle parity,
-    frontmatter, and link integrity.
+*   **Compilation/Build**: `python3 scripts/pack_plugin.py --target claude
+    --output <dir>` builds the runtime package without error. `main` no
+    longer holds a generated copy to update (#387).
+*   **Unit Tests**: `pytest tests/unit`, including packaging, frontmatter,
+    link integrity, scenario coverage, and the 24,000-byte skill load limit
+    (`skills/egm-review-loop/SKILL.md` is 10,325 bytes today).
 *   **Static Analysis & Linting**: N/A beyond the unit checks; skill text
     only.
 *   **Test Coverage Requirement**: Each new rule in the "Run Record" section
