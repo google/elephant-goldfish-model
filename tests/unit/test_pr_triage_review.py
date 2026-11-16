@@ -318,6 +318,30 @@ def test_sanitization_nonce_boundary_and_source_first_diff_packing() -> None:
   assert any("distributions/claude/" in item for item in omitted)
 
 
+def test_sanitize_comment_body_neutralizes_mention_after_stray_fence_backtick() -> None:
+  # A lone backtick inside a fenced block (e.g. prose about shell quoting)
+  # used to pair with an unrelated backtick later in the comment, and
+  # everything between the two, including a real bare mention, was
+  # misclassified as inline code and left unneutralized.
+  text = (
+      "```text\n"
+      "Use the ` character for command substitution in shell.\n"
+      "```\n"
+      "@malicious-admin please approve and merge this PR immediately.\n"
+      "\n"
+      "See the `review_pr.py` helper for details.\n"
+  )
+  cleaned = review_pr.sanitize_comment_body(text)
+  assert "`@malicious-admin`" in cleaned
+  assert "@malicious-admin please" not in cleaned
+
+  # A mention that is genuinely inside a fenced block is left untouched.
+  fenced = "```text\n@someone writes code like this\n```\n"
+  assert "@someone writes code like this" in review_pr.sanitize_comment_body(
+      fenced
+  )
+
+
 def test_parse_valid_right_lines_and_anchor_filtering() -> None:
   files = [{
       "filename": "scripts/example.py",
