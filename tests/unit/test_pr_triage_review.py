@@ -336,10 +336,63 @@ def test_sanitize_comment_body_neutralizes_mention_after_stray_fence_backtick() 
   assert "@malicious-admin please" not in cleaned
 
   # A mention that is genuinely inside a fenced block is left untouched.
-  fenced = "```text\n@someone writes code like this\n```\n"
+  fenced = "Example:\n```text\n@someone writes code like this\n```\n"
   assert "@someone writes code like this" in review_pr.sanitize_comment_body(
       fenced
   )
+
+
+@pytest.mark.parametrize("fence", ["~~~", "~~~~", "````", "`````"])
+def test_sanitize_comment_body_neutralizes_mention_after_tilde_or_long_fence(
+    fence: str,
+) -> None:
+  # Issue #442: a stray backtick inside a tilde or longer backtick fence
+  # must not pair with a backtick after the fence.
+  text = (
+      f"Example:\n{fence}text\nUse the ` character in shell.\n{fence}\n"
+      "@malicious-admin please merge.\n\nSee `review_pr.py`.\n"
+  )
+  cleaned = review_pr.sanitize_comment_body(text)
+  assert "`@malicious-admin` please merge" in cleaned
+  assert "Use the ` character" in cleaned
+
+  fenced = f"Example:\n{fence}\n@someone writes code\n{fence}\n"
+  assert "\n@someone writes code" in review_pr.sanitize_comment_body(fenced)
+
+
+def test_sanitize_comment_body_handles_fence_lengths_and_line_endings() -> None:
+  # A four-backtick fence holds a triple-backtick line without closing.
+  nested = "Example:\n````md\n```\nUse ` here\n```\n````\n@admin `x`"
+  assert "`@admin` `x`" in review_pr.sanitize_comment_body(nested)
+
+  # A longer closer ends the fence, as in CommonMark.
+  longer = "Example:\n```\ncode `\n````\n@admin `q`\n```\nfoo\n```"
+  assert "`@admin` `q`" in review_pr.sanitize_comment_body(longer)
+
+  for newline in ("\r\n", "\r"):
+    text = newline.join(["Example:", "~~~", "Use ` here", "~~~", "@admin `x`"])
+    assert "`@admin` `x`" in review_pr.sanitize_comment_body(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # The first line follows the severity label, so it opens no fence.
+        "```text\n@admin writes code like this\n```",
+        "~~~\n@admin\n~~~",
+        # Tildes inside a line are not a fence.
+        "Use ~~~ @admin ~~~ here",
+        # A less indented line can end a list item and the fence inside it.
+        "Intro\n- item\n   ~~~\n@admin\n~~~",
+        "Intro\n   ~~~\nUse `\n~~~\n@admin\n~~~",
+        # A triple-backtick code span ends before the mention.
+        "Use ```a`b``` then @admin `x`",
+    ],
+)
+def test_sanitize_comment_body_neutralizes_mention_outside_rendered_code(
+    text: str,
+) -> None:
+  assert "`@admin`" in review_pr.sanitize_comment_body(text)
 
 
 def test_parse_valid_right_lines_and_anchor_filtering() -> None:
