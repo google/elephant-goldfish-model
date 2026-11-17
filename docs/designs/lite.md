@@ -11,8 +11,8 @@
 **EGM-Lite** (`/egm-lite`) adapts the Elephant-Goldfish Model (EGM) for small, rapid iterations,
 specification revisions, code refactors, and bug fixes without requiring a full multi-document lifecycle. It enforces
 a decoupled 5-phase state machine with explicit **Elephant and Goldfish persona switching**:
-**Phase 1: Critique Pause** (Goldfish (Critic)), **Phase 2: Lightweight Execution Checklist**
-(Elephant (Planner)) with an optional **Spec Review** (Goldfish (Specification Reviewer via
+**Phase 1: Critique Pause** (Elephant (Critic)), **Phase 2: Lightweight Execution Checklist**
+(Elephant (Planner)) with a recommended **Spec Review** (Goldfish (Specification Reviewer via
 Subagent)), **Phase 3: Scope-Contained Execution** (Elephant (Builder)), **Phase 4: Adversarial
 Diff Review** (Goldfish (Reviewer via Subagent)), and **Phase 5: Post-Review Resolution Gate**
 (Elephant (Resolver)).
@@ -45,13 +45,11 @@ subagent completion:
 *   **Plain-English `> **BLUF:**` Blockquotes**: Phases that require a `> **BLUF:**` open with a
     concise single-paragraph blockquote (followed by `---`) stating the plain-English takeaway and
     recommended action without raw IDs, code literals, or line links.
-*   **Decoupled & Opt-In Phase Triggers**: Transitions occur strictly on user commands.
-    Developers can fast-path directly from Phase 1 to Phase 3 (`exec`) to bypass the
-    checklist pause for routine fixes. The Phase 2B spec review and the Phase 4 diff review
-    (`review` / `goldfish`) are opt-in rather than mandatory.
-*   **Adaptive Gating**: Phase 2A checks the checklist against fixed complexity criteria and
-    recommends the spec review for non-trivial changes or direct execution for routine ones.
-    The developer chooses; the recommendation never adds a mandatory step.
+*   **Decoupled Phase Triggers**: Transitions occur strictly on user commands. Phase 2A
+    recommends the Phase 2B spec review (`review` / `goldfish`) as the default next step after
+    generating the checklist, while allowing developers to skip straight to Phase 3 (`exec` /
+    **Proceed**) or fast-path from Phase 1 (`exec`) when warranted. Phase 4 diff review (`review` /
+    `goldfish`) remains available after execution without being mandatory.
 *   **Command Routing & State Advisory**: `review` and `goldfish` are aliases bound to the most
     recently completed phase. After Phase 2A or Phase 5 spec triage they start the Phase 2B spec
     review. After Phase 3 or Phase 5 diff triage, or with no task in progress on an existing
@@ -68,18 +66,18 @@ subagent completion:
 ```mermaid
 flowchart TD
     Start(["/egm-lite &lt;task&gt;"]) --> CritiquePause
-    CritiquePause["Phase 1: Critique Pause<br/><i>(Goldfish Critic)</i>"]
+    CritiquePause["Phase 1: Critique Pause<br/><i>(Elephant Critic)</i>"]
 
     CritiquePause -->|"checklist"| ChecklistPhase
     CritiquePause -->|"exec (fast path)"| ExecPhase
 
-    subgraph SpecStage ["Specification & Planning (Adaptive Gating)"]
+    subgraph SpecStage ["Specification & Planning"]
         direction TB
         ChecklistPhase["Phase 2A: Checklist<br/><i>(Elephant Planner)</i>"]
         SpecReview["Phase 2B: Spec Review<br/><i>(Goldfish Subagent)</i>"]
         SpecResolution["Phase 5: Spec Triage<br/><i>(Elephant Resolver)</i>"]
 
-        ChecklistPhase -->|"Path B: review / goldfish"| SpecReview
+        ChecklistPhase -->|"Recommended: review / goldfish"| SpecReview
         SpecReview -->|"Findings / LGTM"| SpecResolution
         SpecResolution -->|"checklist"| ChecklistPhase
         SpecResolution -->|"review / goldfish"| SpecReview
@@ -96,7 +94,7 @@ flowchart TD
         DiffResolution -->|"exec"| ExecPhase
     end
 
-    ChecklistPhase -->|"Path A: exec / Proceed"| ExecPhase
+    ChecklistPhase -->|"Skip: exec / Proceed"| ExecPhase
     SpecResolution -->|"exec / Proceed"| ExecPhase
     DiffResolution -->|"checklist"| ChecklistPhase
     DiffResolution -->|"LGTM, or all findings contested"| Done(["Complete"])
@@ -106,19 +104,19 @@ flowchart TD
 
 ### Phase 1: Critique Pause (`/egm-lite`)
 
-*   **Persona**: Goldfish (Critic) — Adversarial, skeptical.
+*   **Persona**: Elephant (Critic) — In-session, skeptical.
 *   **Grounding & BLUF**: Probes target files, direct callers or tests, any existing directory
     `README.md` or user-cited doc, and repository definitions before proposing solutions, leading
-    with a `> **BLUF:**` on whether the approach is ready for `exec` or blocked.
+    with a `> **BLUF:**` on whether the approach is ready for `checklist` or blocked.
 *   **Contract Tracking**: Tags assumptions as `[⚠️ UNVERIFIED]` (untested contracts) or `[⏳ ACK]`
     (scheduled for empirical test).
 *   **Alternatives Considered**: When multiple viable approaches exist, documents trade-offs in
     `egm_lite_alternatives.md` (led by a `> **BLUF:**` on the recommended option and trade-off)
     and links the artifact in chat without inline discussion (omitting it for trivial or single-path
     tasks).
-*   **Completion Gate**: Halts execution; awaits `checklist` (or fast-path `exec`) command. A
-    `review` or `goldfish` command at this point returns a state advisory directing the user to
-    generate a checklist first.
+*   **Completion Gate**: Halts execution; recommends `checklist` (with fast-path `exec` available
+    to skip). A `review` or `goldfish` command at this point returns a state advisory directing the
+    user to generate a checklist first.
 
 ### Phase 2: Lightweight Execution Checklist & Spec Review
 
@@ -133,12 +131,12 @@ flowchart TD
         review.
     3.  *Accepted CONTEST Rationales*: Settled false-positive findings retained across
         iteration loops to prevent redundant review flags.
-*   **Spec Gating (Adaptive Gating)**: Evaluates the checklist against fixed complexity criteria
-    (two or more production code files, async/concurrency, public APIs, or `[⚠️ UNVERIFIED]` /
-    `[⏳ ACK]` tags) and opens the gate with a `> **BLUF:**` recommending Path B (`goldfish` or
-    `review`) for non-trivial tasks or Path A (`exec`) for routine fixes and doc-only edits.
-*   **Completion Gate**: Halts execution until the user clicks **Proceed** or types `exec`
-    (Path A) or types `goldfish` / `review` (Path B).
+*   **Recommended Spec Review Gate**: Opens the gate with a `> **BLUF:**` recommending the
+    Phase 2B spec review (`goldfish` or `review`) as the default next step so an isolated Goldfish
+    subagent audits `egm_lite_checklist.md` before any files are modified, while noting the user
+    can skip straight to implementation via `exec` or **Proceed**.
+*   **Completion Gate**: Halts execution until the user types `goldfish` / `review` (recommended)
+    or clicks **Proceed** / types `exec` to skip.
 
 #### Phase 2B: Stateless Spec Review (`goldfish` / `review`)
 
@@ -240,7 +238,7 @@ The EGM-Lite capability is implemented across the following package files:
 
 | File Path | Type | Purpose & Reason for Existence |
 | :-------- | :--- | :----------------------------- |
-| `skills/egm-lite/SKILL.md` | Skill Definition | Implements the decoupled 5-phase state machine with Adaptive Gating (`/egm-lite` -> `checklist` -> optional spec review -> `exec` -> `review` -> resolution). |
+| `skills/egm-lite/SKILL.md` | Skill Definition | Implements the decoupled 5-phase state machine (`/egm-lite` -> `checklist` -> recommended spec review -> `exec` -> `review` -> resolution). |
 | `skills/egm-lite/agents/openai.yaml` | Host Metadata | Declares extension interface, display names, and brand styling for OpenAI/Codex. |
 | `skills/egm-lite/assets/icon.svg` | Vector Artwork | Self-contained 24x24 dual-facet icon (Checklist Spark) adhering to the EGM design system. |
 | `skills/egm-lite/TEST.md` | Unit Tests | Verification test scenarios testing decoupled phase gating and persona switching. |
@@ -270,11 +268,11 @@ Verification enforces six core behavioral invariants:
 5.  **Post-Review Triage & Synchronization (Phase 5):** Validates presentation-only
     triage (`[🛠️ X FIX | 🛡️ Y CONTEST]`), persistence of `CONTEST` rationales in the
     checklist, and loop closure.
-6.  **Adaptive Gating & Command Routing (Phases 2A, 2B & 5):** Asserts that Phase 2A
-    offers both `exec` and `goldfish` / `review` with a recommendation for non-trivial
-    changes, the spec review subagent receives the checklist and the Spec Review Rubric,
-    a spec LGTM prompts for `exec` without closing the task, and an out-of-order command
-    returns a state advisory.
+6.  **Recommended Spec Review & Command Routing (Phases 2A, 2B & 5):** Asserts that Phase 2A
+    recommends `goldfish` / `review` by default after generating the checklist while keeping `exec`
+    / **Proceed** available to skip, the spec review subagent receives the checklist and the Spec
+    Review Rubric, a spec LGTM prompts for `exec` without closing the task, and an out-of-order
+    command returns a state advisory.
 
 #### Test Execution
 

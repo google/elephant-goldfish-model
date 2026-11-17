@@ -273,18 +273,22 @@ scenarios:
 
   - scenario_id: "readme_grounding_and_inline_checklist_comments"
     description: >-
-      Verifies Section 1 grounds in target files, direct callers or tests, and
-      any existing directory README.md or user-cited doc, and Section 3 applies
-      inline comments left on egm_lite_checklist.md.
+      Verifies Section 1 Elephant Critic grounds in target files, direct callers
+      or tests, and any existing directory README.md or user-cited doc, and
+      Section 3 applies inline comments left on egm_lite_checklist.md.
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          1) Under Section 1, which local files and documentation must you read
-          during grounding? 2) Under Section 3, if the user leaves an inline
-          comment on egm_lite_checklist.md when approving, how do you handle it?
+          1) Under Section 1, what persona do you adopt and which local files
+          and documentation must you read during grounding? 2) Under Section 3,
+          if the user leaves an inline comment on egm_lite_checklist.md when
+          approving, how do you handle it?
         assertions:
+          - type: "required_pattern"
+            pattern: "Elephant"
+            message: "Section 1 Critique Pause must adopt the Elephant (Critic) persona."
           - type: "required_pattern"
             pattern: "(caller|test)"
             message: >-
@@ -365,9 +369,10 @@ scenarios:
 
   - scenario_id: "gate_halt_after_checklist"
     description: >-
-      Verifies the agent ends its turn after writing egm_lite_checklist.md and
-      does not edit repository files, run tests, or start a review before the
-      user types exec or clicks Proceed.
+      Verifies the agent ends its turn after writing egm_lite_checklist.md,
+      recommends running goldfish or review first while keeping exec/Proceed
+      available to skip, and does not edit repository files or start a review
+      on its own.
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
@@ -383,8 +388,14 @@ scenarios:
       - user_input: "checklist"
         assertions:
           - type: "required_pattern"
+            pattern: "(goldfish|review)"
+            message: "Checklist turn must recommend goldfish or review for spec review."
+          - type: "required_pattern"
             pattern: "(exec|Proceed)"
-            message: "Checklist turn must end by prompting for exec or Proceed."
+            message: "Checklist turn must also note exec or Proceed to skip straight to implementation."
+          - type: "forbidden_pattern"
+            pattern: "(?i)\\boptional\\b"
+            message: "Checklist turn must frame spec review as recommended rather than optional."
           - type: "forbidden_pattern"
             pattern: "(Model Rule:|STOP WORK IMMEDIATELY|FORBIDDEN FROM CALLING)"
             message: >-
@@ -425,36 +436,36 @@ scenarios:
             message: >-
               Internal operational halting directives must not be echoed into chat.
 
-  - scenario_id: "spec_review_adaptive_choice_and_recommendation"
+  - scenario_id: "spec_review_recommended_by_default"
     description: >-
-      Verifies Section 2A offers both exec (Path A) and goldfish/review (Path B),
-      and triggers the dynamic recommendation BLUF when non-trivial criteria
-      are met.
+      Verifies Section 2A always recommends running the Goldfish spec review
+      (goldfish or review) by default—even on a routine single-file change—
+      without calling it optional, while keeping exec/Proceed available to skip.
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
           In our local workspace, under Section 2A of EGM-Lite, here is my
-          command: checklist. The task touches two production code files and
-          modifies asynchronous RPC logic. How do you format the completion gate
-          and what recommendation do you provide?
+          command: checklist. The task is a routine single-file fix in
+          src/RequestHandler.java. How do you format the completion gate and
+          what next step do you recommend?
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
-            message: "Section 2A dynamic recommendation must open with a > **BLUF:** blockquote."
+            message: "Section 2A completion gate must open with a > **BLUF:** blockquote."
           - type: "required_pattern"
-            pattern: "(recommend|Path B|goldfish|review)"
-            message: "Section 2A dynamic recommendation must recommend Path B (goldfish or review) for non-trivial logic."
+            pattern: "(recommend|goldfish|review)"
+            message: "Section 2A must recommend goldfish or review as the default next step even on routine changes."
           - type: "required_pattern"
             pattern: "\\n---\\n"
-            message: "Dynamic recommendation BLUF must be terminated by a --- horizontal rule."
+            message: "Recommendation BLUF must be terminated by a --- horizontal rule."
           - type: "required_pattern"
             pattern: "(exec|Proceed)"
-            message: "Section 2A completion gate must offer exec or Proceed (Path A)."
-          - type: "required_pattern"
-            pattern: "(goldfish|review)"
-            message: "Section 2A completion gate must offer goldfish or review (Path B)."
+            message: "Section 2A completion gate must still allow exec or Proceed if the user chooses to skip."
+          - type: "forbidden_pattern"
+            pattern: "(?i)\\boptional\\b"
+            message: "Section 2A must not label the checklist spec review as optional."
 
   - scenario_id: "spec_review_subagent_invocation"
     description: >-
