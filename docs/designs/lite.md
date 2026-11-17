@@ -190,9 +190,10 @@ flowchart TD
     existing diff (workspace changes, or a diff or pull request the user supplies). With nothing
     to review it returns a state advisory.
 *   **Subagent Isolation**: Evaluates the clean VCS diff against the checklist in a fresh subagent
-    context (`invoke_subagent`, `Agent`, or `spawn_agent`, stopping if no fresh-context subagent
-    tool is available) with zero conversational bias, skipping pre-review exclusions and accepted
-    `CONTEST` rationales recorded in the checklist and suppressing stylistic nitpicks.
+    context, spawned as "Goldfish Reviewer" (`invoke_subagent`, `Agent`, or `spawn_agent`,
+    stopping if no fresh-context subagent tool is available), with zero conversational bias,
+    skipping pre-review exclusions and accepted `CONTEST` rationales recorded in the checklist
+    and suppressing stylistic nitpicks.
 *   **Diff Review Rubric**: Enforces a strictly binary output contract (findings only vs.
     explicit `[✅ LGTM]` on zero findings) across five dimensions. For doc-only diffs, the first
     three are replaced by checks for factual consistency against the approved checklist, clarity,
