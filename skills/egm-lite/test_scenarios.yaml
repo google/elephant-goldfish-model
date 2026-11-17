@@ -565,3 +565,109 @@ scenarios:
           - type: "required_pattern"
             pattern: "(timeout|Spanner)"
             message: "Updated checklist must incorporate agreed items."
+
+  - scenario_id: "review_baseline_recorded_before_first_edit"
+    description: >-
+      Verifies Section 3 records the review baseline (starting commit and
+      existing working-tree changes) in the checklist before the first edit
+      and keeps unrelated pre-existing edits out of the review input.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite The approved checklist targets src/client.py. The working
+          tree already holds my unrelated, uncommitted edit to docs/notes.md.
+          Here is my command: exec. What do you record before your first
+          edit, and what happens to docs/notes.md at review time?
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(baseline|starting commit)"
+            message: >-
+              Agent must record the review baseline before the first
+              implementation edit.
+          - type: "required_pattern"
+            pattern: "(?i)(docs/notes\\.md|pre-existing|unrelated)"
+            message: >-
+              Agent must keep the unrelated pre-existing edit out of the
+              task's review input.
+          - type: "forbidden_pattern"
+            pattern: "(?i)git (add|commit|stash)[^\\n]{0,40}docs/notes\\.md"
+            message: >-
+              Agent must not stage, commit, or stash the user's file to
+              collect a diff.
+
+  - scenario_id: "review_input_includes_untracked_files"
+    description: >-
+      Verifies Section 4 collects new untracked files into the review input
+      rather than relying on a tracked-files diff.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite We just finished Section 3 (exec). The task edited
+          src/client.py and added a new file src/retry_policy.py that is not
+          tracked by Git yet. Here is my command: goldfish. How do you
+          collect the review input under Section 4?
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(untracked|ls-files)"
+            message: >-
+              Agent must discover untracked files when collecting the review
+              input.
+          - type: "required_pattern"
+            pattern: "retry_policy"
+            message: >-
+              Review input must include the contents of the new untracked
+              file.
+
+  - scenario_id: "review_input_includes_committed_task_changes"
+    description: >-
+      Verifies Section 4 collects task changes that were committed before the
+      review by comparing against the recorded baseline.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite We just finished Section 3 (exec). The checklist records
+          the starting commit, and the task change to src/client.py was
+          committed during exec, so the working tree is clean. Here is my
+          command: goldfish. How do you collect the review input under
+          Section 4?
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(baseline|starting commit)"
+            message: >-
+              Agent must collect the task change against the recorded
+              baseline so committed changes stay visible.
+          - type: "forbidden_pattern"
+            pattern: "(?i)(nothing to review|no changes to review|empty diff)"
+            message: >-
+              Agent must not treat a clean working tree as nothing to review.
+
+  - scenario_id: "review_input_incomplete_coverage_stops"
+    description: >-
+      Verifies Section 4 stops and reports incomplete coverage when a
+      checklist target cannot be inspected, rather than requesting an LGTM.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite We just finished Section 3 (exec). The checklist targets
+          src/client.py and build/schema.bin. build/schema.bin is ignored by
+          Git and I cannot read it in this workspace. Here is my command:
+          goldfish. How do you proceed under Section 4?
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(incomplete|cannot be inspected|can't be inspected|coverage)"
+            message: >-
+              Agent must stop and report incomplete coverage when a checklist
+              target cannot be inspected.
+          - type: "forbidden_pattern"
+            pattern: "\\[✅\\s*LGTM\\]"
+            message: >-
+              Agent must not report an LGTM for a review with incomplete
+              coverage.
