@@ -9,13 +9,13 @@
 
 ## Overview
 
-Add a separate `egm-in-chat` skill (`display_name: "EGM for ChatGPT"`) for chat hosts that have no local executor, such as ChatGPT Chat and Work on the web.
+Add an `egm-in-chat` skill (`display_name: "EGM in Chat"`) to the existing EGM OpenAI plugin for ChatGPT on the web and desktop.
 It helps a user shape an idea, draft a plan, and review a document from chat context and user-supplied files.
-It ships in its own package outside `skills/`, so no coding harness loads it and published `/egm` behavior does not change.
+The existing `egm-openai.zip` contains this skill alongside the seven full EGM skills, under the same `egm` identity and listing. Its source lives in `openai/skills/`, outside the shared coding-harness skills.
 
 The skill runs in a single context.
 It labels its critique as same-context and never claims Goldfish or fresh-context review.
-When a task needs repository access or independent reviewers, it says so and points to full EGM on a capable host.
+When a task needs repository access or independent reviewers, it checks the tools actually available in that chat and points to the appropriate full EGM skill. A web or desktop label alone does not establish those capabilities.
 
 ## The Problem
 
@@ -24,16 +24,15 @@ ChatGPT on the web cannot run it.
 In a Chrome check, the starter prompts opened the desktop app, and EGM did not appear in the ChatGPT Work plugin picker.
 People in chat products therefore cannot use EGM, even for document work that needs no repository.
 
-Full EGM also depends on capabilities chat hosts lack: fresh-context subagents, a shell, and repository access.
+Full EGM depends on capabilities that are not available in every chat: fresh-context subagents, artifact access, and, for repository workflows, shell and repository access.
 A chat skill can critique a document in the same context.
 It cannot provide independent review and must not imply that it does.
 
 ## Name
 
 `egm-in-chat` (with OpenAI `display_name: "EGM for ChatGPT"`) replaces the working names `egm-lite` and `egm-chat`.
-The skill targets web chat experiences where it is the only EGM skill exposed inside the ChatGPT plugin.
-"Lite" now belongs to the repo-backed single-agent engineering protocol in #460 (#419, #438), which solves a different problem.
-Calling this skill `/egm-in-chat` and displaying `EGM for ChatGPT` makes its surface explicit when users invoke the plugin in ChatGPT.
+The skill is the document-first entry point within the existing EGM plugin. "Lite" now belongs to the repo-backed single-agent engineering protocol in #460 (#419, #438), which solves a different problem.
+The plugin keeps its existing name and listing; the skill displays as `EGM in Chat`.
 
 ## Goals
 
@@ -42,13 +41,16 @@ Calling this skill `/egm-in-chat` and displaying `EGM for ChatGPT` makes its sur
 - Return results in chat. Change a connected file only when asked, and preserve the source by default.
 - Keep source, skill, and test instructions open source and portable.
 - Run in ChatGPT Work on the web without local execution.
+- Ship one OpenAI plugin package and identity for web and desktop, with behavior selected from observed capabilities.
+- Preserve the full skills' artifact requirements and independent-review guarantees.
 
 ## Non-Goals
 
 - Repository inspection, `egm-bootstrap`, `egm-drift-report`, code changes, or local CLI delegation.
 - Claiming fresh-context review when the host does not provide and verify it.
 - Building a hosted EGM service, storing user documents, or adding mandatory MCP or Google OAuth.
-- Updating the published plugin listing before the web test and directory eligibility are confirmed.
+- Publishing the revised package before combined-package web and desktop tests and directory eligibility are confirmed.
+- Adding a second ChatGPT plugin, a web-only ZIP, or a hosted reviewer service.
 - Raising problem recall above an unaided model. The evaluation below shows a single reply cannot do this.
 
 ## Behavior Rules
@@ -62,7 +64,7 @@ The skill must:
 5. Treat facts stated in the document as true. Recompute totals and dates from the document's own figures.
 6. Treat a broken stated hard limit as a blocker. Do not phrase other fixes as preconditions.
 7. Not add requirements the document does not state.
-8. Point to full EGM when the task needs repository access or independent reviewers.
+8. Check available tools when a task needs repository access or independent reviewers. Route to full EGM only when its required capabilities exist; otherwise explain the missing capability and offer same-context document work.
 
 Rules 3 to 7 came from the evaluation. Each was kept only when it improved results beyond run-to-run noise without making another measure worse.
 
@@ -70,16 +72,23 @@ Rules 3 to 7 came from the evaluation. Each was kept only when it improved resul
 
 ### Review a plan in ChatGPT Work
 
-- **Given:** A user uploads a plan to ChatGPT Work on the web and selects `egm-chat`.
+- **Given:** A user uploads a plan to ChatGPT Work on the web and selects `egm-in-chat` from EGM.
 - **When:** The user asks for a review.
 - **Then:** The reply gives a proceed-or-hold decision, blockers, fixes, and a next step.
 - **Then:** The reply says the review is same-context and makes no independence claim.
 
 ### Request work the host cannot do
 
-- **Given:** A user asks `egm-chat` to inspect a repository or run independent reviewers.
+- **Given:** A user asks `egm-in-chat` to inspect a repository or run independent reviewers, but the required tools are absent.
 - **When:** The skill reads the request.
 - **Then:** It explains the missing capability, narrows the task, and points to full EGM on a capable host.
+
+### Use full EGM from the same plugin
+
+- **Given:** The same OpenAI package is installed in a chat with readable bundled files, writable artifacts, and verified fresh-context subagents.
+- **When:** The user requests independent review.
+- **Then:** EGM routes to `egm-review` and retains its isolation checks. A document-only request can still use `egm-in-chat` in that chat.
+- **Then:** Repository operations additionally require access to the requested repository and command execution. The skill must not infer either from the desktop label.
 
 ## Evaluation Evidence
 
@@ -146,10 +155,15 @@ The pilot must be repeated on version 0.3.0 before Stage 2 merges.
 
 ## Packaging and Host Visibility
 
-A separate web package is proposed for the first version.
-It lives in `chatgpt-web/`, outside `skills/`, with its own manifest and build target, and contains only `egm-in-chat`.
-Its manifest omits `requires_local_executor`.
-The published desktop package and the `SKILLS` tuple in `scripts/pack_plugin.py` stay unchanged.
+Use the existing `--target openai` build and `egm-openai.zip`. Keep the `egm` identity, version scheme, marketplace entry, and public listing. Do not create a second plugin manifest or `chatgpt-web` target.
+
+Store the document skill in `openai/skills/egm-in-chat/`. The OpenAI packer places its runtime files at `skills/egm-in-chat/` alongside the seven canonical skills, using the same path-safety and reproducibility checks. The Claude build and repository-based coding-harness skill discovery remain unchanged; repository installs still expose the seven canonical skills.
+
+Remove `requires_local_executor` from both OpenAI manifest locations. Update the listing description to distinguish document work from independent review. This prepares a candidate; it does not publish an update to the current desktop-only listing.
+
+All full skills already read `docs/codex.md` before starting on OpenAI hosts. That document adds a capability check before any workflow intake: readable bundled resources and writable artifacts for full EGM; verified fresh-context native subagents for any Goldfish stage; repository and command access for repository operations. If a requirement is absent, stop that workflow, name the missing capability, and offer `egm-in-chat` when it is installed. Do not silently replace an independent review with same-context critique.
+
+The document skill works on either surface. It checks current tools before referring a repository or independent-review request to full EGM. Neither skill selection nor routing depends on the word "web" or "desktop".
 
 ### Why the skill stays out of `skills/`
 
@@ -161,7 +175,7 @@ Every supported coding harness reads the shared `skills/` folder, so a skill pla
 - The website check requires a public page for every folder under `skills/`.
 
 `disable-model-invocation: true` does not hide a skill. All seven published skills already set it.
-A folder outside `skills/` is the only option that keeps the skill out of every coding harness without host-specific rules.
+Keeping the source outside `skills/` lets the OpenAI archive include it without adding it to other harnesses.
 
 ### Per-skill product gating (not used in the first version)
 
@@ -169,25 +183,21 @@ Codex reads `policy.products` from `agents/openai.yaml`, with the values `chatgp
 In `openai/codex`, CLI, VS Code, Exec, and MCP sessions map to `codex`, and the loader drops a skill whose list excludes the session product.
 A skill with `policy.products: ["chatgpt"]` is therefore hidden in Codex.
 Whether ChatGPT on the web reads the same field is not verified.
-A later version could use this field to ship one OpenAI plugin for both hosts, once the web behavior is tested.
+The combined package does not depend on this field. Product labels do not establish whether an individual chat has repository access or fresh-context reviewers.
 
 ## Alternatives Considered
 
-### Full skill set plus `egm-chat` in one web package
+### Separate web plugin
 
-A preview bundled the seven skills with `egm-chat`.
-ChatGPT Work listed all eight, but the full skills need capabilities the web host lacks.
-Users could start a workflow that cannot finish. Rejected for the experiment.
+A separate package avoids exposing full skills in restricted chats, but creates a second installation, identity, and release path. Oliver selected one OpenAI plugin for web and desktop instead. Capability checks must prevent unsupported full workflows from starting.
 
-### Add `egm-chat` to the published package
+### Add the document skill to shared `skills/`
 
-This would change published `/egm` behavior, which #414 rules out.
+This would expose the skill in every coding harness. Use an OpenAI-only source directory and include it in the existing OpenAI build instead.
 
 ### One OpenAI plugin with per-skill product gating
 
-One bundle could hold all eight skills, with `policy.products` hiding each skill on the wrong host.
-It would need `requires_local_executor` removed from the published listing, and it depends on web behavior that is not verified.
-It also leaves the skill visible in Claude Code, Cursor, and OpenCode. Deferred.
+Web behavior is unverified, and filtering by product cannot replace checks of the current chat's tools. It is not required for the first combined package.
 
 ### Simulate Goldfish reviewers inside one reply
 
@@ -196,16 +206,18 @@ It would also blur the line between same-context and independent review.
 
 ## Required Tests (Stage 2)
 
-- `chatgpt-web/` with `plugin.json`, and `chatgpt-web/skills/egm-in-chat/` with `SKILL.md`, `TEST.md`, `test_scenarios.yaml`, `agents/openai.yaml`, and `assets/icon.svg`, following `skills/egm-review/`.
+- `openai/skills/egm-in-chat/` contains `SKILL.md`, `TEST.md`, `test_scenarios.yaml`, `agents/openai.yaml`, and `assets/icon.svg`, following `skills/egm-review/`. There is no separate plugin manifest.
 - Unit tests check the new skill's frontmatter, load limit, scenarios, and icon, because the shared tests only scan `skills/`.
-- Unit tests check that the web package omits `requires_local_executor`, and that the Claude and OpenAI desktop bundles do not contain `egm-in-chat`.
+- Unit tests check that the existing OpenAI archive has the same `egm` identity, contains all eight skills and their runtime assets, omits `requires_local_executor` in both manifests, and is reproducible. The Claude archive still has seven skills. Missing or symlinked document-skill files fail before output.
 - `ruff check .` and `python -m pytest tests/unit` pass.
-- Offline package validation passes for the web package.
-- A clean ChatGPT Work web test completes brainstorm, draft, and document review from user-provided content, with the package version and observed capabilities recorded.
+- Offline package validation passes for the combined OpenAI package.
+- Before merge or publication, install the exact same archive in clean ChatGPT web and desktop chats. Record archive checksum, package version, host version or date, installation result, skill discovery, and observed capabilities separately for each surface.
+- On each surface, complete document brainstorm, draft, and same-context review through `egm-in-chat`. Verify a full-skill request with missing tools names the limitation and offers the document skill without claiming independent review.
+- On a capable desktop chat, run `egm-brainstorm`, `egm-draft`, and `egm-review` end to end and verify native fresh-context reviewer evidence. Record `not run` for any missing check. Installation or unit tests alone do not satisfy this gate.
 - Connected-document use is tested only when the host exposes it. Uploads remain the fallback.
 
 ## Open Questions
 
-- A maintainer must approve the scope and the `egm-in-chat` (`EGM for ChatGPT`) name.
-- Whether `chatgpt-web/` is the right home for the web package's manifest and build target.
-- Whether the web package can be listed separately once directory eligibility is confirmed.
+- A maintainer must approve the revised scope and `egm-in-chat` name.
+- Combined-package installation, routing, and native workflow behavior must be verified on web and desktop before merge.
+- Confirm directory eligibility for the revised existing listing before publication.
