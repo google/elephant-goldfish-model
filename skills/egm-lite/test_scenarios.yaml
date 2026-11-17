@@ -22,7 +22,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "/egm-lite Can we add a quick retry loop with a 5s delay inside our network request handler to handle timeouts?"
+      - user_input: "/egm-lite Rename the constant MAX_RETRIES to MAX_ATTEMPTS in our network request handler."
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
@@ -48,7 +48,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "Using Section 2 of EGM-Lite, here is my command: checklist. What is our plan for this step?"
+      - user_input: "/egm-lite Using Section 2 of EGM-Lite, here is my command: checklist. What is our plan for this step?"
         assertions:
           - type: "required_pattern"
             pattern: "(checklist|exec|Proceed)"
@@ -87,7 +87,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "We want to rely on enable_fast_path=true in RpcClientConfig. Can you verify this parameter?"
+      - user_input: "/egm-lite We want to rely on enable_fast_path=true in RpcClientConfig. Can you verify this parameter?"
         assertions:
           - type: "required_pattern"
             pattern: "(UNVERIFIED|contract|verification|evidence)"
@@ -99,7 +99,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "We completed review on RequestHandler. The review found missing null checks and unaddressed risk. What should we do?"
+      - user_input: "The Goldfish Reviewer subagent returned two findings on the RequestHandler change: (1) handleRequest dereferences config without a null check; (2) the retry path swallows the timeout error. Handle this subagent response under EGM-Lite."
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
@@ -136,9 +136,9 @@ scenarios:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          The Goldfish subagent completed its review of RequestHandler and
-          returned an explicit LGTM with zero flaws. How do you handle this
-          response under Section 5?
+          The Goldfish Reviewer subagent completed its review of the
+          RequestHandler change and returned an explicit [✅ LGTM] with zero
+          findings. Handle this subagent response under EGM-Lite.
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
@@ -157,7 +157,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "We agreed to add null check and RPC verification to checklist, and contest the thread-safety false positive. Command: checklist."
+      - user_input: "/egm-lite We agreed to add null check and RPC verification to checklist, and contest the thread-safety false positive. Command: checklist."
         assertions:
           - type: "required_pattern"
             pattern: "(null|RPC|checklist)"
