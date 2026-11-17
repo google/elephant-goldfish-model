@@ -30,7 +30,7 @@ It cannot provide independent review and must not imply that it does.
 
 ## Name
 
-`egm-in-chat` (with OpenAI `display_name: "EGM for ChatGPT"`) replaces the working names `egm-lite` and `egm-chat`.
+`egm-in-chat` (with OpenAI `display_name: "EGM in Chat"`) replaces the working names `egm-lite` and `egm-chat`.
 The skill is the document-first entry point within the existing EGM plugin. "Lite" now belongs to the repo-backed single-agent engineering protocol in #460 (#419, #438), which solves a different problem.
 The plugin keeps its existing name and listing; the skill displays as `EGM in Chat`.
 
