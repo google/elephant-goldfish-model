@@ -1,5 +1,5 @@
 interface:
-  display_name: "EGM for ChatGPT"
+  display_name: "EGM in Chat"
   short_description: "Shape ideas and review documents in chat"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

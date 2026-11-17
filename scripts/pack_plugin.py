@@ -28,12 +28,10 @@ SKILLS = (
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
     "egm-resolve", "egm-review", "egm-review-loop",
 )
-# The web package is a separate plugin for hosts with no local executor. It
-# stays outside skills/ so no coding harness loads it.
-WEB = "chatgpt-web"
-WEB_FILES = (
-    "plugin.json", "skills/*/SKILL.md", "skills/*/agents/openai.yaml",
-    "skills/*/assets/*.svg",
+REQUIRED_SKILL_FILES = ("SKILL.md", "agents/openai.yaml", "assets/icon.svg")
+OPENAI_FILES = tuple(
+    f"openai/skills/egm-in-chat/{name}"
+    for name in REQUIRED_SKILL_FILES
 )
 REQUIRED_SHARED = (
     "plugin.json", "LICENSE", "README.md", "assets/icon.svg",
@@ -46,7 +44,7 @@ REQUIRED_SHARED = (
 ) + tuple(
     f"skills/{skill}/{name}"
     for skill in SKILLS
-    for name in ("SKILL.md", "agents/openai.yaml", "assets/icon.svg")
+    for name in REQUIRED_SKILL_FILES
 ) + tuple(
     f"agents/{name}.md" for name in (
         "bootstrap_orchestrator", "codebase_details", "comprehension",
@@ -70,8 +68,9 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
     raise ValueError("Output folder or ZIP already exists")
   if folder == root or root.is_relative_to(folder):
     raise ValueError("Output must not contain the source tree")
-  files = set()
-  for pattern in SHARED + HOST[target]:
+  sources = {}
+  extra = OPENAI_FILES if target == "openai" else ()
+  for pattern in SHARED + HOST[target] + extra:
     for path in root.glob(pattern):
       relative = path.relative_to(root)
       if any((root / Path(*relative.parts[:i])).is_symlink()
@@ -80,9 +79,11 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
       if not path.resolve().is_relative_to(root):
         raise ValueError(f"Path outside source: {relative}")
       if path.is_file():
-        files.add(relative)
-  for name in REQUIRED_SHARED + (HOST[target][0],):
-    if Path(name) not in files:
+        destination = relative.relative_to("openai") if pattern in extra else relative
+        sources[destination] = path
+  for name in REQUIRED_SHARED + (HOST[target][0],) + extra:
+    destination = Path(name).relative_to("openai") if name in extra else Path(name)
+    if destination not in sources:
       raise ValueError(f"Missing required file: {name}")
   manifest = json.loads((root / HOST[target][0]).read_text(encoding="utf-8"))
   portable = json.loads((root / "plugin.json").read_text(encoding="utf-8"))
@@ -112,33 +113,8 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
     if not isinstance(reference, str):
       raise ValueError(f"Invalid manifest reference: {reference!r}")
     path = Path(reference)
-    if path.is_absolute() or ".." in path.parts or path not in files:
+    if path.is_absolute() or ".." in path.parts or path not in sources:
       raise ValueError(f"Unbundled manifest reference: {reference}")
-  _write({relative: root / relative for relative in files}, folder, archive)
-  return folder, archive
-
-
-def build_web(root: Path, output: Path) -> tuple[Path, Path]:
-  """Write the web chat package: one skill and no local executor."""
-  root = root.resolve()
-  source = root / WEB
-  folder = output.resolve() / f"egm-{WEB}"
-  archive = folder.with_suffix(".zip")
-  if any(path.exists() or path.is_symlink() for path in (folder, archive)):
-    raise ValueError("Output folder or ZIP already exists")
-  if folder == root or root.is_relative_to(folder):
-    raise ValueError("Output must not contain the source tree")
-  sources = {Path("LICENSE"): root / "LICENSE"}
-  for pattern in WEB_FILES:
-    for path in source.glob(pattern):
-      if not path.resolve().is_relative_to(source) or not path.is_file():
-        raise ValueError(f"Unsafe runtime path: {path.relative_to(root)}")
-      sources[path.relative_to(source)] = path
-  if Path("plugin.json") not in sources or len(sources) < 5:
-    raise ValueError("Missing required web package file")
-  if "requires_local_executor" in sources[Path("plugin.json")].read_text(
-      encoding="utf-8"):
-    raise ValueError("The web package must not require a local executor")
   _write(sources, folder, archive)
   return folder, archive
 
@@ -169,12 +145,9 @@ def _write(sources: dict[Path, Path], folder: Path, archive: Path) -> None:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--target", required=True, choices=(*HOST, WEB))
+  parser.add_argument("--target", required=True, choices=HOST)
   parser.add_argument("--output", required=True, type=Path)
   args = parser.parse_args()
   source_root = Path(__file__).resolve().parents[1]
-  if args.target == WEB:
-    runtime, bundle = build_web(source_root, args.output)
-  else:
-    runtime, bundle = build(source_root, args.target, args.output)
+  runtime, bundle = build(source_root, args.target, args.output)
   print(f"Runtime: {runtime}\nZIP: {bundle}")

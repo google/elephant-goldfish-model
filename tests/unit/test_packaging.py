@@ -28,7 +28,7 @@ def source(tmp_path: Path) -> Path:
   (root / ".github").mkdir()
   shutil.copyfile(ROOT / ".github/PULL_REQUEST_TEMPLATE.md",
                   root / ".github/PULL_REQUEST_TEMPLATE.md")
-  for name in ("skills", "agents", "resources", "docs", "assets",
+  for name in ("skills", "openai", "agents", "resources", "docs", "assets",
                ".claude-plugin", ".codex-plugin"):
     shutil.copytree(ROOT / name, root / name)
   return root
@@ -51,7 +51,8 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
-    assert len([p for p in names if p.endswith("/SKILL.md")]) == 7
+    assert len([p for p in names if p.endswith("/SKILL.md")]) == (8 if target == "openai" else 7)
+    assert ("skills/egm-in-chat/SKILL.md" in names) == (target == "openai")
     for skill in source.glob("skills/*/SKILL.md"):
       prefix = skill.parent.relative_to(source)
       metadata = yaml.safe_load(bundle.read((prefix / "agents/openai.yaml").as_posix()))
@@ -139,16 +140,32 @@ def test_bundles_readme_images(source: Path, tmp_path: Path, target: str) -> Non
     assert "docs/assets/private.txt" not in bundle.namelist()
 
 
-@pytest.mark.parametrize("directory", [False, True])
+@pytest.mark.parametrize("directory", [False, True, "openai", "openai/skills/egm-in-chat/SKILL.md"])
 def test_rejects_symlinked_runtime_paths(
     source: Path, tmp_path: Path, directory: bool,
 ) -> None:
-  victim = source / ("agents" if directory else "assets/icon.svg")
+  victim = source / (directory if isinstance(directory, str)
+                     else "agents" if directory else "assets/icon.svg")
   outside = tmp_path / "outside"
   shutil.move(str(victim), outside)
-  victim.symlink_to(outside, target_is_directory=directory)
+  victim.symlink_to(outside, target_is_directory=outside.is_dir())
   with pytest.raises(ValueError, match="Symlink"):
     build(source, "openai", tmp_path / "output")
+
+
+@pytest.mark.parametrize("missing", [
+    "openai/skills/egm-in-chat/SKILL.md",
+    "openai/skills/egm-in-chat/agents/openai.yaml",
+    "openai/skills/egm-in-chat/assets/icon.svg",
+])
+def test_incomplete_openai_skill_fails_before_output(
+    source: Path, tmp_path: Path, missing: str,
+) -> None:
+  (source / missing).unlink()
+  output = tmp_path / "output"
+  with pytest.raises(ValueError, match="Missing required file"):
+    build(source, "openai", output)
+  assert not output.exists()
 
 
 @pytest.mark.parametrize("target", ["claude", "openai"])

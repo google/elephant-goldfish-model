@@ -5,6 +5,27 @@ SPDX-License-Identifier: Apache-2.0
 
 # Codex integration
 
+## Check capabilities before starting
+
+The OpenAI archive contains `egm-in-chat` alongside the full EGM skills in one
+`egm` plugin. Check the current chat's tools before intake, artifact creation,
+or reviewer dispatch. Web and desktop labels do not establish capabilities.
+
+- For document work from pasted text or uploads, use `egm-in-chat`. It needs
+  no shell or subagents and labels its critique as same-context.
+- Full EGM workflows require readable bundled resources and writable artifacts.
+  Before any Goldfish stage, also verify a native subagent tool can start a
+  fresh context, following the isolation rules below. Never simulate reviewers
+  or silently substitute same-context critique for independent review.
+- Repository workflows additionally require access to the requested repository
+  and command execution. Do not assume that installing the plugin grants either.
+
+If a required capability is absent, stop that full workflow before starting,
+name what is missing, and offer `egm-in-chat` if it is in the installed skill
+inventory. Continue with same-context document work only if the user chooses it.
+Repository-based installs that expose only the seven canonical skills must not
+claim the document skill is installed.
+
 ## Install and locate the plugin
 
 For the desktop app, install the [published EGM plugin](https://chatgpt.com/plugins/plugins_6aeb90f47ec88191a3c107e01d3eb357). This listing is desktop-only.
@@ -111,16 +132,28 @@ Package the runtime files from the repository root:
 python3 scripts/pack_plugin.py --target openai --output /tmp/egm-chatgpt
 ```
 
-Use a fresh output directory. Upload `/tmp/egm-chatgpt/egm-openai.zip` and
-install the plugin in the ChatGPT desktop app. Use
-**Try in chat** in a new thread that runs locally. The earlier cloud Work
-test in `TESTING.md` predates this package's desktop-only declaration.
+Use a fresh output directory. The candidate `egm-openai.zip` contains all eight
+skills under the existing `egm` identity. Upload the same archive for private
+testing in ChatGPT web and desktop, then use **Try in chat** in clean threads.
+The published listing remains desktop-only until a revised release is approved
+and published; these source changes do not update it.
 Keep repository marketplace catalogs and development files outside this archive.
-The OpenAI directory package declares local execution because bootstrap uses
-shell commands. Its listing uses the portable manifest's OpenAI extension;
-the Codex compatibility manifest retains matching metadata for native installs.
+The candidate omits the plugin-wide local-executor requirement: document work
+needs none, while full workflows check their requirements before starting.
+The portable manifest's OpenAI extension and Codex compatibility manifest
+retain matching listing metadata. The Claude build and repository-based coding
+harness installs retain their existing seven skills.
 Keep `.claude-plugin/` outside the OpenAI archive: its agent adapters belong
 to the Claude Code integration. Public directory plugins cannot include hooks.
+
+Before merge or publication, record the archive checksum, package version,
+host version or test date, installation, skill discovery, and observed tools
+for each surface. Complete document brainstorm, draft, and same-context review
+on both. In a chat without the required tools, invoke a full skill and verify
+it stops with a capability explanation. In a capable desktop chat, run
+`egm-brainstorm`, `egm-draft`, and `egm-review` through the installed package,
+retaining native reviewer-isolation evidence. Mark unperformed checks `not run`.
+Offline packaging checks do not establish that this gate passed.
 
 Enterprise, Business, and Edu workspaces can import the plugin via Admin > Plugins > Add > Import marketplace.
 Set the repository URL to `https://github.com/google/elephant-goldfish-model` and marketplace path to `.agents/plugins`.

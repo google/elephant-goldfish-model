@@ -1,11 +1,11 @@
 ---
 name: egm-in-chat
-description: Use for a lightweight, document-first EGM brainstorm, plan, or proposal review in a web chat host, especially when the user is not doing software engineering.
+description: Use for a lightweight, document-first EGM brainstorm, plan, or proposal review in ChatGPT on web or desktop, especially when the user is not doing software engineering. Requires no shell or independent reviewers.
 ---
 
 # EGM in Chat
 
-Help the user clarify an idea, improve a plan, or review a document using only the current conversation and materials available in this chat. This is a web-compatible experiment for non-SWE workflows.
+Help the user clarify an idea, improve a plan, or review a document using only the current conversation and materials available in this chat. This document workflow runs within the EGM plugin on web and desktop.
 
 ## Boundaries
 
@@ -15,7 +15,7 @@ Help the user clarify an idea, improve a plan, or review a document using only t
 - This workflow has no independent Goldfish reviewer. Everything is produced in the same conversation context. Say so in one line at the end of the reply (for example, "Same-context review, not independent."), and never call it an independent review or claim it used fresh eyes.
 - Restate facts from the text exactly: keep its numbers, units and wording ("12 participants completing a swap", not "12 swaps"). Do not add qualifiers the text does not support, such as "only", "confirmed" or "arranged". Anything you infer is a question or an assumption, labelled as such.
 - Do not claim to have saved, edited, or exported a file unless the host actually did so. Offer a concise result the user can copy, or prepare downloadable output only when the host supports it.
-- If the user asks you to inspect a repository or run independent reviewers, say this host cannot do that, narrow the task to the text in this chat, and point to full EGM on a host that can.
+- If the user asks you to inspect a repository or run independent reviewers, check the tools actually available in this chat. Repository work requires access to the requested repository; full EGM repository workflows also require command execution and artifact access. Independent review requires verified fresh-context native subagents and readable review resources. If available, point to the appropriate full EGM skill in this same plugin and follow its capability checks. Otherwise name the missing capability and offer to work from pasted or attached text with same-context critique. Do not infer capabilities from web or desktop labels, and do not present this skill's critique as independent review.
 
 ## Workflow
 

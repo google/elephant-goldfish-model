@@ -1,7 +1,7 @@
 # Copyright 2026 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Check the separate web chat package, which the shared skill tests skip."""
+"""Check document work in the combined OpenAI plugin."""
 
 import json
 from pathlib import Path
@@ -13,13 +13,11 @@ import zipfile
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-WEB = ROOT / "chatgpt-web"
-SKILL = WEB / "skills/egm-in-chat"
+SKILL = ROOT / "openai/skills/egm-in-chat"
 PACKER = runpy.run_path(str(ROOT / "scripts/pack_plugin.py"))
 
 
-def test_skill_stays_out_of_shared_skills() -> None:
-  # Every coding harness and both desktop bundles read skills/.
+def test_skill_source_stays_out_of_shared_skills() -> None:
   assert not (ROOT / "skills/egm-in-chat").exists()
   assert "egm-in-chat" not in PACKER["SKILLS"]
 
@@ -51,7 +49,7 @@ def test_skill_scenarios() -> None:
 def test_skill_interface_and_icon() -> None:
   interface = yaml.safe_load(
       (SKILL / "agents/openai.yaml").read_text(encoding="utf-8"))["interface"]
-  assert interface["display_name"] == "EGM for ChatGPT"
+  assert interface["display_name"] == "EGM in Chat"
   assert 25 <= len(interface["short_description"]) <= 64
   assert f"${SKILL.name}" in interface["default_prompt"]
   assert interface["brand_color"].lower() == "#1b6ef3"
@@ -67,32 +65,33 @@ def test_skill_interface_and_icon() -> None:
     assert colors == {"#1b6ef3", "#7cacf8"}
 
 
-def test_manifest_needs_no_local_executor() -> None:
-  text = (WEB / "plugin.json").read_text(encoding="utf-8")
-  assert "requires_local_executor" not in text
-  manifest = json.loads(text)
-  assert manifest["name"] == SKILL.name
-  assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
-  interface = manifest["extensions"]["com.openai"]["interface"]
-  for field, limit in (
-      ("displayName", 30), ("shortDescription", 30),
-      ("longDescription", 4000), ("developerName", 80),
-  ):
-    assert 0 < len(interface[field]) <= limit, field
+def test_one_plugin_needs_no_local_executor() -> None:
+  portable = json.loads((ROOT / "plugin.json").read_text(encoding="utf-8"))
+  codex = json.loads((ROOT / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
+  assert portable["name"] == codex["name"] == "egm"
+  assert not portable["extensions"]["com.openai"].get("requires_local_executor")
+  assert not codex.get("requires_local_executor")
+  assert not (ROOT / "openai/plugin.json").exists()
+  assert not (ROOT / "chatgpt-web").exists()
 
 
-def test_web_bundle_is_complete_and_reproducible(tmp_path: Path) -> None:
-  folder, archive = PACKER["build_web"](ROOT, tmp_path / "first")
-  _, repeated = PACKER["build_web"](ROOT, tmp_path / "second")
+def test_combined_bundle_is_complete_and_reproducible(tmp_path: Path) -> None:
+  folder, archive = PACKER["build"](ROOT, "openai", tmp_path / "first")
+  _, repeated = PACKER["build"](ROOT, "openai", tmp_path / "second")
+  assert archive.name == "egm-openai.zip"
   assert archive.read_bytes() == repeated.read_bytes()
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
-    assert set(bundle.namelist()) == {
-        "LICENSE", "plugin.json",
-        "skills/egm-in-chat/SKILL.md",
-        "skills/egm-in-chat/agents/openai.yaml",
-        "skills/egm-in-chat/assets/icon.svg",
+    names = set(bundle.namelist())
+    assert {p for p in names if p.endswith("/SKILL.md")} == {
+        f"skills/{name}/SKILL.md" for name in (
+            "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
+            "egm-resolve", "egm-review", "egm-review-loop", "egm-in-chat",
+        )
     }
+    for name in ("SKILL.md", "agents/openai.yaml", "assets/icon.svg"):
+      assert bundle.read(f"skills/egm-in-chat/{name}") == (SKILL / name).read_bytes()
+    assert not any(p.startswith(("chatgpt-web/", "openai/")) for p in names)
     for info in bundle.infolist():
       assert info.date_time == (1980, 1, 1, 0, 0, 0)
       assert bundle.read(info) == (folder / info.filename).read_bytes()

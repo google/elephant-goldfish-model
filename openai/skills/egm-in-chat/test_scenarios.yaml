@@ -20,7 +20,7 @@ scenarios:
     description: "Asserts a review discloses same-context critique and claims no independent review."
     eval_type: "deterministic"
     system_prompt:
-      skill_file: "chatgpt-web/skills/egm-in-chat/SKILL.md"
+      skill_file: "openai/skills/egm-in-chat/SKILL.md"
     turns:
       - user_input: "Review this plan: The goal is 100 signups by Friday. The budget is $500. We spend $300 on ads and $150 on printing."
         assertions:
@@ -35,7 +35,7 @@ scenarios:
     description: "Asserts a recomputed budget overrun is a blocker and the reply holds."
     eval_type: "deterministic"
     system_prompt:
-      skill_file: "chatgpt-web/skills/egm-in-chat/SKILL.md"
+      skill_file: "openai/skills/egm-in-chat/SKILL.md"
     turns:
       - user_input: "Review this plan: The budget cap is $500. Line items: $300 venue, $250 catering."
         assertions:
@@ -53,10 +53,25 @@ scenarios:
     description: "Asserts a request for repository access or independent reviewers points to full EGM."
     eval_type: "deterministic"
     system_prompt:
-      skill_file: "chatgpt-web/skills/egm-in-chat/SKILL.md"
+      skill_file: "openai/skills/egm-in-chat/SKILL.md"
     turns:
-      - user_input: "Inspect my repository and run independent reviewers on my diff."
+      - user_input: "There is no repository access, shell, or subagent tool in this chat. Inspect my repository and run independent reviewers on my diff."
         assertions:
           - type: "required_pattern"
             pattern: "(?i)full EGM"
             message: "Reply must point to full EGM on a capable host."
+
+  - scenario_id: "capable_chat_routes_to_full_egm"
+    description: "Checks actual capabilities rather than rejecting all web chats."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "openai/skills/egm-in-chat/SKILL.md"
+    turns:
+      - user_input: "This web chat exposes verified fresh-context native subagents, readable EGM resources, and writable artifacts. Which EGM skill should I use for independent review?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-review"
+            message: "Route to full review in the same plugin."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(web (chat|host) cannot|desktop (app )?required)"
+            message: "Do not reject capabilities based on surface alone."
