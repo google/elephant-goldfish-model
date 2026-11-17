@@ -158,6 +158,14 @@ Do not write a formal design document.
         `egm_lite_checklist.md` using the exact structure and rules in Section 2
         Steps 1–2 **before** invoking any code-modification or command-execution
         tools.
+    *   **Review Baseline:** Before the first implementation edit, record the
+        starting commit and existing working-tree changes in the checklist.
+        Preserve that baseline through review and resolution rounds. Keep
+        unrelated pre-existing changes out of the task's review input. If task
+        changes overlap them, establish a comparison that keeps both visible
+        and distinguishable before editing. For non-Git work, capture the
+        starting content of each target. Do not stage or commit the user's
+        files merely to collect a diff.
 2.  **Implementation:** Implement the unchecked (`- [ ]`) items in the approved
     checklist. Adhere to strict scope containment and execution standards:
     *   **Scope Containment:** Do not execute commands or modify/delete any
@@ -200,11 +208,18 @@ context window.
 
 ### A. Subagent Delegation (True Context Separation)
 
-1.  Read the `egm_lite_checklist.md` artifact, gather the raw code diff (via
-    `git diff HEAD` or working tree inspection), and construct the subagent's
-    prompt by stripping away all conversational history, polite buildup, and
-    authorial justification.
-2.  Inject the checklist contents and the raw diff natively into the prompt.
+1.  Read `egm_lite_checklist.md` and collect every task change against its
+    recorded baseline, including changes already committed during the task,
+    staged and unstaged edits, deletions, and the contents of new untracked
+    files. In Git, use `git diff <starting-commit>` for tracked changes and
+    `git ls-files --others --exclude-standard` to discover untracked files.
+    Inspect the task files from that inventory. Check the input against
+    every checklist target, including any ignored target. If the baseline is
+    missing or any target cannot be inspected, stop and report incomplete
+    coverage rather than requesting an LGTM. For non-Git work, capture the
+    equivalent before/after content for each target.
+2.  Pass the checklist, task change inventory, and complete change content to
+    the fresh reviewer. Omit conversational history and authorial justification.
 3.  Spawn a fresh clean-context subagent (as a "Goldfish Code Reviewer") via
     your harness's subagent tool (`invoke_subagent`, `Agent`, or `spawn_agent`),
     passing the constructed prompt completely. If your harness exposes no
