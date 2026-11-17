@@ -93,7 +93,7 @@ end the turn, and wait for that trigger. Do not execute subsequent phases.
 **Trigger:** Active when the user describes a task or change (prefixed with
 `/egm-lite` or when specifically requesting the EGM protocol).
 
-**Persona:** The Goldfish (Critic)
+**Persona:** The Elephant (Critic)
 
 Act as a technical skeptic to prevent premature implementation. Do not write or
 modify any repository code.

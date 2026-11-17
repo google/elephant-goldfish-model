@@ -11,11 +11,11 @@
 **EGM-Lite** (`/egm-lite`) adapts the Elephant-Goldfish Model (EGM) for small, rapid iterations,
 specification revisions, code refactors, and bug fixes without requiring a full multi-document lifecycle. It enforces
 a decoupled 5-phase state machine with explicit **Elephant and Goldfish persona switching**:
-**Phase 1: Critique Pause** (Goldfish (Critic)), **Phase 2: Lightweight Execution Checklist**
-(Elephant (Planner)) with an optional **Spec Review** (Goldfish (Specification Reviewer via
-Subagent)), **Phase 3: Scope-Contained Execution** (Elephant (Builder)), **Phase 4: Adversarial
-Diff Review** (Goldfish (Reviewer via Subagent)), and **Phase 5: Post-Review Resolution Gate**
-(Elephant (Resolver)).
+**Phase 1: Critique Pause** (Elephant (Critic)), **Phase 2: Lightweight Execution Checklist**
+(Elephant (Planner)) followed by a **Spec Review** (Goldfish (Specification Reviewer via
+Subagent)) that the user can skip, **Phase 3: Scope-Contained Execution** (Elephant (Builder)),
+**Phase 4: Adversarial Diff Review** (Goldfish (Reviewer via Subagent)), and **Phase 5:
+Post-Review Resolution Gate** (Elephant (Resolver)).
 
 ## The Problem
 
@@ -45,10 +45,10 @@ subagent completion:
 *   **Plain-English `> **BLUF:**` Blockquotes**: Phases that require a `> **BLUF:**` open with a
     concise single-paragraph blockquote (followed by `---`) stating the plain-English takeaway and
     recommended action without raw IDs, code literals, or line links.
-*   **Decoupled & Opt-In Phase Triggers**: Transitions occur strictly on user commands.
+*   **Decoupled Phase Triggers**: Transitions occur strictly on user commands.
     Developers can fast-path directly from Phase 1 to Phase 3 (`exec`) to bypass the
     checklist pause for routine fixes. The Phase 2B spec review and the Phase 4 diff review
-    (`review` / `goldfish`) are opt-in rather than mandatory.
+    (`review` / `goldfish`) are Goldfish reviews that the user can skip; neither is mandatory.
 *   **Adaptive Gating**: Phase 2A checks the checklist against fixed complexity criteria and
     recommends the spec review for non-trivial changes or direct execution for routine ones.
     The developer chooses; the recommendation never adds a mandatory step.
@@ -68,7 +68,7 @@ subagent completion:
 ```mermaid
 flowchart TD
     Start(["/egm-lite &lt;task&gt;"]) --> CritiquePause
-    CritiquePause["Phase 1: Critique Pause<br/><i>(Goldfish Critic)</i>"]
+    CritiquePause["Phase 1: Critique Pause<br/><i>(Elephant Critic)</i>"]
 
     CritiquePause -->|"checklist"| ChecklistPhase
     CritiquePause -->|"exec (fast path)"| ExecPhase
@@ -106,7 +106,8 @@ flowchart TD
 
 ### Phase 1: Critique Pause (`/egm-lite`)
 
-*   **Persona**: Goldfish (Critic) — Adversarial, skeptical.
+*   **Persona**: Elephant (Critic) — Adversarial, skeptical. It works with the full conversation
+    context, so it is an Elephant; the zero-context Goldfish reviews run in Phases 2B and 4.
 *   **Grounding & BLUF**: Probes target files, direct callers or tests, any existing directory
     `README.md` or user-cited doc, and repository definitions before proposing solutions, leading
     with a `> **BLUF:**` on whether the approach is ready for `exec` or blocked.
@@ -180,8 +181,9 @@ flowchart TD
     after test verification passes, leading with a `> **BLUF:**` on escalation halts, autonomous
     self-repairs, or multi-file summaries while omitting it on clean single-target runs.
 *   **Completion Gate**: Prompts for `review` or `goldfish` and halts execution with a strict
-    negative constraint forbidding subsequent phases until triggered. The diff review is optional:
-    the gate recommends it whenever Phase 3 edited files, and the user can end the task without it.
+    negative constraint forbidding subsequent phases until triggered. The diff review is a Goldfish
+    review that the user can skip: the gate recommends it whenever Phase 3 edited files, and the
+    user can end the task without it.
 
 ### Phase 4: Adversarial Diff Review (`review` / `goldfish`)
 
@@ -241,7 +243,7 @@ The EGM-Lite capability is implemented across the following package files:
 
 | File Path | Type | Purpose & Reason for Existence |
 | :-------- | :--- | :----------------------------- |
-| `skills/egm-lite/SKILL.md` | Skill Definition | Implements the decoupled 5-phase state machine with Adaptive Gating (`/egm-lite` -> `checklist` -> optional spec review -> `exec` -> `review` -> resolution). |
+| `skills/egm-lite/SKILL.md` | Skill Definition | Implements the decoupled 5-phase state machine with Adaptive Gating (`/egm-lite` -> `checklist` -> spec review (the user can skip it) -> `exec` -> `review` -> resolution). |
 | `skills/egm-lite/agents/openai.yaml` | Host Metadata | Declares extension interface, display names, and brand styling for OpenAI/Codex. |
 | `skills/egm-lite/assets/icon.svg` | Vector Artwork | Self-contained 24x24 dual-facet icon (Checklist Spark) adhering to the EGM design system. |
 | `skills/egm-lite/TEST.md` | Unit Tests | Verification test scenarios testing decoupled phase gating and persona switching. |

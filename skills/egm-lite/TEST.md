@@ -6,7 +6,7 @@ Frontmatter, link checks, and scenario coverage run in `pytest tests/unit` (see 
 
 When evaluating or exploring `egm-lite` interactively in chat, verify:
 
--   **Step 1 (Critique Pause):** The agent adopts the **Goldfish (Critic)**
+-   **Step 1 (Critique Pause):** The agent adopts the **Elephant (Critic)**
     persona, leads with a plain-English `> **BLUF:**` blockquote (followed by
     `---`) on whether the approach is ready for `exec` or blocked, challenges
     assumptions without editing repository code, documents competing approaches
