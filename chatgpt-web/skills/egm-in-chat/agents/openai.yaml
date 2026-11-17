@@ -1,0 +1,7 @@
+interface:
+  display_name: "EGM for ChatGPT"
+  short_description: "Shape ideas and review documents in chat"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#1B6EF3"
+  default_prompt: "Use $egm-in-chat to shape an idea or review a document."

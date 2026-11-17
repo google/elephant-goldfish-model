@@ -28,6 +28,13 @@ SKILLS = (
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
     "egm-resolve", "egm-review", "egm-review-loop",
 )
+# The web package is a separate plugin for hosts with no local executor. It
+# stays outside skills/ so no coding harness loads it.
+WEB = "chatgpt-web"
+WEB_FILES = (
+    "plugin.json", "skills/*/SKILL.md", "skills/*/agents/openai.yaml",
+    "skills/*/assets/*.svg",
+)
 REQUIRED_SHARED = (
     "plugin.json", "LICENSE", "README.md", "assets/icon.svg",
     "docs/index.md", "docs/getting_started.md", "docs/harnesses.md",
@@ -107,13 +114,45 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
     path = Path(reference)
     if path.is_absolute() or ".." in path.parts or path not in files:
       raise ValueError(f"Unbundled manifest reference: {reference}")
+  _write({relative: root / relative for relative in files}, folder, archive)
+  return folder, archive
+
+
+def build_web(root: Path, output: Path) -> tuple[Path, Path]:
+  """Write the web chat package: one skill and no local executor."""
+  root = root.resolve()
+  source = root / WEB
+  folder = output.resolve() / f"egm-{WEB}"
+  archive = folder.with_suffix(".zip")
+  if any(path.exists() or path.is_symlink() for path in (folder, archive)):
+    raise ValueError("Output folder or ZIP already exists")
+  if folder == root or root.is_relative_to(folder):
+    raise ValueError("Output must not contain the source tree")
+  sources = {Path("LICENSE"): root / "LICENSE"}
+  for pattern in WEB_FILES:
+    for path in source.glob(pattern):
+      if not path.resolve().is_relative_to(source) or not path.is_file():
+        raise ValueError(f"Unsafe runtime path: {path.relative_to(root)}")
+      sources[path.relative_to(source)] = path
+  if Path("plugin.json") not in sources or len(sources) < 5:
+    raise ValueError("Missing required web package file")
+  if "requires_local_executor" in sources[Path("plugin.json")].read_text(
+      encoding="utf-8"):
+    raise ValueError("The web package must not require a local executor")
+  _write(sources, folder, archive)
+  return folder, archive
+
+
+def _write(sources: dict[Path, Path], folder: Path, archive: Path) -> None:
+  """Copy sources into a new folder and a byte-reproducible ZIP."""
+  output = folder.parent
   output.mkdir(parents=True, exist_ok=True)
   folder.mkdir()
   with tempfile.TemporaryDirectory(prefix=".egm-", dir=output) as temporary:
     staged = Path(temporary) / archive.name
     with zipfile.ZipFile(staged, "x", zipfile.ZIP_DEFLATED) as bundle:
-      for relative in sorted(files):
-        data = (root / relative).read_bytes()
+      for relative in sorted(sources):
+        data = sources[relative].read_bytes()
         destination = folder / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)
@@ -126,14 +165,16 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
     # Windows exclusive file creation can follow a dangling symlink. Linking
     # the completed ZIP claims the final directory entry without following it.
     archive.hardlink_to(staged)
-  return folder, archive
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--target", required=True, choices=HOST)
+  parser.add_argument("--target", required=True, choices=(*HOST, WEB))
   parser.add_argument("--output", required=True, type=Path)
   args = parser.parse_args()
-  runtime, bundle = build(Path(__file__).resolve().parents[1],
-                          args.target, args.output)
+  source_root = Path(__file__).resolve().parents[1]
+  if args.target == WEB:
+    runtime, bundle = build_web(source_root, args.output)
+  else:
+    runtime, bundle = build(source_root, args.target, args.output)
   print(f"Runtime: {runtime}\nZIP: {bundle}")

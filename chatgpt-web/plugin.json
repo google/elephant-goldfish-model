@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "egm-in-chat",
+  "version": "0.3.0",
+  "description": "A document-first EGM workflow for web chat hosts.",
+  "author": {
+    "name": "Elephant-Goldfish Model contributors"
+  },
+  "repository": "https://github.com/google/elephant-goldfish-model",
+  "license": "Apache-2.0",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "EGM for ChatGPT",
+        "shortDescription": "Think through plans and docs",
+        "longDescription": "A document-first EGM workflow for web chat. It uses the current conversation and attached or connected documents. It does not provide independent fresh-context reviewers.",
+        "developerName": "Elephant-Goldfish Model contributors",
+        "category": "Productivity",
+        "capabilities": [
+          "Develop ideas",
+          "Review plans and documents"
+        ],
+        "defaultPrompt": "Help me think through an idea or review a document."
+      }
+    }
+  }
+}
