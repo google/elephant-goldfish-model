@@ -22,7 +22,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "/egm-lite Rename the constant MAX_RETRIES to MAX_ATTEMPTS in our network request handler."
+      - user_input: "/egm-lite Fix the typo in the log message 'Conection timed out' in our network request handler."
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
