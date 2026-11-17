@@ -11,7 +11,7 @@
 **EGM-Lite** (`/egm-lite`) adapts the Elephant-Goldfish Model (EGM) for small, rapid iterations,
 specification revisions, code refactors, and bug fixes without requiring a full multi-document lifecycle. It enforces
 a decoupled 5-phase state machine with explicit **Elephant and Goldfish persona switching**:
-**Phase 1: Critique Pause** (Goldfish (Critic)), **Phase 2: Lightweight Execution Checklist**
+**Phase 1: Critique Pause** (Elephant (Critic)), **Phase 2: Lightweight Execution Checklist**
 (Elephant (Planner)), **Phase 3: Scope-Contained Execution** (Elephant (Builder)), **Phase 4:
 Adversarial Code Review** (Goldfish (Reviewer via Subagent)), and **Phase 5: Post-Review Resolution
 Gate** (Elephant (Resolver)).
@@ -57,7 +57,7 @@ subagent completion:
 
 ```mermaid
 flowchart TD
-    Start([Task Intake: /egm-lite]) --> P1["Phase 1: Critique Pause (Goldfish Critic)"]
+    Start([Task Intake: /egm-lite]) --> P1["Phase 1: Critique Pause (Elephant Critic)"]
     P1 --> Gate1{User Action?}
     Gate1 -- checklist --> P2["Phase 2: Execution Checklist (Elephant Planner)"]
     Gate1 -- exec --> P3["Phase 3: Scope-Contained Execution (Elephant Builder)"]
@@ -75,7 +75,8 @@ flowchart TD
 
 ### Phase 1: Critique Pause (`/egm-lite`)
 
-*   **Persona**: Goldfish (Critic) — Adversarial, skeptical.
+*   **Persona**: Elephant (Critic) — Adversarial, skeptical. It works with the full conversation
+    context, so it is an Elephant; the zero-context Goldfish review runs in Phase 4.
 *   **Grounding & BLUF**: Probes target files, direct callers or tests, any existing directory
     `README.md` or user-cited doc, and repository definitions before proposing solutions, leading
     with a `> **BLUF:**` on whether the approach is ready for `exec` or blocked.
