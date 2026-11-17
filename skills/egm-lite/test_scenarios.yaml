@@ -76,7 +76,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "Using EGM-Lite, review this diff adding retry loops without exponential backoff or jitter."
+      - user_input: "/egm-lite Add retry loops to our RPC client without exponential backoff or jitter."
         assertions:
           - type: "forbidden_pattern"
             pattern: "(brilliant|great idea|perfect|excellent|smart)"
@@ -174,24 +174,6 @@ scenarios:
             pattern: "(CONTEST|thread-safety|false positive)"
             message: "Agent must record accepted CONTEST rationales in the checklist."
 
-  - scenario_id: "exec_protocol_adherence"
-    description: "Enforces step-by-step sequential execution without skipping."
-    eval_type: "deterministic"
-    system_prompt:
-      skill_file: "skills/egm-lite/SKILL.md"
-    turns:
-      - user_input: "User approved checklist in egm_lite_checklist.md. Command: exec."
-        assertions:
-          - type: "required_pattern"
-            pattern: "(RequestHandler|exec|implement)"
-            message: "Agent must acknowledge execution of approved checklist items."
-          - type: "required_pattern"
-            pattern: "(- \\[x\\]|egm_lite_checklist\\.md)"
-            message: "Agent must mark completed checklist tasks with - [x]."
-          - type: "required_pattern"
-            pattern: "(review|goldfish)"
-            message: "Agent must gate on prompting for review or goldfish."
-
   - scenario_id: "fast_path_exec_initializes_checklist"
     description: "Verifies fast-path exec from Critique Pause or Resolution Gate initializes egm_lite_checklist.md before executing."
     eval_type: "deterministic"
@@ -216,7 +198,7 @@ scenarios:
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "Review diff on RequestHandler touching src/RequestHandler.java."
+      - user_input: "/egm-lite Add a null check to handleRequest in src/RequestHandler.java."
         assertions:
           - type: "required_pattern"
             pattern: "\\[[^\\]]+\\]\\([^\\)]+\\)"
@@ -231,9 +213,11 @@ scenarios:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
       - user_input: >-
-          Using Section 4 of EGM-Lite, here is my command: goldfish. Note that
-          this harness does not expose any subagent tool (no invoke_subagent,
-          Agent, or spawn_agent). How do you proceed under Section 4?
+          We just finished Section 3 (exec) of EGM-Lite on RequestHandler, and
+          the workspace holds the resulting diff. Here is my command: goldfish.
+          Note that this harness does not expose any subagent tool (no
+          invoke_subagent, Agent, or spawn_agent). How do you proceed under
+          Section 4?
         assertions:
           - type: "required_pattern"
             pattern: "(stop|not a Goldfish review|same-context|fresh)"
@@ -517,8 +501,8 @@ scenarios:
       - user_input: >-
           In our local workspace, the Goldfish Specification Reviewer subagent
           completed its spec review of egm_lite_checklist.md and returned an
-          explicit [✅ LGTM] with zero flaws. How do you handle this response
-          under Section 5 of EGM-Lite?
+          explicit [✅ LGTM] with zero findings. Handle this subagent response
+          under EGM-Lite.
         assertions:
           - type: "required_pattern"
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"

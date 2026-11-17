@@ -288,7 +288,7 @@ Isolate the review in a clean context window to eliminate confirmation bias.
     user supplied), and construct prompt by stripping conversation history,
     polite buildup, and authorial justification.
 2.  Inject checklist contents (if any) and raw diff natively into the prompt.
-3.  Spawn fresh clean-context subagent (as "Goldfish Code Reviewer") via your
+3.  Spawn fresh clean-context subagent (as "Goldfish Reviewer") via your
     harness's subagent tool (`invoke_subagent`, `Agent`, or `spawn_agent`),
     passing the constructed prompt completely. If harness exposes no
     fresh-context subagent tool, stop and explain that a same-context review is
@@ -344,7 +344,7 @@ modify repository files in this section.
     *   *Pre-Implementation (Spec Review):* Section 2B spawned it (subagent role
         `Goldfish Specification Reviewer`).
     *   *Post-Implementation (Diff Review):* Section 4 spawned it (subagent role
-        `Goldfish Code Reviewer`).
+        `Goldfish Reviewer`).
 2.  **Perfect Execution (LGTM):** If the subagent returns an explicit
     `[✅ LGTM]` with zero findings:
 
