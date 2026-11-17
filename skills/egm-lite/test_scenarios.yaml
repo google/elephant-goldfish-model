@@ -175,12 +175,12 @@ scenarios:
             message: "Agent must record accepted CONTEST rationales in the checklist."
 
   - scenario_id: "fast_path_exec_initializes_checklist"
-    description: "Verifies fast-path exec from Critique Pause or Resolution Gate initializes egm_lite_checklist.md before executing."
+    description: "Verifies fast-path exec from the Resolution Gate creates or updates egm_lite_checklist.md before executing."
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "We aligned on adding jitter to RequestHandler during Section 1 Critique Pause and want to skip the Section 2 pause. Command: exec. Describe your exact steps."
+      - user_input: "The Goldfish Reviewer subagent returned one finding on the RequestHandler change (retries have no jitter), and in Section 5 of EGM-Lite we agreed to fix it. Command: exec. Describe your exact steps."
         assertions:
           - type: "required_pattern"
             pattern: "egm_lite_checklist\\.md"
@@ -342,10 +342,10 @@ scenarios:
               Agent must link egm_lite_alternatives.md in chat without
               discussing alternatives inline.
           - type: "required_pattern"
-            pattern: "(checklist|exec)"
+            pattern: "checklist"
             message: >-
-              Agent must still gate on checklist or exec at the end of the
-              Critique Pause.
+              Agent must still gate on checklist at the end of the Critique
+              Pause.
 
   - scenario_id: "gate_halt_after_checklist"
     description: >-
@@ -390,12 +390,17 @@ scenarios:
           containing exactly one line: eval probe?
         assertions:
           - type: "required_pattern"
-            pattern: "(checklist|exec)"
-            message: "First turn must stop at the Critique Pause and offer checklist or exec."
+            pattern: "checklist"
+            message: "First turn must stop at the Critique Pause and offer checklist."
           - type: "forbidden_pattern"
             pattern: "(Model Rule:|STOP WORK IMMEDIATELY|FORBIDDEN FROM CALLING)"
             message: >-
               Internal operational halting directives must not be echoed into chat.
+      - user_input: "checklist"
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm_lite_checklist\\.md"
+            message: "Checklist turn must write egm_lite_checklist.md and stop before implementing."
       - user_input: "exec"
         assertions:
           - type: "required_pattern"
@@ -411,9 +416,8 @@ scenarios:
 
   - scenario_id: "spec_review_adaptive_choice_and_recommendation"
     description: >-
-      Verifies Section 2A offers both exec (Path A) and goldfish/review (Path B),
-      and triggers the dynamic recommendation BLUF when non-trivial criteria
-      are met.
+      Verifies Section 2A offers both exec and goldfish/review, and triggers
+      the dynamic recommendation BLUF when non-trivial criteria are met.
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
@@ -428,17 +432,47 @@ scenarios:
             pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
             message: "Section 2A dynamic recommendation must open with a > **BLUF:** blockquote."
           - type: "required_pattern"
-            pattern: "(recommend|Path B|goldfish|review)"
-            message: "Section 2A dynamic recommendation must recommend Path B (goldfish or review) for non-trivial logic."
+            pattern: "(recommend|goldfish|review)"
+            message: "Section 2A dynamic recommendation must recommend goldfish or review for non-trivial logic."
           - type: "required_pattern"
             pattern: "\\n---\\n"
             message: "Dynamic recommendation BLUF must be terminated by a --- horizontal rule."
           - type: "required_pattern"
             pattern: "(exec|Proceed)"
-            message: "Section 2A completion gate must offer exec or Proceed (Path A)."
+            message: "Section 2A completion gate must offer exec or Proceed."
           - type: "required_pattern"
             pattern: "(goldfish|review)"
-            message: "Section 2A completion gate must offer goldfish or review (Path B)."
+            message: "Section 2A completion gate must offer goldfish or review."
+
+  - scenario_id: "spec_review_offered_on_routine_change"
+    description: >-
+      Verifies Section 2A still offers goldfish/review next to exec or Proceed
+      when no complexity criterion is met.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          In our local workspace, under Section 2A of EGM-Lite, here is my
+          command: checklist. The task is a routine change to one production
+          code file. How do you format the completion gate and what
+          recommendation do you provide?
+        assertions:
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:"
+            message: "Section 2A recommendation must open with a > **BLUF:** blockquote."
+          - type: "required_pattern"
+            pattern: "(goldfish|review)"
+            message: "Section 2A completion gate must offer goldfish or review even for a routine change."
+          - type: "required_pattern"
+            pattern: "\\n---\\n"
+            message: "Recommendation BLUF must be terminated by a --- horizontal rule."
+          - type: "required_pattern"
+            pattern: "(exec|Proceed)"
+            message: "Section 2A completion gate must offer exec or Proceed."
+          - type: "forbidden_pattern"
+            pattern: "\\bPath [AB]\\b"
+            message: "Gate text must name the commands, not Path A or Path B."
 
   - scenario_id: "spec_review_subagent_invocation"
     description: >-
@@ -671,3 +705,30 @@ scenarios:
             message: >-
               Agent must not report an LGTM for a review with incomplete
               coverage.
+
+  - scenario_id: "exec_before_checklist_redirects_to_checklist"
+    description: >-
+      Verifies exec straight after the Critique Pause does not start
+      implementation and sends the user to checklist first.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite Add a function is_odd(n) to a new file parity.py, with a
+          unit test in parity_test.py.
+        assertions:
+          - type: "required_pattern"
+            pattern: "checklist"
+            message: "First turn must stop at the Critique Pause and offer checklist."
+      - user_input: "exec"
+        assertions:
+          - type: "required_pattern"
+            pattern: "checklist"
+            message: "exec before a checklist exists must send the user to checklist first."
+          - type: "required_pattern"
+            pattern: ">\\s*\\*\\*BLUF(?:\\*\\*)?:.*State Advisory"
+            message: "exec before a checklist exists must return a > **BLUF:** [State Advisory] blockquote."
+          - type: "forbidden_pattern"
+            pattern: "- \\[x\\]"
+            message: "Nothing may be implemented or marked complete before a checklist exists."

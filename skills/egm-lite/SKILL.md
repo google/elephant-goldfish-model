@@ -55,6 +55,10 @@ end the turn, and wait for that trigger. Do not execute subsequent phases.
         request supplied by the user.
     -   *No Speculative Implementation:* Never edit repository files in Section
         1 or Section 2 without an explicit `exec` or **Proceed** approval.
+    -   *No Execution From the Critique Pause:* Never run Section 3 directly
+        after Section 1. `exec` and **Proceed** are valid only after Section 2A
+        or Section 5; in Section 1, answer `exec` with the advisory below,
+        recommending `checklist`.
     -   *No Premature Task Closure:* Never emit completion summaries or close a
         task on spec review LGTM in Section 5; after a spec LGTM the only way
         forward is `exec` or **Proceed**.
@@ -69,8 +73,9 @@ end the turn, and wait for that trigger. Do not execute subsequent phases.
     user's next command.
 *   **Specification & Documentation Scope:** "Execution" encompasses modifying
     specification and design documents (`.md`, `docs/`, RFCs) as well as code.
-    Fast-path execution (`exec` directly from Section 1 or Section 5) is
-    supported for rapid specification hardening without subagent overhead.
+    Fast-path execution (`exec` after the checklist without a spec review, or
+    directly from Section 5 with agreed revisions) is supported for rapid
+    specification hardening; the diff review after execution still applies.
 
 ### General Formatting Invariants (All Phases)
 
@@ -111,7 +116,7 @@ modify any repository code.
     deferring with a **`[⏳ ACK]`** tag and scheduled empirical test).
 
 *   **Challenge & Probe:** Lead with a `> **BLUF:**` on whether the approach is
-    ready for `exec` or blocked, then engage in skeptical dialogue to break
+    ready for `checklist` or blocked, then engage in skeptical dialogue to break
     confirmation bias before building the checklist.
 
 *   **Alternatives Considered:** When multiple viable approaches exist, use your
@@ -122,8 +127,7 @@ modify any repository code.
     alternatives inline. Omit if singular or trivial.
 
 *   **Completion Gate:** Instruct the user: *"If you are satisfied with this
-    approach, type **`checklist`** to review the execution checklist first, or
-    **`exec`** to generate the checklist and implement immediately."*
+    approach, type **`checklist`** to generate the execution checklist."*
 
     *(Model Rule: Halt for user command.)*
 
@@ -164,21 +168,18 @@ Planning only; do not write code or a formal design document.
             evidence to verify.
         -   `[⏳ ACK]`: Acknowledged assumption. Factual evidence unavailable;
             risk accepted and opaque-box empirical test strictly scheduled.
-3.  **Spec Gating (Adaptive Gating) & Dynamic Recommendation:** Evaluate
-    checklist targets against complexity criteria:
-    *   *Non-Trivial Threshold:* Changes touching two or more production code
-        files (excluding pure documentation/specification `.md` and `docs/`
-        edits), async/concurrency routines, public APIs, or any
-        `[⚠️ UNVERIFIED]` or `[⏳ ACK]` tags.
-    *   *Dynamic BLUF Recommendation:* If non-trivial, open completion gate with
-        a single-paragraph `> **BLUF:**` (followed by `---`) recommending Path B
-        (`goldfish` or `review`) to conduct a spec review before implementation.
-        For trivial, single-file fixes or pure docs, recommend Path A (`exec`)
-        for immediate implementation, noting `goldfish` remains available.
-4.  **Completion Gate:** Notify user the checklist is ready for review.
-    Instruct them to click **'Proceed'** or type **`exec`** to begin
-    implementation (Path A), or type **`goldfish`** or **`review`** to conduct a
-    spec review first (Path B).
+3.  **Spec Gating (Adaptive Gating):** Check checklist targets against these
+    criteria: two or more production code files (excluding pure
+    documentation/specification `.md` and `docs/` edits), async/concurrency
+    routines, public APIs, or any `[⚠️ UNVERIFIED]` or `[⏳ ACK]` tags. Open
+    completion gate with a single-paragraph `> **BLUF:**` (followed by `---`):
+    if any criterion is met, recommend a Goldfish spec review before
+    implementation; otherwise say the change is routine and direct execution
+    is reasonable.
+4.  **Completion Gate:** Notify user the checklist is ready for review. Always
+    offer both commands: **`goldfish`** or **`review`** to run the spec review
+    first, or **'Proceed'** / **`exec`** to begin implementation. Never call
+    the spec review optional.
 
     *(Model Rule: Halt for user approval.)*
 
@@ -236,10 +237,12 @@ spec triage).
     *   **Standard Path (From Section 2 or Spec LGTM):** Read
         `egm_lite_checklist.md` directly (applying inline comments or chat
         adjustments) to determine approved scope without recreating artifact.
-    *   **Fast-Path `exec` (Direct from Section 1, or from Section 5 with agreed
-        revisions or fixes, bypassing Section 2):** First create or update
-        `egm_lite_checklist.md` using Section 2A Steps 1–2
-        before invoking file-modification or command tools.
+    *   **Fast-Path `exec` (Direct from Section 5 with agreed revisions or
+        fixes, bypassing Section 2):** First create or update
+        `egm_lite_checklist.md` using Section 2A Steps 1–2 before invoking
+        file-modification or command tools.
+    *   **`exec` Direct from Section 1:** Do not implement. Reply with the
+        Graceful Recovery Advisory recommending `checklist`.
     *   **Review Baseline:** Before the first implementation edit, record the
         starting commit and existing working-tree changes in the checklist.
         Preserve that baseline through review and resolution rounds. Keep

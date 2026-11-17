@@ -103,7 +103,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
     ("bootstrap", "#1b6ef3", "#7cacf8"),
     ("brainstorm", "#1b6ef3", "#7cacf8"),
     ("draft", "#1b6ef3", "#7cacf8"),
-    ("lite", "#1b6ef3", "#ff8d41"),
+    ("lite", "#1b6ef3", "#e86e00"),
     ("resolve", "#1b6ef3", "#7cacf8"),
     ("drift_report", "#e86e00", "#ff8d41"),
     ("review", "#e86e00", "#ff8d41"),
