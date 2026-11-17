@@ -185,12 +185,12 @@ scenarios:
             message: "Agent must gate on prompting for review or goldfish."
 
   - scenario_id: "fast_path_exec_initializes_checklist"
-    description: "Verifies fast-path exec from Critique Pause or Resolution Gate initializes egm_lite_checklist.md before executing."
+    description: "Verifies fast-path exec from the Resolution Gate creates or updates egm_lite_checklist.md before executing."
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-lite/SKILL.md"
     turns:
-      - user_input: "We aligned on adding jitter to RequestHandler during Section 1 Critique Pause and want to skip the Section 2 pause. Command: exec. Describe your exact steps."
+      - user_input: "The Goldfish Reviewer subagent returned one finding on the RequestHandler change (retries have no jitter), and in Section 5 of EGM-Lite we agreed to fix it. Command: exec. Describe your exact steps."
         assertions:
           - type: "required_pattern"
             pattern: "egm_lite_checklist\\.md"
@@ -350,10 +350,10 @@ scenarios:
               Agent must link egm_lite_alternatives.md in chat without
               discussing alternatives inline.
           - type: "required_pattern"
-            pattern: "(checklist|exec)"
+            pattern: "checklist"
             message: >-
-              Agent must still gate on checklist or exec at the end of the
-              Critique Pause.
+              Agent must still gate on checklist at the end of the Critique
+              Pause.
 
   - scenario_id: "review_baseline_recorded_before_first_edit"
     description: >-
@@ -460,3 +460,27 @@ scenarios:
             message: >-
               Agent must not report an LGTM for a review with incomplete
               coverage.
+
+  - scenario_id: "exec_before_checklist_redirects_to_checklist"
+    description: >-
+      Verifies exec straight after the Critique Pause does not start
+      implementation and sends the user to checklist first.
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-lite/SKILL.md"
+    turns:
+      - user_input: >-
+          /egm-lite Add a function is_odd(n) to a new file parity.py, with a
+          unit test in parity_test.py.
+        assertions:
+          - type: "required_pattern"
+            pattern: "checklist"
+            message: "First turn must stop at the Critique Pause and offer checklist."
+      - user_input: "exec"
+        assertions:
+          - type: "required_pattern"
+            pattern: "checklist"
+            message: "exec before a checklist exists must send the user to checklist first."
+          - type: "forbidden_pattern"
+            pattern: "- \\[x\\]"
+            message: "Nothing may be implemented or marked complete before a checklist exists."

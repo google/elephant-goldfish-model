@@ -76,9 +76,9 @@ implementation. Do not write or modify any repository code.
     scheduled empirical test to validate the logic).
 
 *   **Challenge & Probe:** Lead with a `> **BLUF:**` on whether the approach is
-    ready for `exec` or blocked, then engage in a skeptical technical dialogue
-    to break confirmation bias and ensure the implementation is justified before
-    building the checklist.
+    ready for `checklist` or blocked, then engage in a skeptical technical
+    dialogue to break confirmation bias and ensure the implementation is
+    justified before building the checklist.
 
 *   **Alternatives Considered:** When multiple viable architectures or
     approaches exist, use your harness's file-writing tool to document them
@@ -89,9 +89,8 @@ implementation. Do not write or modify any repository code.
     or singular.
 
 *   **Completion Gate:** Conclude your critique by instructing the user: *"If
-    you are satisfied with this approach, type **`checklist`** to review the
-    execution checklist first, or **`exec`** to generate the checklist and
-    implement immediately."* **STOP WORK IMMEDIATELY AND WAIT FOR THIS COMMAND.
+    you are satisfied with this approach, type **`checklist`** to generate the
+    execution checklist."* **STOP WORK IMMEDIATELY AND WAIT FOR THIS COMMAND.
     YOU ARE STRICTLY FORBIDDEN FROM CALLING ANY MORE TOOLS OR EXECUTING ANY
     SUBSEQUENT PHASES UNTIL EXPLICITLY TRIGGERED.**
 
@@ -153,11 +152,12 @@ Do not write a formal design document.
         Read `egm_lite_checklist.md` (applying any inline artifact comments or
         chat adjustments accompanying the approval) to determine the exact
         approved scope.
-    *   **If fast-path `exec` (triggered directly from Section 1 or Section 5,
-        bypassing the Section 2 pause):** First create or update
-        `egm_lite_checklist.md` using the exact structure and rules in Section 2
-        Steps 1–2 **before** invoking any code-modification or command-execution
-        tools.
+    *   **If fast-path `exec` (triggered directly from Section 5, bypassing the
+        Section 2 pause):** First create or update `egm_lite_checklist.md` using
+        the exact structure and rules in Section 2 Steps 1–2 **before** invoking
+        any code-modification or command-execution tools.
+    *   **If `exec` arrives directly from Section 1:** Do not implement. Tell
+        the user that the checklist comes first and to type **`checklist`**.
     *   **Review Baseline:** Before the first implementation edit, record the
         starting commit and existing working-tree changes in the checklist.
         Preserve that baseline through review and resolution rounds. Keep

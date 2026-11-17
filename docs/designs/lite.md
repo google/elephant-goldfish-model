@@ -46,9 +46,10 @@ subagent completion:
     concise single-paragraph blockquote (followed by `---`) stating the plain-English takeaway and
     recommended action without raw IDs, code literals, or line links.
 *   **Decoupled Phase Triggers**: Transitions occur strictly on user commands.
-    Developers can fast-path directly from Phase 1 to Phase 3 (`exec`) to bypass the
-    checklist pause for routine fixes. The Phase 2B spec review and the Phase 4 diff review
-    (`review` / `goldfish`) are Goldfish reviews that the user can skip; neither is mandatory.
+    Phase 1 leads only to the checklist. From the checklist, developers can fast-path to
+    Phase 3 (`exec`) without a spec review and review the result afterwards. The Phase 2B spec
+    review and the Phase 4 diff review (`review` / `goldfish`) are Goldfish reviews that the
+    user can skip; neither is mandatory.
 *   **Adaptive Gating**: Phase 2A checks the checklist against fixed complexity criteria and
     recommends the spec review for non-trivial changes or direct execution for routine ones.
     The developer chooses; the recommendation never adds a mandatory step.
@@ -71,7 +72,6 @@ flowchart TD
     CritiquePause["Phase 1: Critique Pause<br/><i>(Elephant Critic)</i>"]
 
     CritiquePause -->|"checklist"| ChecklistPhase
-    CritiquePause -->|"exec (fast path)"| ExecPhase
 
     subgraph SpecStage ["Specification & Planning (Adaptive Gating)"]
         direction TB
@@ -79,7 +79,7 @@ flowchart TD
         SpecReview["Phase 2B: Spec Review<br/><i>(Goldfish Subagent)</i>"]
         SpecResolution["Phase 5: Spec Triage<br/><i>(Elephant Resolver)</i>"]
 
-        ChecklistPhase -->|"Path B: review / goldfish"| SpecReview
+        ChecklistPhase -->|"review / goldfish"| SpecReview
         SpecReview -->|"Findings / LGTM"| SpecResolution
         SpecResolution -->|"checklist"| ChecklistPhase
         SpecResolution -->|"review / goldfish"| SpecReview
@@ -96,7 +96,7 @@ flowchart TD
         DiffResolution -->|"exec"| ExecPhase
     end
 
-    ChecklistPhase -->|"Path A: exec / Proceed"| ExecPhase
+    ChecklistPhase -->|"exec / Proceed"| ExecPhase
     SpecResolution -->|"exec / Proceed"| ExecPhase
     DiffResolution -->|"checklist"| ChecklistPhase
     DiffResolution -->|"LGTM, or all findings contested"| Done(["Complete"])
@@ -110,16 +110,16 @@ flowchart TD
     context, so it is an Elephant; the zero-context Goldfish reviews run in Phases 2B and 4.
 *   **Grounding & BLUF**: Probes target files, direct callers or tests, any existing directory
     `README.md` or user-cited doc, and repository definitions before proposing solutions, leading
-    with a `> **BLUF:**` on whether the approach is ready for `exec` or blocked.
+    with a `> **BLUF:**` on whether the approach is ready for `checklist` or blocked.
 *   **Contract Tracking**: Tags assumptions as `[⚠️ UNVERIFIED]` (untested contracts) or `[⏳ ACK]`
     (scheduled for empirical test).
 *   **Alternatives Considered**: When multiple viable approaches exist, documents trade-offs in
     `egm_lite_alternatives.md` (led by a `> **BLUF:**` on the recommended option and trade-off)
     and links the artifact in chat without inline discussion (omitting it for trivial or single-path
     tasks).
-*   **Completion Gate**: Halts execution; awaits `checklist` (or fast-path `exec`) command. A
-    `review` or `goldfish` command at this point returns a state advisory directing the user to
-    generate a checklist first.
+*   **Completion Gate**: Halts execution; awaits the `checklist` command. An `exec`, `review` or
+    `goldfish` command at this point returns a state advisory directing the user to generate a
+    checklist first.
 
 ### Phase 2: Lightweight Execution Checklist & Spec Review
 
@@ -136,10 +136,11 @@ flowchart TD
         iteration loops to prevent redundant review flags.
 *   **Spec Gating (Adaptive Gating)**: Evaluates the checklist against fixed complexity criteria
     (two or more production code files, async/concurrency, public APIs, or `[⚠️ UNVERIFIED]` /
-    `[⏳ ACK]` tags) and opens the gate with a `> **BLUF:**` recommending Path B (`goldfish` or
-    `review`) for non-trivial tasks or Path A (`exec`) for routine fixes and doc-only edits.
-*   **Completion Gate**: Halts execution until the user clicks **Proceed** or types `exec`
-    (Path A) or types `goldfish` / `review` (Path B).
+    `[⏳ ACK]` tags) and opens the gate with a `> **BLUF:**` that recommends the spec review
+    (`goldfish` or `review`) for non-trivial tasks, or says direct execution (`exec`) is
+    reasonable for routine fixes and doc-only edits.
+*   **Completion Gate**: Offers both commands in every case and halts execution until the user
+    types `goldfish` / `review` or clicks **Proceed** / types `exec`.
 
 #### Phase 2B: Stateless Spec Review (`goldfish` / `review`)
 
@@ -168,9 +169,8 @@ flowchart TD
 *   **Persona**: Elephant (Builder) — Focused implementer.
 *   **Artifact Initialization**: After a completed checklist or a verified specification (from
     Phase 2A, Phase 2B, or a Phase 5 spec LGTM), reads `egm_lite_checklist.md` directly without
-    re-creating it. On the fast path from Phase 1, or from Phase 5 with agreed revisions or
-    fixes, first creates or updates `egm_lite_checklist.md` before modifying any file or running
-    commands.
+    re-creating it. On the fast path from Phase 5 with agreed revisions or fixes, first creates
+    or updates `egm_lite_checklist.md` before modifying any file or running commands.
 *   **Boundary Enforcement**: Applies any inline comments left on `egm_lite_checklist.md` and
     executes only approved items and targets in the checklist, across code, specifications, or
     design documents; zero speculative logic.
@@ -258,7 +258,7 @@ suites (`skills/egm-lite/test_scenarios.yaml`), protocol checklists
 Verification enforces six core behavioral invariants:
 
 1.  **State Machine & Pause Gating (Phases 1 & 2):** Asserts that mutating operations
-    pause for user confirmation (`checklist` or fast-path `exec`),
+    pause for user confirmation (`checklist`, then `exec` or **Proceed**),
     `egm_lite_checklist.md` is initialized with GFM checkboxes, and competing
     architectures are recorded in `egm_lite_alternatives.md`.
 2.  **Scope-Contained Execution & Convergence (Phase 3):** Verifies that code edits

@@ -8,11 +8,11 @@ When evaluating or exploring `egm-lite` interactively in chat, verify:
 
 -   **Step 1 (Critique Pause):** The agent adopts the **Elephant (Critic)**
     persona, leads with a plain-English `> **BLUF:**` blockquote (followed by
-    `---`) on whether the approach is ready for `exec` or blocked, challenges
-    assumptions without editing repository code, documents competing approaches
-    in `egm_lite_alternatives.md` without inline discussion when multiple viable
-    options exist (omitting it for trivial or single-path tasks), and prompts for
-    `checklist` (or fast-path `exec`).
+    `---`) on whether the approach is ready for `checklist` or blocked,
+    challenges assumptions without editing repository code, documents competing
+    approaches in `egm_lite_alternatives.md` without inline discussion when
+    multiple viable options exist (omitting it for trivial or single-path
+    tasks), and prompts for `checklist` only.
 -   **Step 2 (Lightweight Checklist):** Upon `checklist`, the agent adopts the
     **Elephant (Planner)** persona, outputs an itemized checklist of change
     targets (with files and referenced specs as clickable file and line-range
