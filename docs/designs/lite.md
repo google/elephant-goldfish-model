@@ -44,10 +44,10 @@ subagent completion:
 *   **Plain-English `> **BLUF:**` Blockquotes**: Phases that require a `> **BLUF:**` open with a
     concise single-paragraph blockquote (followed by `---`) stating the plain-English takeaway and
     recommended action without raw IDs, code literals, or line links.
-*   **Decoupled & Opt-In Phase Triggers**: Transitions occur strictly on user commands.
+*   **Decoupled Phase Triggers**: Transitions occur strictly on user commands.
     Developers can fast-path directly from Phase 1 to Phase 3 (`exec`) to bypass the
-    checklist pause for routine fixes, and Phase 4 code review (`review` / `goldfish`) is
-    opt-in rather than mandatory.
+    checklist pause for routine fixes. The Phase 4 code review (`review` / `goldfish`) is a
+    Goldfish review that the user can skip; it is not mandatory.
 *   **Subagent Integrity Guard**: Phase 4 requires an isolated, fresh-context subagent
     tool (`invoke_subagent`). In single-agent environments without subagent capabilities,
     the protocol halts and informs the developer rather than executing a biased, same-context
