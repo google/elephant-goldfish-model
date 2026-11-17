@@ -242,7 +242,7 @@ The EGM-Lite capability is implemented across the following package files:
 | :-------- | :--- | :----------------------------- |
 | `skills/egm-lite/SKILL.md` | Skill Definition | Implements the decoupled 5-phase state machine with Adaptive Gating (`/egm-lite` -> `checklist` -> optional spec review -> `exec` -> `review` -> resolution). |
 | `skills/egm-lite/agents/openai.yaml` | Host Metadata | Declares extension interface, display names, and brand styling for OpenAI/Codex. |
-| `skills/egm-lite/assets/icon.svg` | Vector Artwork | Self-contained 24x24 dual-facet icon (Checklist Spark) adhering to the EGM design system. |
+| `skills/egm-lite/assets/icon.svg` | Vector Artwork | Self-contained 24x24 dual-facet icon (Spark) adhering to the EGM design system. |
 | `skills/egm-lite/TEST.md` | Unit Tests | Verification test scenarios testing decoupled phase gating and persona switching. |
 | `skills/egm-lite/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating model adherence to the 5-phase EGM-Lite protocol. |
 
