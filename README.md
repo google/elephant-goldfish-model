@@ -127,6 +127,7 @@ You can use each skill when you need it. You do not have to follow the full sequ
 <table>
   <thead><tr><th align="left">Skill</th><th align="left">Use it to…</th></tr></thead>
   <tbody>
+    <tr valign="top"><td width="160" valign="top"><a href="skills/egm/SKILL.md">EGM</a></td><td>Start with /egm to choose the next workflow from your task and progress.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-brainstorm/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-brainstorm/SKILL.md">Brainstorm</a></td><td>Test an idea and write a concept brief.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-draft/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-draft/SKILL.md">Draft</a></td><td>Turn a brief or existing notes into a design document.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-resolve/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-resolve/SKILL.md">Resolve</a></td><td>Work through review findings and agree on changes.</td></tr>

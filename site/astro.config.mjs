@@ -42,6 +42,7 @@ export default defineConfig({
       ] },
       { label: 'Skills', items: [
         { label: 'Overview', slug: 'skills' },
+        { label: 'Start with EGM', slug: 'skills/egm' },
         { label: 'Brainstorm', slug: 'skills/egm-brainstorm' },
         { label: 'Draft', slug: 'skills/egm-draft' },
         { label: 'Review', slug: 'skills/egm-review' },
@@ -60,6 +61,7 @@ export default defineConfig({
   markdown: { processor: unified({ remarkPlugins: [remarkRepositoryLinks] }) },
 
   redirects: {
+    '/docs/skills/egm': '/skills/egm',
     '/docs': '/guide',
     '/docs/getting-started': '/getting-started',
     '/docs/workflow': '/workflow',

@@ -51,7 +51,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
-    assert len([p for p in names if p.endswith("/SKILL.md")]) == 8
+    assert len([p for p in names if p.endswith("/SKILL.md")]) == 9
     for skill in source.glob("skills/*/SKILL.md"):
       prefix = skill.parent.relative_to(source)
       metadata = yaml.safe_load(bundle.read((prefix / "agents/openai.yaml").as_posix()))

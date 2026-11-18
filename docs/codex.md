@@ -5,6 +5,20 @@ SPDX-License-Identifier: Apache-2.0
 
 # Codex integration
 
+## Choose or resume a workflow
+
+Start with `/egm` (or select **EGM** in the skill picker) to choose or resume
+the next workflow from the request and current artifacts. The router reads
+the selected skill from the same installation and preserves its approval gates.
+Check requirements for the active phase; supported intake or checklist work
+does not require tools needed only by a later independent review.
+
+Command spelling and skill discovery depend on the host. Verify the installed
+entry point in a fresh session. If a required capability is absent, stop the
+affected phase, name what is missing, and preserve any completed artifacts.
+The optional `egm-in-chat` skill is a separate feature and is not included in
+this shared router change.
+
 ## Install and locate the plugin
 
 For the desktop app, install the [published EGM plugin](https://chatgpt.com/plugins/plugins_6aeb90f47ec88191a3c107e01d3eb357). This listing is desktop-only.
