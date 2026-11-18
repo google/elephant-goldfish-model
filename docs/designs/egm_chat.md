@@ -11,21 +11,9 @@
 
 Add an `egm-in-chat` skill (`display_name: "EGM in Chat"`) to the existing EGM OpenAI plugin for ChatGPT on the web and desktop.
 It helps a user shape an idea, draft a plan, and review a document from chat context and user-supplied files.
-The existing `egm-openai.zip` contains this skill alongside the nine shared EGM skills, under the same `egm` identity and listing. Its source lives in `openai/skills/`, outside the shared coding-harness skills.
+The existing `egm-openai.zip` contains this skill alongside the eight canonical EGM skills, under the same `egm` identity and listing. Its source lives in `openai/skills/`, outside the shared coding-harness skills.
 
-The v0.2.0 release includes the default `egm` entry point, `egm-lite` for small repository-backed engineering tasks (merged in #438), and `egm-in-chat` for document work in chat. The OpenAI archive has ten skills; the Claude archive and repository installs have nine. Engineering Lite still needs the tools required by its active phase, including verified fresh-context subagents for Goldfish review.
-
-### Default entry point
-
-Add `skills/egm/SKILL.md` to the shared package. `/egm` chooses the useful next workflow from the user's request, current artifacts, active phase, and observed capabilities. It reads only the selected skill and executes that skill's current phase. It does not create a second orchestration engine or automatically run the whole lifecycle.
-
-Honor an explicitly chosen workflow. Resume an existing checklist, draft, or review instead of restarting intake. Route small engineering changes to `egm-lite`; a new substantial idea to `egm-brainstorm`; an aligned brief to `egm-draft`; a design needing independent review to `egm-review`; findings to `egm-resolve`; a configured reviewer set to `egm-review-loop`; codebase documentation to `egm-bootstrap`; and document/source comparison to `egm-drift-report`. Document-only work can use `egm-in-chat` when that skill is installed. Ask one question only when ambiguity would change the next action.
-
-The router preserves the selected skill's approval pauses, phase transitions, artifact rules, and isolation requirements. It never treats its own route selection as approval to implement, publish, or advance phases. Check the capabilities needed by the active phase, rather than rejecting a whole workflow because a later review will need subagents. Missing engineering capabilities must be named; offer the document workflow only when installed and continue with that fallback only if the user chooses it. Never infer tools from web or desktop labels or simulate independent reviewers.
-
-The router remains available for automatic discovery. The eight existing shared workflows retain `disable-model-invocation: true`. It is a user-selectable skill, not a hook that intercepts unrelated requests. Hosts may show `/egm`, a namespaced command, or a skill picker; document the host's actual invocation form.
-
-Implementation adds the router instructions, OpenAI interface and existing EGM icon, a Windsurf forwarding workflow, a public skill page, and routing scenarios. Update the packer's required inventory, adapter and archive contracts, README, capability guide, and release checklist. Tests must cover packaging and resource resolution; behavioral scenarios must cover resuming Lite, explicit choices, ambiguous intake, absent tools, and an absent document skill. Host evaluation results must distinguish executed checks from scenarios that are only checked in.
+The v0.2.0 release includes both new workflows: `egm-lite` for small repository-backed engineering tasks (merged in #438) and `egm-in-chat` for document work in chat. The OpenAI archive has nine skills; the Claude archive and repository installs have eight. Engineering Lite still needs the tools required by its active phase, including verified fresh-context subagents for Goldfish review.
 
 The skill runs in a single context.
 It labels its critique as same-context and never claims Goldfish or fresh-context review.
@@ -57,7 +45,6 @@ The plugin keeps its existing name and listing; the skill displays as `EGM in Ch
 - Run in ChatGPT Work on the web without local execution.
 - Ship one OpenAI plugin package and identity for web and desktop, with behavior selected from observed capabilities.
 - Preserve the full skills' artifact requirements and independent-review guarantees.
-- Provide `/egm` as the shared default entry point without duplicating workflow logic.
 
 ## Non-Goals
 
@@ -172,7 +159,7 @@ The pilot must be repeated on version 0.3.0 before Stage 2 merges.
 
 Use the existing `--target openai` build and `egm-openai.zip`. Keep the `egm` identity, version scheme, marketplace entry, and public listing. Do not create a second plugin manifest or `chatgpt-web` target.
 
-Store the document skill in `openai/skills/egm-in-chat/`. The OpenAI packer places its runtime files at `skills/egm-in-chat/` alongside the nine shared skills, including `egm` and `egm-lite`, using the same path-safety and reproducibility checks. The Claude build and repository-based coding-harness skill discovery retain those nine shared skills.
+Store the document skill in `openai/skills/egm-in-chat/`. The OpenAI packer places its runtime files at `skills/egm-in-chat/` alongside the eight canonical skills, including `egm-lite`, using the same path-safety and reproducibility checks. The Claude build and repository-based coding-harness skill discovery retain those eight canonical skills.
 
 Remove `requires_local_executor` from both OpenAI manifest locations. Update the listing description to distinguish document work from independent review. This prepares a candidate; it does not publish an update to the current desktop-only listing.
 
@@ -189,7 +176,7 @@ Every supported coding harness reads the shared `skills/` folder, so a skill pla
 - The OpenCode adapter installs every folder under `skills/`.
 - The website check requires a public page for every folder under `skills/`.
 
-`disable-model-invocation: true` does not hide a skill. The eight existing shared workflows set it; the new default `egm` router leaves automatic discovery enabled.
+`disable-model-invocation: true` does not hide a skill. All eight canonical skills set it.
 Keeping the source outside `skills/` lets the OpenAI archive include it without adding it to other harnesses.
 
 ### Per-skill product gating (not used in the first version)
@@ -223,7 +210,7 @@ It would also blur the line between same-context and independent review.
 
 - `openai/skills/egm-in-chat/` contains `SKILL.md`, `TEST.md`, `test_scenarios.yaml`, `agents/openai.yaml`, and `assets/icon.svg`, following `skills/egm-review/`. There is no separate plugin manifest.
 - Unit tests check the new skill's frontmatter, load limit, scenarios, and icon, because the shared tests only scan `skills/`.
-- Unit tests check that the existing OpenAI archive has the same `egm` identity, contains all ten skills and their runtime assets, omits `requires_local_executor` in both manifests, and is reproducible. The Claude archive has nine skills. Both archives must include `egm` and `egm-lite`; only OpenAI includes `egm-in-chat`. Missing or symlinked document-skill files fail before output.
+- Unit tests check that the existing OpenAI archive has the same `egm` identity, contains all nine skills and their runtime assets, omits `requires_local_executor` in both manifests, and is reproducible. The Claude archive has eight skills. Both archives must include `egm-lite`; only OpenAI includes `egm-in-chat`. Missing or symlinked document-skill files fail before output.
 - `ruff check .` and `python -m pytest tests/unit` pass.
 - Offline package validation passes for the combined OpenAI package.
 - Before merge or publication, install the exact same archive in clean ChatGPT web and desktop chats. Record archive checksum, package version, host version or date, installation result, skill discovery, and observed capabilities separately for each surface.
