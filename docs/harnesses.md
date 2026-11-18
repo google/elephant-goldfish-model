@@ -140,6 +140,9 @@ Copilot, and OpenCode adapters set their own reviewer permissions; see the
 [Cursor](https://github.com/google/elephant-goldfish-model/blob/main/docs/cursor.md),
 [Copilot](https://github.com/google/elephant-goldfish-model/blob/main/docs/copilot.md), and
 [OpenCode](https://github.com/google/elephant-goldfish-model/blob/main/docs/opencode.md) guides.
+The experimental Windsurf workflows launch reviewers on the host's read-only
+subagent profile; see
+[Support Status](#support-status--contributing-other-harnesses).
 
 ## Artifact Directory
 
