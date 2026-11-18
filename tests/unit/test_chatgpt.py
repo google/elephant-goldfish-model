@@ -82,7 +82,7 @@ def test_combined_bundle_contains_all_runtime_skills(tmp_path: Path) -> None:
     names = set(bundle.namelist())
     assert {p for p in names if p.endswith("/SKILL.md")} == {
         f"skills/{name}/SKILL.md" for name in (
-            "egm", "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
+            "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
             "egm-lite", "egm-resolve", "egm-review", "egm-review-loop", "egm-in-chat",
         )
     }

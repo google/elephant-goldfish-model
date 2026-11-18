@@ -51,7 +51,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
-    assert len([p for p in names if p.endswith("/SKILL.md")]) == (10 if target == "openai" else 9)
+    assert len([p for p in names if p.endswith("/SKILL.md")]) == (9 if target == "openai" else 8)
     assert "skills/egm-lite/SKILL.md" in names
     assert ("skills/egm-in-chat/SKILL.md" in names) == (target == "openai")
     for skill in source.glob("skills/*/SKILL.md"):

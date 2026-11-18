@@ -26,7 +26,7 @@ MARKETPLACES = (
     ".cursor-plugin/marketplace.json",
 )
 EXPECTED_SKILLS = {
-    "egm", "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
+    "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
     "egm-lite", "egm-resolve", "egm-review", "egm-review-loop",
 }
 REVIEWERS = (

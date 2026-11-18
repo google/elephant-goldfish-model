@@ -25,7 +25,7 @@ HOST = {
     "openai": (".codex-plugin/plugin.json",),
 }
 SKILLS = (
-    "egm", "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
+    "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
     "egm-lite", "egm-resolve", "egm-review", "egm-review-loop",
 )
 REQUIRED_SKILL_FILES = ("SKILL.md", "agents/openai.yaml", "assets/icon.svg")
