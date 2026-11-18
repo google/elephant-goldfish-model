@@ -6,9 +6,11 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 HOST_VERSION = "1.18.29"
@@ -25,6 +27,20 @@ def name(path: Path) -> str:
     if not match:
         raise ValueError(f"Missing canonical name: {path}")
     return match[1]
+
+
+def _link_skill_dir(link: Path, target: Path) -> None:
+    """Symlink a skill directory, falling back to a Windows junction if unprivileged."""
+    try:
+        link.symlink_to(target, target_is_directory=True)
+    except OSError:
+        if os.name != "nt":
+            raise
+        subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+            check=True,
+            capture_output=True,
+        )
 
 
 def install(destination: Path) -> Path:
@@ -45,6 +61,14 @@ def install(destination: Path) -> Path:
     if destination.is_relative_to(ROOT):
         raise ValueError("Install outside the source tree")
     destination.mkdir(parents=True)
+    try:
+        return _install_into(destination)
+    except BaseException:
+        shutil.rmtree(destination, ignore_errors=True)
+        raise
+
+
+def _install_into(destination: Path) -> Path:
     bundle = destination / "bundle"
     bundle.mkdir()
     for directory in ("skills", "agents", "resources", "docs"):
@@ -113,7 +137,7 @@ def install(destination: Path) -> Path:
     commands = {}
     for skill in sorted((bundle / "skills").glob("*/SKILL.md")):
         skill_name = name(skill)
-        (skills / skill_name).symlink_to(skill.parent, target_is_directory=True)
+        _link_skill_dir(skills / skill_name, skill.parent)
         commands[skill_name] = {
             "description": f"Run {skill_name} (experimental)",
             "agent": "egm",
