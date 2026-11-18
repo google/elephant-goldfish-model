@@ -51,7 +51,8 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
-    assert len([p for p in names if p.endswith("/SKILL.md")]) == (8 if target == "openai" else 7)
+    assert len([p for p in names if p.endswith("/SKILL.md")]) == (9 if target == "openai" else 8)
+    assert "skills/egm-lite/SKILL.md" in names
     assert ("skills/egm-in-chat/SKILL.md" in names) == (target == "openai")
     for skill in source.glob("skills/*/SKILL.md"):
       prefix = skill.parent.relative_to(source)
@@ -104,6 +105,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
     ("bootstrap", "#1b6ef3", "#7cacf8"),
     ("brainstorm", "#1b6ef3", "#7cacf8"),
     ("draft", "#1b6ef3", "#7cacf8"),
+    ("lite", "#1b6ef3", "#e86e00"),
     ("resolve", "#1b6ef3", "#7cacf8"),
     ("drift_report", "#e86e00", "#ff8d41"),
     ("review", "#e86e00", "#ff8d41"),
@@ -365,6 +367,7 @@ def test_refuses_unbundled_services(source: Path, tmp_path: Path, field: str) ->
     "skills/egm-brainstorm/SKILL.md",
     "skills/egm-draft/SKILL.md",
     "skills/egm-drift-report/SKILL.md",
+    "skills/egm-lite/SKILL.md",
     "skills/egm-resolve/SKILL.md",
     "skills/egm-review/SKILL.md",
     "skills/egm-review-loop/SKILL.md",

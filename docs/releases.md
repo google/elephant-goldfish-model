@@ -47,7 +47,8 @@ Exact installed-bundle verification remains tracked in
 
 ## Launch v0.2.0 on OpenAI
 
-The v0.2.0 candidate adds `egm-in-chat` to the existing EGM OpenAI plugin.
+The v0.2.0 candidate includes engineering `egm-lite` (merged in #438) and adds
+document-first `egm-in-chat` to the existing EGM OpenAI plugin.
 Keep the `egm` package name and the
 [existing public listing](https://chatgpt.com/plugins/plugins_6aeb90f47ec88191a3c107e01d3eb357).
 The private preview is a test fixture, not the listing to publish.
@@ -55,14 +56,17 @@ Merging the PRs or publishing a GitHub release does not update OpenAI.
 
 ### Changes for the release notes
 
-- Use one OpenAI package for ChatGPT web and desktop, with eight skills.
+- Use one OpenAI package for ChatGPT web and desktop, with nine skills.
+- Add `egm-lite` for small repository-backed engineering tasks and explicit
+  checklist, execution, and review phases. Goldfish review still requires
+  verified fresh-context subagents.
 - Add document brainstorming, drafting, and same-context review through
   `egm-in-chat`, without requiring a shell or repository.
 - Check the current chat's tools before full EGM workflows start. Independent
   review still requires verified fresh-context subagents and artifact access;
   repository workflows also require repository access and command execution.
 - Keep the Claude archive and repository-based coding-harness installs at
-  seven skills. Existing skill names remain unchanged.
+  eight skills, including `egm-lite`. Existing skill names remain unchanged.
 
 ### Release and publication checklist
 
@@ -83,7 +87,8 @@ Merging the PRs or publishing a GitHub release does not update OpenAI.
   Record its checksum, host version or date, installation, skill discovery,
   document brainstorm/draft/review, and missing-capability behavior. Verify
   full `egm-brainstorm`, `egm-draft`, and `egm-review` on a capable desktop
-  host, including native reviewer-isolation evidence. Earlier private-preview
+  host, including native reviewer-isolation evidence. Verify `egm-lite`'s
+  engineering workflow on a capable host too. Earlier private-preview
   smoke tests do not complete this check.
 - [ ] Replace the GitHub draft's placeholder notes with the changes above,
   compatibility details, and exact-archive test results. Publish the GitHub
@@ -93,7 +98,8 @@ Merging the PRs or publishing a GitHub release does not update OpenAI.
   organization and creates a new draft version. Upload
   `egm-openai-0.2.0.zip`; do not create another plugin or use the private
   preview's identity.
-- [ ] Verify the saved draft's `egm` identity, version, eight skills, listing,
+- [ ] Verify the saved draft's `egm` identity, version, nine skills (including
+  both `egm-lite` and `egm-in-chat`), listing,
   icons, four listing URLs, verified publisher, and saved country settings.
   Resolve validation errors and complete the portal's required attestations.
   This is a skills-only plugin; it adds no MCP connection or credentials.

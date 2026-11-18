@@ -5,13 +5,15 @@
 - **Date:** 2026-11-16
 - **Scope issue:** #414
 - **Related:** #460, #419, #438 (`egm-lite` for repo-backed engineering), #371 (24 KB skill load limit)
-- **Earlier names:** `egm-lite`, `egm-chat`. This design proposes `/egm-in-chat` (`EGM for ChatGPT` in the OpenAI UI).
+- **Earlier names:** `egm-lite`, `egm-chat`. This design proposes `/egm-in-chat` (`EGM in Chat` in the OpenAI UI).
 
 ## Overview
 
 Add an `egm-in-chat` skill (`display_name: "EGM in Chat"`) to the existing EGM OpenAI plugin for ChatGPT on the web and desktop.
 It helps a user shape an idea, draft a plan, and review a document from chat context and user-supplied files.
-The existing `egm-openai.zip` contains this skill alongside the seven full EGM skills, under the same `egm` identity and listing. Its source lives in `openai/skills/`, outside the shared coding-harness skills.
+The existing `egm-openai.zip` contains this skill alongside the eight canonical EGM skills, under the same `egm` identity and listing. Its source lives in `openai/skills/`, outside the shared coding-harness skills.
+
+The v0.2.0 release includes both new workflows: `egm-lite` for small repository-backed engineering tasks (merged in #438) and `egm-in-chat` for document work in chat. The OpenAI archive has nine skills; the Claude archive and repository installs have eight. Engineering Lite still needs the tools required by its active phase, including verified fresh-context subagents for Goldfish review.
 
 The skill runs in a single context.
 It labels its critique as same-context and never claims Goldfish or fresh-context review.
@@ -157,7 +159,7 @@ The pilot must be repeated on version 0.3.0 before Stage 2 merges.
 
 Use the existing `--target openai` build and `egm-openai.zip`. Keep the `egm` identity, version scheme, marketplace entry, and public listing. Do not create a second plugin manifest or `chatgpt-web` target.
 
-Store the document skill in `openai/skills/egm-in-chat/`. The OpenAI packer places its runtime files at `skills/egm-in-chat/` alongside the seven canonical skills, using the same path-safety and reproducibility checks. The Claude build and repository-based coding-harness skill discovery remain unchanged; repository installs still expose the seven canonical skills.
+Store the document skill in `openai/skills/egm-in-chat/`. The OpenAI packer places its runtime files at `skills/egm-in-chat/` alongside the eight canonical skills, including `egm-lite`, using the same path-safety and reproducibility checks. The Claude build and repository-based coding-harness skill discovery retain those eight canonical skills.
 
 Remove `requires_local_executor` from both OpenAI manifest locations. Update the listing description to distinguish document work from independent review. This prepares a candidate; it does not publish an update to the current desktop-only listing.
 
@@ -174,7 +176,7 @@ Every supported coding harness reads the shared `skills/` folder, so a skill pla
 - The OpenCode adapter installs every folder under `skills/`.
 - The website check requires a public page for every folder under `skills/`.
 
-`disable-model-invocation: true` does not hide a skill. All seven published skills already set it.
+`disable-model-invocation: true` does not hide a skill. All eight canonical skills set it.
 Keeping the source outside `skills/` lets the OpenAI archive include it without adding it to other harnesses.
 
 ### Per-skill product gating (not used in the first version)
@@ -208,7 +210,7 @@ It would also blur the line between same-context and independent review.
 
 - `openai/skills/egm-in-chat/` contains `SKILL.md`, `TEST.md`, `test_scenarios.yaml`, `agents/openai.yaml`, and `assets/icon.svg`, following `skills/egm-review/`. There is no separate plugin manifest.
 - Unit tests check the new skill's frontmatter, load limit, scenarios, and icon, because the shared tests only scan `skills/`.
-- Unit tests check that the existing OpenAI archive has the same `egm` identity, contains all eight skills and their runtime assets, omits `requires_local_executor` in both manifests, and is reproducible. The Claude archive still has seven skills. Missing or symlinked document-skill files fail before output.
+- Unit tests check that the existing OpenAI archive has the same `egm` identity, contains all nine skills and their runtime assets, omits `requires_local_executor` in both manifests, and is reproducible. The Claude archive has eight skills. Both archives must include `egm-lite`; only OpenAI includes `egm-in-chat`. Missing or symlinked document-skill files fail before output.
 - `ruff check .` and `python -m pytest tests/unit` pass.
 - Offline package validation passes for the combined OpenAI package.
 - Before merge or publication, install the exact same archive in clean ChatGPT web and desktop chats. Record archive checksum, package version, host version or date, installation result, skill discovery, and observed capabilities separately for each surface.

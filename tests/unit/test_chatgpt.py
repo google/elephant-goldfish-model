@@ -83,7 +83,7 @@ def test_combined_bundle_contains_all_runtime_skills(tmp_path: Path) -> None:
     assert {p for p in names if p.endswith("/SKILL.md")} == {
         f"skills/{name}/SKILL.md" for name in (
             "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-            "egm-resolve", "egm-review", "egm-review-loop", "egm-in-chat",
+            "egm-lite", "egm-resolve", "egm-review", "egm-review-loop", "egm-in-chat",
         )
     }
     for name in ("SKILL.md", "agents/openai.yaml", "assets/icon.svg"):

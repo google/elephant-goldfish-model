@@ -22,6 +22,7 @@ artwork; do not normalize individual bounding boxes or stroke widths.
 | Bootstrap | Rounded plus: initialize project documentation | `#1b6ef3` / `#7cacf8` |
 | Brainstorm | Lightbulb: explore ideas | `#1b6ef3` / `#7cacf8` |
 | Draft | Pencil: write the design | `#1b6ef3` / `#7cacf8` |
+| Lite | Spark: rapid engineering iterations | `#1b6ef3` / `#e86e00` |
 | Resolve | Check: address review findings | `#1b6ef3` / `#7cacf8` |
 | Drift report | Touching, offset halves: document and code diverge | `#e86e00` / `#ff8d41` |
 | Review | Magnifier: inspect the document | `#e86e00` / `#ff8d41` |

@@ -26,7 +26,7 @@ HOST = {
 }
 SKILLS = (
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop",
+    "egm-lite", "egm-resolve", "egm-review", "egm-review-loop",
 )
 REQUIRED_SKILL_FILES = ("SKILL.md", "agents/openai.yaml", "assets/icon.svg")
 OPENAI_FILES = tuple(
