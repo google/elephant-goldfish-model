@@ -1,0 +1,72 @@
+---
+import IconButton from '../gb/IconButton.astro';
+import Symbol from '../gb/Symbol.astro';
+const id = `theme-${crypto.randomUUID()}`;
+const options = [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'auto', label: 'System' }] as const;
+---
+<egm-theme-picker>
+  <IconButton label="Color theme" popovertarget={id} aria-haspopup="menu" aria-controls={id} aria-expanded="false">
+    <Symbol name="dark_mode" />
+  </IconButton>
+  <div id={id} class="menu theme-menu" popover role="menu" aria-label="Color theme">
+    {options.map(option => <button type="button" class="menu-item ripple focus-ring-inner" role="menuitemradio" aria-checked={option.value === 'auto' ? 'true' : 'false'} data-theme-value={option.value}>
+      <span class="menu-item-content">{option.label}</span>
+      <span class="menu-item-trailing"><Symbol name="check" /></span>
+    </button>)}
+  </div>
+</egm-theme-picker>
+<script>
+  type Theme = 'light' | 'dark' | 'auto';
+  const media = matchMedia('(prefers-color-scheme: dark)');
+  const parse = (value: unknown): Theme => value === 'light' || value === 'dark' ? value : 'auto';
+  let preference: Theme = 'auto';
+  try { preference = parse(localStorage.getItem('starlight-theme')); } catch { /* Use the system theme if storage is unavailable. */ }
+
+  function applyTheme() {
+    document.documentElement.dataset.theme = preference === 'auto' ? (media.matches ? 'dark' : 'light') : preference;
+    document.querySelectorAll<HTMLButtonElement>('egm-theme-picker [data-theme-value]').forEach(button => {
+      const selected = button.dataset.themeValue === preference;
+      button.setAttribute('aria-checked', String(selected));
+      button.classList.toggle('checked', selected);
+    });
+  }
+  media.addEventListener('change', applyTheme);
+
+  class ThemePicker extends HTMLElement {
+    connectedCallback() {
+      const menu = this.querySelector<HTMLElement>('[popover]')!;
+      const trigger = this.querySelector<HTMLButtonElement>('[popovertarget]')!;
+      const buttons = [...menu.querySelectorAll<HTMLButtonElement>('[data-theme-value]')];
+      applyTheme();
+      menu.addEventListener('toggle', () => {
+        const open = menu.matches(':popover-open');
+        trigger.setAttribute('aria-expanded', String(open));
+        if (open) buttons.find(button => button.getAttribute('aria-checked') === 'true')?.focus();
+      });
+      buttons.forEach(button => button.addEventListener('click', () => {
+        preference = parse(button.dataset.themeValue);
+        try { localStorage.setItem('starlight-theme', preference === 'auto' ? '' : preference); } catch { /* The selected theme still applies for this page. */ }
+        applyTheme();
+        menu.hidePopover();
+        trigger.focus();
+      }));
+      menu.addEventListener('keydown', event => {
+        const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        const target = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
+          : event.key === 'ArrowDown' ? (index + 1) % buttons.length
+          : event.key === 'ArrowUp' ? (index + buttons.length - 1) % buttons.length : -1;
+        if (target >= 0) { event.preventDefault(); buttons[target].focus(); }
+      });
+    }
+  }
+  customElements.define('egm-theme-picker', ThemePicker);
+</script>
+<style>
+  egm-theme-picker { display:inline-flex; }
+  .theme-menu { min-width:160px; --container-elevation:none; --container-shape:12px; position-area:block-start span-inline-start; position-try-fallbacks:flip-block, flip-inline; margin:0 0 8px; }
+  .menu-item { border:0; background:transparent; text-align:start; }
+  .menu-item.checked { --container-color:var(--md-sys-color-secondary-container); --label-text-color:var(--md-sys-color-on-secondary-container); --leading-icon-color:var(--md-sys-color-on-secondary-container); --trailing-icon-color:var(--md-sys-color-on-secondary-container); }
+  .menu-item-trailing { visibility:hidden; }
+  .checked .menu-item-trailing { visibility:visible; }
+  .menu-item :global(svg) { width:20px; height:20px; }
+</style>

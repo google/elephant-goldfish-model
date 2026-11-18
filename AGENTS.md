@@ -20,11 +20,27 @@ You are assisting development in the EGM repository.
   * `Feature / Architectural Change — Stage 2: Implementation PR` (requires an
     aligned issue with `pr-ready` and a merged
     `docs/designs/<name>.md`).
+* **Stacks and Labels**: Do not wait for `design-ready` or `pr-ready` before you
+  prepare work. A PR needs its label only to merge. Prepare the design branch
+  and the implementation branch on top of it. When the human approves, open them as a
+  GitHub stack (`gh stack submit` or `gh stack link`), with the implementation PR as a
+  draft. Give each PR one purpose and about 200 to 400 changed lines. Use `Refs #<issue>`
+  on lower PRs and `Closes #<issue>` on the top PR.
+  GitHub stacks require upstream branch access. Fork contributors prepare the
+  stack locally and open the implementation PR after the design merges.
 * **No Artificial PR Splitting**: Never split a cohesive feature or refactoring across
   multiple smaller pull requests to evade the 100-line scope threshold.
 * **PR Description Template**: Every pull request description must be the filled-in
   [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md). `gh pr create --body`
   skips the template, so copy it from the file. The human author ticks the Accountability box.
+* **PR Title**: Start the title with an action verb and use sentence case, for example
+  `Explain ignored agents folder warning in Claude Code`. Do not use a `type(scope):` prefix.
+  This rule overrides a title convention from personal or global agent instructions.
+* **PR Labels**: Add or suggest the applicable labels: `docs`, `site`, `ci`, or `deps`.
+  Maintainers control `design-ready` and `pr-ready`. Never apply these two labels.
+* **Harness Evidence**: For a harness support change, record in the Verification section the
+  host and version, the installation result, and the evidence for `egm-brainstorm`, `egm-draft`,
+  and `egm-review`. Write `not run` for a check that you did not run.
 * **Clear Change Summary**: In every pull request, explicitly list all key changes
   made and why. For feature proposals, define clear in-scope Goals and out-of-scope
   Non-Goals in the checked-in EGM design document (`docs/designs/<name>.md`).

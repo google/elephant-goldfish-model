@@ -17,6 +17,7 @@ name: Check PR scope
 on:
   # zizmor: ignore[dangerous-triggers] - Only inspects PR metadata/diff stats and posts advisory comment; never checks out or executes untrusted code.
   pull_request_target:
+    branches: [main]
     types: [opened, edited, synchronize]
 
 concurrency:
@@ -29,10 +30,10 @@ jobs:
   scope-advisory:
     name: "Evaluate PR Scope and Template"
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
-      pull-requests: write # Required to list files and post comments/labels on PRs
-      issues: write # Required to post/update advisory comments and labels
-      contents: read # Required for baseline repository metadata access
+      pull-requests: write # Required to list files and manage PR comments/labels on fork PRs
+      issues: write # Required to post/update/delete advisory comments and manage labels
     steps:
       - name: "Analyze PR Scope and Track"
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0

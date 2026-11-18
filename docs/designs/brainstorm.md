@@ -123,7 +123,7 @@ specialized Goldfish personas defined in `agents/` and document standards:
     *   [`agents/design_critic.md`](../../agents/design_critic.md): Cost, Quota & Resource Economics Lens.
     *   [`agents/comprehension.md`](../../agents/comprehension.md): UX & Developer Ergonomics Lens.
     *   [`agents/implementation_readiness.md`](../../agents/implementation_readiness.md): Migration & Compatibility Lens.
-    *   [`agents/codebase_details.md`](../../agents/codebase_details.md): Codebase Grounding & Existing Reuse Lens.
+    *   [`agents/codebase_details.md`](../../agents/codebase_details.md): Observability & SRE Debuggability Lens.
     *   [`agents/structural.md`](../../agents/structural.md): Maintainability & Tech Debt Lens.
     *   [`agents/inventive_catalyst.md`](../../agents/inventive_catalyst.md): Contradiction Elimination & Inventive Transforms Lens.
 *   **Referenced Standards**: Evaluates concepts against

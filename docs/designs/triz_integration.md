@@ -418,7 +418,7 @@ checkpoints at each stage.
     `com.github.copilot/agents/egm-inventive-catalyst.agent.md`, the reviewer
     list in `adapters/opencode/install.py`, and the persona list in
     `scripts/pack_plugin.py`. Update reviewer and adapter counts in
-    `docs/harnesses.md` from nine to ten. Regenerate `distributions/claude/`.
+    `docs/harnesses.md` from nine to ten.
 
 *Phase 1 Checkpoint*: Validate YAML frontmatter across all agent files using
 `pytest tests/unit/test_frontmatter.py`.

@@ -81,7 +81,7 @@ flowchart TD
     *   *Target*: `FeatureRange` (High-Level Architecture).
     *   *Personas*: [`design_critic`](../../agents/design_critic.md),
         [`structural`](../../agents/structural.md), [`style`](../../agents/style.md).
-    *   *Standards*: `feature-spec-standard.md`, `heilmeier-standard.md`.
+    *   *Standard*: `feature-spec-standard.md` (for `design_critic` and `structural`).
     *   *Focus*: Probes single points of failure (SPOFs), scaling limits,
         failure modes, and edge cases.
 4.  **Step 8: Intermediate Zoom Out Review (Post-Critic Pruning)**:
@@ -96,7 +96,8 @@ flowchart TD
     *   *Target*: `DetailedRange` (`## Detailed Implementation Plan`).
     *   *Personas*: [`implementation_readiness`](../../agents/implementation_readiness.md),
         [`codebase_details`](../../agents/codebase_details.md), [`style`](../../agents/style.md).
-    *   *Standards*: `implementation-readiness-standard.md`, `re-implementation-standard.md`.
+    *   *Standard*: `implementation-readiness-standard.md` (for
+        `implementation_readiness` and `codebase_details`).
     *   *Focus*: Verifies that every file touched is listed as an explicit
         repository-relative write boundary with rationale, API signatures match
         current codebase reality, and step-by-step test plans exist.

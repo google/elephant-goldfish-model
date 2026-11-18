@@ -130,7 +130,9 @@ Drafts the execution section:
     separated by a horizontal rule delimiter (`--------------------------------------------------------------------------------`)
     after trailing open questions.
 *   Writes the document to `docs/designs/<FEATURE>.md`.
-*   Registers the document in `docs/designs/README.md` if present.
+*   Registers the document in `docs/designs/SITEMAP.md` if present. This repository
+    uses `docs/designs/README.md`; contributors update it as required by
+    [CONTRIBUTING.md](../../CONTRIBUTING.md).
 *   Formats markdown using standard markdown formatters.
 *   Outputs a clickable link and instructs the user to run `/egm-review`.
 
@@ -143,12 +145,12 @@ Goldfish review engine to parse the document into two semantic zones:
 
 1.  **Feature Range (`FeatureRange`)**: Lines 1 through the header boundary.
     Contains the high-level problem statement, goals, architecture, and
-    alternatives. Audited by the **Design Critic** (`egm_design`) and
-    **Comprehension Reviewer** (`egm_comprehension`).
+    alternatives. Audited by the **Design Critic** (`egm-design`) and
+    **Comprehension Reviewer** (`egm-comprehension`).
 2.  **Detailed Range (`DetailedRange`)**: From `## Detailed Implementation Plan`
     to EOF. Contains file targets, schemas, and test plans. Audited by the
-    **Implementation Readiness Reviewer** (`egm_implementation_readiness`) and
-    **Codebase Details Auditor** (`egm_codebase_details`).
+    **Implementation Readiness Reviewer** (`egm-implementation-readiness`) and
+    **Codebase Details Auditor** (`egm-codebase-details`).
 
 Standardizing on the `## Detailed Implementation Plan` header allows automated
 boundary discovery without requiring manual line range configuration. Terminal
