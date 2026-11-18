@@ -1,0 +1,7 @@
+interface:
+  display_name: "EGM"
+  short_description: "Choose the next EGM workflow for your task"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#1B6EF3"
+  default_prompt: "Use $egm to find and run the useful next workflow for my task."

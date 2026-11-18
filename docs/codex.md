@@ -11,6 +11,12 @@ The OpenAI archive contains `egm-in-chat` alongside the full EGM skills in one
 `egm` plugin. Check the current chat's tools before intake, artifact creation,
 or reviewer dispatch. Web and desktop labels do not establish capabilities.
 
+Start with `/egm` (or select **EGM** in the skill picker) to choose or resume
+the next workflow from the request and current artifacts. The router reads
+the selected skill and preserves its approval gates. Check requirements for
+the active phase; do not reject supported intake or checklist work because
+a later independent review needs subagents.
+
 - For document work from pasted text or uploads, use `egm-in-chat`. It needs
   no shell or subagents and labels its critique as same-context.
 - Full EGM workflows require readable bundled resources and writable artifacts.
@@ -20,10 +26,10 @@ or reviewer dispatch. Web and desktop labels do not establish capabilities.
 - Repository workflows additionally require access to the requested repository
   and command execution. Do not assume that installing the plugin grants either.
 
-If a required capability is absent, stop that full workflow before starting,
+If a required capability is absent, stop the affected phase before starting it,
 name what is missing, and offer `egm-in-chat` if it is in the installed skill
 inventory. Continue with same-context document work only if the user chooses it.
-Repository-based installs that expose only the eight canonical skills must not
+Repository-based installs that expose only the nine shared skills must not
 claim the document skill is installed.
 
 ## Install and locate the plugin
@@ -132,7 +138,7 @@ Package the runtime files from the repository root:
 python3 scripts/pack_plugin.py --target openai --output /tmp/egm-chatgpt
 ```
 
-Use a fresh output directory. The candidate `egm-openai.zip` contains all nine
+Use a fresh output directory. The candidate `egm-openai.zip` contains all ten
 skills under the existing `egm` identity. Upload the same archive for private
 testing in ChatGPT web and desktop, then use **Try in chat** in clean threads.
 The published listing remains desktop-only until a revised release is approved
@@ -142,9 +148,9 @@ The candidate omits the plugin-wide local-executor requirement: document work
 needs none, while full workflows check their requirements before starting.
 The portable manifest's OpenAI extension and Codex compatibility manifest
 retain matching listing metadata. The Claude build and repository-based coding
-harness installs have eight canonical skills, including engineering `egm-lite`.
-The OpenAI archive adds document-first `egm-in-chat` to those eight; both new
-workflows are part of the v0.2.0 candidate.
+harness installs have nine shared skills, including the default `egm` entry
+point and engineering `egm-lite`. The OpenAI archive adds document-first
+`egm-in-chat` to those nine in the v0.2.0 candidate.
 Keep `.claude-plugin/` outside the OpenAI archive: its agent adapters belong
 to the Claude Code integration. Public directory plugins cannot include hooks.
 

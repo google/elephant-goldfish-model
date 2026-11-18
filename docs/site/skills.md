@@ -3,6 +3,11 @@ title: Skills
 description: Start with an idea, bring a document, or work with an existing codebase. Choose the skill that fits your next task.
 ---
 
+## Start with your task
+
+Use [EGM](/skills/egm) `/egm` to select the useful next workflow from your
+task, progress, and available tools. You can also choose a skill below.
+
 ## Develop an idea
 
 Explore the problem, then put the plan in writing.
