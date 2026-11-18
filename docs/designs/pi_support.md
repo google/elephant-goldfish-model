@@ -6,15 +6,32 @@ SPDX-License-Identifier: Apache-2.0
 # Pi harness support
 
 Proposed first-class support for [Pi](https://github.com/badlogic/pi-coding-agent)
-via a Pi package manifest and installation guide. Refs #468.
+via a Pi package manifest and installation guide. Refs #276, the
+consolidated Pi support tracker (#468 was consolidated into #276 on
+2026-11-18).
 
 ## Problem
 
-Pi implements the Agent Skills specification, distributes resources through
-npm and git packages, and provides a fresh-context subagent tool
-(`subagent`) — the mechanism Goldfish reviews require. There is no documented
-install path for EGM in Pi today, so Pi users must hand-copy skills and
-repair persona paths manually.
+Pi implements the Agent Skills specification and distributes resources
+through npm and git packages. Pi core ships **no** fresh-context subagent
+tool; delegation comes from a third-party subagent extension, and only
+Gentle Agents in `gentle-pi` 4.5.1 has been checked. That tool is the
+mechanism Goldfish reviews require, so Pi support is conditional on the
+user installing such an extension. There is no documented install path for
+EGM in Pi today, so Pi users must hand-copy skills and repair persona
+paths manually.
+
+### Packaging choice versus the copied-distribution alternative
+
+Issue #276 originally proposed a copied distribution at `distributions/pi/`
+with thin Pi adapters over untouched canonical `agents/*.md` (the
+Claude-distribution two-layer pattern). This design instead proposes a root
+`package.json` manifest with `pi.skills: ["./skills"]` so Pi discovers the
+canonical skill files in place, with `agents/` and `resources/` resolved at
+their canonical locations and no copied skill text. The trade-off is
+recorded for maintainer evaluation: no fork to keep in sync versus
+reliance on Pi's manifest discovery and path resolution behaving as
+specified.
 
 ## Design
 
@@ -56,14 +73,20 @@ command are appended to the loaded skill instructions as the user request.
 
 ### Fresh-context delegation
 
-Skills detect a Pi session and spawn reviewers through Pi's `subagent` tool.
-The orchestrating skill instructs each general-purpose child to read its
-persona file (`agents/<persona>.md`, resolved from the package root) before
-reviewing. Named subagent registration is not required: the general-purpose
-fallback that `SKILL.md` already prescribes works. Pi's `subagent` tool
+Skills detect a Pi session and spawn reviewers through the `subagent` tool
+supplied by a third-party subagent extension (Pi core ships none; verified
+with Gentle Agents `gentle-pi` 4.5.1). The orchestrating skill instructs
+each general-purpose child to read its persona file
+(`agents/<persona>.md`, resolved from the package root) before reviewing.
+Named subagent registration is not required: the general-purpose fallback
+that `SKILL.md` already prescribes works. The extension's `subagent` tool
 supports nested delegation, but EGM should keep direct dispatch from the
-root context as the default because reviewer persona files forbid workspace
-writes and the synthesizer nesting is unnecessary at Pi's context sizes.
+root context as the default because reviewer persona files forbid
+workspace writes and the synthesizer nesting is unnecessary at Pi's
+context sizes. Isolation observed so far is directory-based, not
+harness-enforced; reviewer read-only behavior and a parent-only marker
+plus negative-mutation probe remain Stage-2 verification gates, as
+required by #276.
 
 ### Documentation
 
