@@ -57,12 +57,13 @@ read a document standard. The cost grows with these factors:
     design with no implementation plan gets Stages 5 to 8 only: 7 reviewers.
     The other presets pause after each stage and run Stages 7 and 9, when they
     include them, through `egm-review-loop`. Each round of that loop starts the
-    stage's 3 reviewers again; it asks you before each new round, finishes after
-    two clean rounds in a row, and asks again at 5 rounds, where you can choose
-    to continue. Stages 5, 6, and 8 can run once more after the design changes,
-    and Stages 7 and 9 can run their whole loop once more. An interactive review
-    can therefore start many more than 10 reviewers, and the number depends on
-    your choices.
+    stage's 3 reviewers again; it asks you before each new round and finishes
+    after two clean rounds in a row. It also stops and asks you at 5 rounds,
+    where you can choose to continue, and on churn, when a new finding sits
+    where a fix was applied and undoing that fix would resolve it. Stages 5, 6,
+    and 8 can run once more after the design changes, and Stages 7 and 9 can
+    run their whole loop once more. An interactive review can therefore start
+    many more than 10 reviewers, and the number depends on your choices.
 *   **Extra subagents**: When a run nests reviewers under `egm-synthesizer`
     (Claude Cowork cannot), each stage or loop round that uses it adds a
     synthesizer, and the synthesizer may start two copies of each reviewer. A
