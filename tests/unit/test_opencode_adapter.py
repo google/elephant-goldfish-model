@@ -187,3 +187,39 @@ def test_env_matching_destination_is_rejected(tmp_path: Path, suffix: str) -> No
     with pytest.raises(ValueError, match="read rules"):
         ADAPTER["install"](tmp_path / suffix)
     assert not list(tmp_path.iterdir())
+
+
+def test_install_cleans_up_partial_destination_on_symlink_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "egm-oc"
+
+    def fail_symlink(self: Path, target: Path, target_is_directory: bool = False) -> None:
+        raise OSError("symlinks disabled")
+
+    monkeypatch.setattr(Path, "symlink_to", fail_symlink)
+    monkeypatch.setattr(os, "name", "posix")
+    with pytest.raises(OSError, match="symlinks disabled"):
+        ADAPTER["install"](destination)
+    assert not destination.exists()
+
+
+def test_install_falls_back_to_windows_junction_on_symlink_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "egm-oc"
+    calls: list[list[str]] = []
+
+    def fail_symlink(self: Path, target: Path, target_is_directory: bool = False) -> None:
+        raise OSError("WinError 1314")
+
+    def fake_run(cmd: list[str], **kwargs: object) -> None:
+        calls.append(cmd)
+
+    monkeypatch.setattr(Path, "symlink_to", fail_symlink)
+    monkeypatch.setattr(os, "name", "nt")
+    monkeypatch.setattr("subprocess.run", fake_run)
+    config = ADAPTER["install"](destination)
+    assert config.exists()
+    assert calls
+    assert calls[0][:4] == ["cmd", "/c", "mklink", "/J"]
