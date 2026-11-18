@@ -1,0 +1,14 @@
+---
+import IconButton from '../gb/IconButton.astro';
+import Symbol from '../gb/Symbol.astro';
+---
+<div class="mobile-menu"><IconButton label="Documentation menu" popovertarget="starlight__sidebar"><Symbol name="menu" /></IconButton></div>
+<style>
+  .mobile-menu { position:fixed; top:14px; right:var(--site-gutter); z-index:var(--sl-z-index-navbar); }
+  @media(min-width:50rem) { .mobile-menu { display:none; } }
+</style>
+<style is:global>
+  @media(max-width:49.999rem) {
+    body:has(#starlight__sidebar:popover-open) { overflow:hidden; }
+  }
+</style>

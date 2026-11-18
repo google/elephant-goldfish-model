@@ -210,3 +210,11 @@ def test_copilot_native_offline_discovery(
                 process.stdout.close()
                 provider.shutdown()
                 assert provider_requests == [], "Loader attempted model access"
+
+
+def test_vscode_copilot_workspace_settings(repo_root: Path) -> None:
+    settings = json.loads((repo_root / ".vscode/settings.json").read_text(encoding="utf-8"))
+    assert settings["chat.agentSkillsLocations"] == {"skills": True}
+    assert settings["chat.agentFilesLocations"] == {"com.github.copilot/agents": True}
+    assert (repo_root / "skills").is_dir()
+    assert (repo_root / "com.github.copilot/agents").is_dir()

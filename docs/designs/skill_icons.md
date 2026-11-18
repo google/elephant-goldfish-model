@@ -22,6 +22,7 @@ artwork; do not normalize individual bounding boxes or stroke widths.
 | Bootstrap | Rounded plus: initialize project documentation | `#1b6ef3` / `#7cacf8` |
 | Brainstorm | Lightbulb: explore ideas | `#1b6ef3` / `#7cacf8` |
 | Draft | Pencil: write the design | `#1b6ef3` / `#7cacf8` |
+| Lite | Spark: rapid engineering iterations | `#1b6ef3` / `#e86e00` |
 | Resolve | Check: address review findings | `#1b6ef3` / `#7cacf8` |
 | Drift report | Touching, offset halves: document and code diverge | `#e86e00` / `#ff8d41` |
 | Review | Magnifier: inspect the document | `#e86e00` / `#ff8d41` |
@@ -33,8 +34,8 @@ artwork; do not normalize individual bounding boxes or stroke widths.
   Its `brand_color` matches the icon's base color. Host rendering is controlled
   by the host; metadata validation does not verify its picker UI.
 - Both runtime bundles include the canonical files through the existing
-  [package builder](../../scripts/pack_plugin.py). Regenerate
-  `distributions/claude`; do not edit its copies independently. Claude's
+  [package builder](../../scripts/pack_plugin.py). Do not edit generated
+  copies independently. Claude's
   reviewer color keywords and the plugin-level logo stay unchanged.
 - The root README references the canonical paths directly. These relative
   paths also resolve inside generated runtime packages.

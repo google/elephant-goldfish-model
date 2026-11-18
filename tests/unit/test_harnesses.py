@@ -4,6 +4,7 @@
 """Offline packaging and isolation contracts for shared and host manifests."""
 
 import json
+import os
 from pathlib import Path
 import re
 import runpy
@@ -22,10 +23,11 @@ COMPATIBILITY_MANIFESTS = (
 MARKETPLACES = (
     ".agents/plugins/marketplace.json",
     ".claude-plugin/marketplace.json",
+    ".cursor-plugin/marketplace.json",
 )
 EXPECTED_SKILLS = {
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop",
+    "egm-lite", "egm-resolve", "egm-review", "egm-review-loop",
 }
 REVIEWERS = (
     "codebase_details", "comprehension", "design_critic",
@@ -106,7 +108,11 @@ def test_compatibility_metadata_matches_root(path: str) -> None:
     assert manifest[field] == canonical[field], f"{path}: {field} drift"
   for field in ("author", "homepage", "repository", "license"):
     if field in manifest:
-      assert manifest[field] == canonical[field], f"{path}: {field} drift"
+      expected = canonical[field]
+      if path == ".claude-plugin/plugin.json" and field == "author":
+        # Anthropic's directory lists Google plugins under the legal entity.
+        expected = {"name": "Google LLC"}
+      assert manifest[field] == expected, f"{path}: {field} drift"
   if "interface" in manifest:
     assert manifest["interface"]["developerName"] == canonical["author"]["name"]
   if "skills" in manifest:
@@ -126,18 +132,26 @@ def test_marketplace_resolves_shared_package(path: str) -> None:
   entry = marketplace["plugins"][0]
   assert entry["name"] == canonical["name"]
   package = (ROOT / entry["source"]).resolve()
-  expected = ROOT / "distributions/claude" if path == ".claude-plugin/marketplace.json" else ROOT
-  assert package == expected
+  assert package == ROOT
   if path == ".claude-plugin/marketplace.json":
     # Cowork rejects a plugin root with a second, nested Claude manifest.
-    assert list(package.rglob(".claude-plugin/plugin.json")) == [
-        package / ".claude-plugin/plugin.json",
-    ]
+    # Untracked tool and dependency folders can hold other checkouts; skip them.
+    untracked = {".git", ".claude", ".venv", "venv", "node_modules"}
+    roots = []
+    for folder, names, _ in os.walk(package):
+      names[:] = [name for name in names if name not in untracked]
+      if (Path(folder) / ".claude-plugin/plugin.json").is_file():
+        roots.append(Path(folder))
+    assert roots == [package]
     manifest = json.loads((package / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))
     assert manifest["name"] == entry["name"]
     assert manifest["version"] == canonical["version"]
     for adapter in manifest["agents"]:
       assert (package / adapter).is_file()
+    assert marketplace["owner"] == manifest["author"]
+    assert entry["author"] == manifest["author"]
+    assert entry["homepage"] == canonical["homepage"]
+    assert entry["category"] == "development"
   if "description" in entry:
     assert entry["description"] == canonical["description"]
   if path == ".agents/plugins/marketplace.json":

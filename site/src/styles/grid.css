@@ -1,0 +1,3 @@
+:root { --site-max-width:1160px; --site-gutter:24px; --site-inline:max(var(--site-gutter), calc((100vw - var(--site-max-width)) / 2)); }
+.wrap { inline-size:min(100% - 2 * var(--site-gutter), var(--site-max-width)); margin-inline:auto; }
+@media(max-width:640px) { :root { --site-gutter:16px; } }
