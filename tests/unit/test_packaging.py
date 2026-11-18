@@ -446,3 +446,15 @@ def test_archive_claimed_after_preflight_is_not_overwritten(
   else:
     assert archive.read_bytes() == b"another build owns this file"
   assert not list(output.glob(".egm-*"))
+
+
+def test_build_cleans_up_partial_folder_on_failure(tmp_path, monkeypatch):
+  output = tmp_path / "out"
+
+  def fail_hardlink(self, target):
+    raise OSError("hardlinks unsupported")
+
+  monkeypatch.setattr(Path, "hardlink_to", fail_hardlink)
+  with pytest.raises(OSError, match="hardlinks unsupported"):
+    build(ROOT, "openai", output)
+  assert list(output.iterdir()) == []
