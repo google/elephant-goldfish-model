@@ -100,6 +100,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
 
 
 @pytest.mark.parametrize("skill,base,facet", [
+    ("ask", "#1b6ef3", "#7cacf8"),
     ("bootstrap", "#1b6ef3", "#7cacf8"),
     ("brainstorm", "#1b6ef3", "#7cacf8"),
     ("draft", "#1b6ef3", "#7cacf8"),
@@ -345,6 +346,7 @@ def test_refuses_unbundled_services(source: Path, tmp_path: Path, field: str) ->
 @pytest.mark.parametrize("target", ["claude", "openai"])
 @pytest.mark.parametrize("missing", [
     "skills",
+    "skills/egm-ask/SKILL.md",
     "skills/egm-bootstrap/SKILL.md",
     "skills/egm-brainstorm/SKILL.md",
     "skills/egm-draft/SKILL.md",

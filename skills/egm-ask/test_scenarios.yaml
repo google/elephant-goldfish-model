@@ -1,17 +1,149 @@
-skill: egm-ask
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+skill: "egm-ask"
+description: "Behavioral evaluation scenario suite for egm-ask skill."
+
 scenarios:
-  - scenario_id: next_step_with_no_artifacts
+  - scenario_id: "empty_workspace_no_question"
+    description: "Empty workspace with no question suggests egm-brainstorm or egm-bootstrap."
     eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
     turns:
-      - user_input: "/egm-ask What should I do next?"
-        expected_patterns:
-          - "egm-brainstorm"
-          - "egm-lite"
-        forbidden_patterns:
-          - "git status"
-  - scenario_id: out_of_scope_question
+      - user_input: "/egm-ask"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(egm-brainstorm|egm-bootstrap)"
+            message: "Must suggest egm-brainstorm or egm-bootstrap for an empty workspace."
+
+  - scenario_id: "concepts_brief_present"
+    description: "Workspace with concepts_brief.md suggests egm-draft."
     eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
     turns:
-      - user_input: "/egm-ask How do I fix this TypeScript error?"
-        expected_patterns:
-          - "EGM"
+      - user_input: "/egm-ask Only concepts_brief.md is in my workspace. What next?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-draft"
+            message: "Must suggest egm-draft when concepts_brief.md is present."
+
+  - scenario_id: "review_reports_completion_unknown"
+    description: "Review report presence asks whether review finished before suggesting egm-resolve."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask I see critic_report.md for my current design. What do I run next?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(finish|complete|egm-resolve|egm-review)"
+            message: "Must check whether review finished before suggesting egm-resolve."
+
+  - scenario_id: "unfinished_review_continues_egm_review"
+    description: "When critic_report.md is present and review did not finish, suggests continuing egm-review."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask critic_report.md is here, and the review did not finish."
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-review"
+            message: "Must suggest continuing egm-review rather than restarting from scratch."
+
+  - scenario_id: "multiple_stage_artifacts_listed"
+    description: "Lists both concepts_brief.md and docs/designs/x.md and names the latest stage."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask My workspace has concepts_brief.md and docs/designs/x.md."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(concepts_brief\\.md.*docs/designs/x\\.md|docs/designs/x\\.md.*concepts_brief\\.md)"
+            message: "Must list both artifacts and identify the latest stage."
+
+  - scenario_id: "task_request_remains_read_only"
+    description: "Refuses to edit files on 'Please fix my draft for me' and names the appropriate skill."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask Please fix my draft for me."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(read-only|advisory|egm-draft|egm-resolve)"
+            message: "Must make no edits and name the skill that performs draft updates."
+
+  - scenario_id: "unrelated_programming_question"
+    description: "Declines general programming questions outside EGM."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask How do I fix this TypeScript generic variance error?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "EGM"
+            message: "Must explain that egm-ask only covers EGM."
+
+  - scenario_id: "pending_resolve_gate_untouched"
+    description: "Answers question during a pending egm-resolve gate without picking a gate option or editing."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask An egm-resolve approval gate is waiting above. What does egm-resolve write?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "goldfish_review_report\\.md"
+            message: "Must answer the question without acting on the pending gate."
+
+  - scenario_id: "skill_choice_drift_report"
+    description: "Recommends egm-drift-report and cites its SKILL.md."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask Which skill compares my designs with code?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-drift-report"
+            message: "Must recommend egm-drift-report and cite skills/egm-drift-report/SKILL.md."
+
+  - scenario_id: "troubleshooting_persona_read_failure"
+    description: "Cites docs/claude.md or docs/harnesses.md for persona read failures."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask In Claude Code, the reviewer says it cannot read its persona."
+        assertions:
+          - type: "required_pattern"
+            pattern: "docs/(claude|harnesses)\\.md"
+            message: "Must cite docs/claude.md or docs/harnesses.md."
+
+  - scenario_id: "resolved_report_ambiguous_target_and_approval"
+    description: "With two checked-in designs and a resolved report, asks to confirm target and human approval rather than suggesting implementation."
+    eval_type: "behavioral"
+    system_prompt:
+      skill_file: "skills/egm-ask/SKILL.md"
+    turns:
+      - user_input: "/egm-ask I have goldfish_review_report.md (Status: resolved) and both docs/designs/a.md and docs/designs/b.md. Should I implement now?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "(which|Target|approv|human)"
+            message: "Must ask which design target applies and whether human approval passed before implementation."

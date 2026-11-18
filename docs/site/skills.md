@@ -48,3 +48,11 @@ Document a codebase, make targeted changes, and check whether code matches the p
 - [Check for drift](/skills/egm-drift-report) `/egm-drift-report`
 
   Compare documents with the current source code.
+
+## Get help
+
+Check your current stage, pick a skill, or troubleshoot setup without changing files.
+
+- [Ask](/skills/egm-ask) `/egm-ask`
+
+  Check where you are in the workflow, choose the right skill, or troubleshoot an issue.

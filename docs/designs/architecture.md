@@ -68,6 +68,8 @@ Modular agent capabilities executable via slash commands or direct invocation:
 *   `egm-resolve`: Interactive resolution and patch application.
 *   `egm-drift-report`: Agent workflow comparing specs and READMEs to code via host search and file-reading tools.
 *   `egm-bootstrap`: Recursive bottom-up codebase documentation generator.
+*   `egm-lite`: Rapid 5-phase engineering protocol for small changes.
+*   `egm-ask`: Read-only contextual workflow help and next-step guidance.
 
 ### 2. Personas Layer (`agents/`)
 Stateless system prompt instructions for isolated Goldfish reviewer subagents

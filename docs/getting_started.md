@@ -86,6 +86,20 @@ The "core" workflow looks like:
     > testing strategies, etc. EGM is not opinionated here. Add your skills to
     > your implementation plan!
 
+### What to run next
+
+If you return to a project after a break or want contextual guidance, run `/egm-ask <question>` (or `/egm-ask` with no question). It checks which EGM artifacts exist on disk without modifying files and suggests the next command from this table:
+
+| Artifacts found (written by) | Detected stage | Suggested next step |
+| :--------------------------- | :------------- | :------------------ |
+| None, and no `docs/designs/*.md` | Not started | `egm-brainstorm` for a new idea, or `egm-bootstrap` to document an existing codebase |
+| `concepts_brief.md` (`egm-brainstorm`) | Ideation done | `egm-draft`, which reads `concepts_brief.md` as its first input |
+| `design_draft.md` (`egm-draft`), no matching `docs/designs/<feature>.md` | Draft in progress | Continue `egm-draft` until it writes `docs/designs/<feature>.md` |
+| `docs/designs/<feature>.md`, no review reports | Ready for review | `egm-review docs/designs/<feature>.md` |
+| `zoom_out_report.md`, `comprehension_report.md`, `critic_report.md`, `intermediate_zoom_out_report.md`, `implementation_readiness_report.md`, or `consolidated_review_report.md` (`egm-review`) | Review started (completion unknown) | Confirm whether the review of this target finished: if yes, `egm-resolve` on its findings, otherwise continue `egm-review` |
+| `goldfish_review_report.md` (`egm-resolve`) without `Status: resolved` | Resolution in progress | Return to the resolve step waiting for an answer, or run `egm-resolve` again |
+| `goldfish_review_report.md` with `Status: resolved` | Findings resolved | Human review of the design (step 4 above), then implement once target and approval are confirmed |
+
 ## Drift Detection
 
 To ensure that your design specifications and active codebase remain

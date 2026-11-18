@@ -4,3 +4,4 @@ interface:
   default_prompt: "Use $egm-ask to ask about your current EGM workflow stage, which skill to run next, or how to troubleshoot an EGM issue."
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
+  brand_color: "#1B6EF3"
