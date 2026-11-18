@@ -1,0 +1,17 @@
+skill: egm-ask
+scenarios:
+  - scenario_id: next_step_with_no_artifacts
+    eval_type: "behavioral"
+    turns:
+      - user_input: "/egm-ask What should I do next?"
+        expected_patterns:
+          - "egm-brainstorm"
+          - "egm-lite"
+        forbidden_patterns:
+          - "git status"
+  - scenario_id: out_of_scope_question
+    eval_type: "behavioral"
+    turns:
+      - user_input: "/egm-ask How do I fix this TypeScript error?"
+        expected_patterns:
+          - "EGM"
