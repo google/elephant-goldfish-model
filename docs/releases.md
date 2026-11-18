@@ -45,6 +45,71 @@ exact-artifact checks. Local builds remain diagnostic candidates.
 Exact installed-bundle verification remains tracked in
 [#60](https://github.com/google/elephant-goldfish-model/issues/60).
 
+## Launch v0.2.0 on OpenAI
+
+The v0.2.0 candidate adds `egm-in-chat` to the existing EGM OpenAI plugin.
+Keep the `egm` package name and the
+[existing public listing](https://chatgpt.com/plugins/plugins_6aeb90f47ec88191a3c107e01d3eb357).
+The private preview is a test fixture, not the listing to publish.
+Merging the PRs or publishing a GitHub release does not update OpenAI.
+
+### Changes for the release notes
+
+- Use one OpenAI package for ChatGPT web and desktop, with eight skills.
+- Add document brainstorming, drafting, and same-context review through
+  `egm-in-chat`, without requiring a shell or repository.
+- Check the current chat's tools before full EGM workflows start. Independent
+  review still requires verified fresh-context subagents and artifact access;
+  repository workflows also require repository access and command execution.
+- Keep the Claude archive and repository-based coding-harness installs at
+  seven skills. Existing skill names remain unchanged.
+
+### Release and publication checklist
+
+- [ ] Before merging #464, build a local v0.2.0 candidate using
+  `scripts/prepare_release.py` and the reviewed commit. Complete the web and
+  desktop host checks required by the design and attach the results to the
+  PR. Local preparation does not require creating a Git tag.
+- [ ] Merge the design (#435), then the implementation (#464), through native
+  [stack #472](https://github.com/google/elephant-goldfish-model/stack/472),
+  after the required reviews and implementation checks.
+- [ ] Confirm all five versioned manifests are `0.2.0`. A maintainer creates
+  the annotated `v0.2.0` tag on the merged main commit and runs **Prepare draft
+  release** from `main` with that tag, as described above.
+- [ ] Download `egm-openai-0.2.0.zip`, `SHA256SUMS`, and the provenance bundle
+  from the resulting GitHub draft release. Verify checksums and attestations.
+  Use this workflow-built archive for final host verification and OpenAI upload.
+- [ ] Install that exact archive in clean ChatGPT web and desktop chats.
+  Record its checksum, host version or date, installation, skill discovery,
+  document brainstorm/draft/review, and missing-capability behavior. Verify
+  full `egm-brainstorm`, `egm-draft`, and `egm-review` on a capable desktop
+  host, including native reviewer-isolation evidence. Earlier private-preview
+  smoke tests do not complete this check.
+- [ ] Replace the GitHub draft's placeholder notes with the changes above,
+  compatibility details, and exact-archive test results. Publish the GitHub
+  release after maintainer review.
+- [ ] In the [OpenAI plugin submission portal](https://platform.openai.com/plugins),
+  the authorized publisher opens the existing EGM submission in its owning
+  organization and creates a new draft version. Upload
+  `egm-openai-0.2.0.zip`; do not create another plugin or use the private
+  preview's identity.
+- [ ] Verify the saved draft's `egm` identity, version, eight skills, listing,
+  icons, four listing URLs, verified publisher, and saved country settings.
+  Resolve validation errors and complete the portal's required attestations.
+  This is a skills-only plugin; it adds no MCP connection or credentials.
+- [ ] Submit the saved draft for review. Record its version, submission
+  reference, and actual review state. Upload success alone is not submission
+  or publication.
+- [ ] After approval, the authorized publisher publishes that approved
+  version. Check the existing public listing and install from it in fresh web
+  and desktop chats to verify the released skill inventory and behavior.
+  Record publication evidence before calling v0.2.0 launched.
+
+The source version and local archives are release candidates until these
+steps are complete. Portal access, saved submission metadata, host tests,
+review approval, and publication must be verified at their owning surfaces.
+See OpenAI's [submission workflow](https://developers.openai.com/plugins/deploy/submission).
+
 ## Verify downloads
 
 Download both ZIPs, `SHA256SUMS`, and the provenance bundle into one directory.
