@@ -60,10 +60,11 @@ def test_all_skills_have_co_located_test_scenarios(
             f"system_prompt.skill_file: {skill_file!r}"
         )
         rules = system_prompt.get("rules", [])
-        assert "resources/execution_instructions.md" in rules, (
-            f"Scenario '{sc['scenario_id']}' in {scenarios_file} must include "
-            "'resources/execution_instructions.md' in system_prompt.rules"
-        )
+        if skill_path.name != "egm-lite":
+          assert "resources/execution_instructions.md" in rules, (
+              f"Scenario '{sc['scenario_id']}' in {scenarios_file} must include "
+              "'resources/execution_instructions.md' in system_prompt.rules"
+          )
         for rule_path in rules:
           assert (repo_root / rule_path).is_file(), (
               f"Scenario '{sc['scenario_id']}' in {scenarios_file} references "

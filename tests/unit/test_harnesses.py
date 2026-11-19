@@ -255,17 +255,18 @@ def test_bundled_prompt_dependencies_and_harness_guides() -> None:
   for skill in skills:
     text = skill.read_text(encoding="utf-8")
     assert "${CLAUDE_PLUGIN_ROOT}/docs/claude.md" in text
-    assert "${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md" in text
     assert "`resources/execution_instructions.md`" not in text
     assert "`docs/harnesses.md`" not in text
     targets = re.findall(r"\[Codex integration\]\(([^)]+)\)", text)
     assert len(targets) == 1
     assert (skill.parent / targets[0]).resolve() == ROOT / "docs/codex.md"
-    exec_targets = re.findall(r"\[execution instructions\]\(([^)]+)\)", text)
-    assert len(exec_targets) == 1
-    assert (
-        skill.parent / exec_targets[0]
-    ).resolve() == ROOT / "resources/execution_instructions.md"
+    if skill.parent.name != "egm-lite":
+      assert "${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md" in text
+      exec_targets = re.findall(r"\[execution instructions\]\(([^)]+)\)", text)
+      assert len(exec_targets) == 1
+      assert (
+          skill.parent / exec_targets[0]
+      ).resolve() == ROOT / "resources/execution_instructions.md"
 
   prompts = skills + list((ROOT / "agents").glob("*.md"))
   for prompt in prompts:

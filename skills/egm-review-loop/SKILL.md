@@ -31,9 +31,11 @@ unconditionally re-parses target line ranges before every iteration, spawns
 concurrent specialized Goldfish auditors based on configuration, and coordinates
 with the Elephant context to resolve findings.
 
-## Execution Constraints & Delegation
+## Execution Constraints & Delegation (CRITICAL)
 
-Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, proceed inline). If your harness cannot nest subagents, use direct dispatch instead of `egm-synthesizer` (see [harnesses.md](../../docs/harnesses.md)). If your harness has no subagent tool, stop and tell the user: a review in the same context is not a Goldfish review.
+1.  Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, apply inline rules below). Spawn fresh-context Goldfish subagents (`invoke_subagent` / `Agent` / `spawn_agent`), use direct dispatch instead of `egm-synthesizer` if nesting is unsupported (see [harnesses.md](../../docs/harnesses.md)), and stop if no subagent tool exists (a review in the same context is not a Goldfish review).
+2.  **Artifact-First, Doc-Only & Style**: Write review reports (`goldfish_review_report.md`) to the working or artifact directory rather than dumping reports in chat; never modify functional implementation code or run VCS commits (`git add`, `git commit`). Use direct plain English with adversarial scrutiny (never `"brilliant"`, `"great"`, `"smart"`, `"correct"`, `"perfect"`, `"excellent"`, `"spot-on"`, or apologies).
+3.  **Interaction Invariants**: Every modal gate MUST have one question (`len(questions) == 1`), `is_multi_select: false`, no `(Recommended)` prefixes, non-empty visible chat text first, and be the sole tool call in its model response step (finish preparatory file writes or reads in an earlier step of the turn first).
 
 ## Inputs
 

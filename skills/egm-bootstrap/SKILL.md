@@ -21,10 +21,12 @@ Automates creating, updating, and verifying Elephant-and-Goldfish Model (EGM) `R
 
 ## Execution Constraints (CRITICAL)
 
-1.  Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, proceed inline). If your harness cannot nest subagents, use direct dispatch; if it has no subagent tool, run the scout steps inline.
-2.  **Temporary File Isolation**: Each worker keeps its status, checkpoint, and log files in its own directory outside the workspace (host scratch or `mktemp -d`), never a fixed, shared path. If neither exists, skip them.
-3.  **Local Contracts, Templates & Parallelism**: Write all contract files locally in-tree following [README templates](references/templates.md) with clean Markdown (headers, tables, fenced blocks; optional repo formatter like `npx prettier --write` if configured). Spawn sub-orchestrator workers in parallel.
-4.  **Mandatory Safety Gate (> 15 Subdirectories)**: If BFS discovery finds more than 15 subdirectories, pause immediately and request user confirmation before continuing or spawning workers.
+1.  Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, apply inline rules below). Spawn fresh-context subagents (`invoke_subagent` / `Agent` / `spawn_agent`), use direct dispatch if nesting is unsupported, or run scout steps inline if no subagent tool exists.
+2.  **Documentation-Only, VCS Isolation & Style**: Write only contract docs (`README.md` / `target_filename`) locally in-tree; never modify functional implementation code or run VCS commits (`git add`, `git commit`). Use direct plain English grounded in verified code symbols (never `"brilliant"`, `"great"`, `"smart"`, `"correct"`, `"perfect"`, `"excellent"`, `"spot-on"`, or apologies).
+3.  **Interaction Invariants**: Every modal gate MUST have one question (`len(questions) == 1`), `is_multi_select: false`, non-empty visible chat text first, and be the sole tool call in its model response step (finish preparatory file writes in an earlier step of the turn first).
+4.  **Temporary File Isolation**: Each worker keeps its status, checkpoint, and log files in its own directory outside the workspace (host scratch or `mktemp -d`), never a fixed, shared path. If neither exists, skip them.
+5.  **Local Contracts, Templates & Parallelism**: Write all contract files locally in-tree following [README templates](references/templates.md) with clean Markdown (headers, tables, fenced blocks; optional repo formatter like `npx prettier --write` if configured). Spawn sub-orchestrator workers in parallel.
+6.  **Mandatory Safety Gate (> 15 Subdirectories)**: If BFS discovery finds more than 15 subdirectories, pause immediately and request user confirmation before continuing or spawning workers.
 
 ---
 

@@ -13,7 +13,11 @@ description: >-
 
 When running in Codex or ChatGPT Work, first read [Codex integration](../../docs/codex.md).
 In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
-Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, proceed inline).
+
+## Execution Constraints (CRITICAL)
+
+1.  Read and apply [execution instructions](../../resources/execution_instructions.md) (in Claude Code: `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; if `<SKILL>` omits a file path, check `~/.gemini/config/plugins/egm/resources/execution_instructions.md`; if file tools are unavailable, apply inline rules below).
+2.  **Artifact-First, Read-Only Audit & Style**: Write `{YYYY-MM-DD}_DRIFT_REPORT.md` in the working or artifact directory rather than dumping the report in chat (if file tools are unavailable, tell the user that inspecting files and writing `{YYYY-MM-DD}_DRIFT_REPORT.md` require file tools). Never modify design docs or functional code or run VCS commits (`git add`, `git commit`). Use direct plain English with adversarial rigor (never `"brilliant"`, `"great"`, `"smart"`, `"correct"`, `"perfect"`, `"excellent"`, `"spot-on"`, or apologies).
 
 When the user asks to detect drift across all designs or a set of READMEs, the
 goal is to identify all instances where the codebase has diverged or failed to
