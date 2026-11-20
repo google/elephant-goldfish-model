@@ -1,0 +1,277 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: PR Triage Review
+
+on:
+  # zizmor: ignore[dangerous-triggers] - Runs from the trusted default branch only; never checks out or executes PR head code, and splits read-only review planning from checkout-free posting.
+  pull_request_target:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  # zizmor: ignore[dangerous-triggers] - Retains post-Tests fallback while pull_request_target event policy activates; SHA deduplication prevents duplicate reviews.
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number to review"
+        required: true
+        type: number
+      force_manual:
+        description: "Re-review even if a human already commented or same SHA was reviewed"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.head_sha || github.run_id }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  review:
+    name: "Run Stage-1 Goldfish PR Review"
+    if: >-
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) ||
+      (github.event_name == 'pull_request_target' &&
+       github.event.pull_request.draft == false) ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'pull_request' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      has_action: ${{ steps.plan.outputs.has_action }}
+      action: ${{ steps.plan.outputs.action }}
+    steps:
+      - name: "Checkout trusted default branch"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: "Set up Python 3.12"
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: "Analyze PR and prepare review plan"
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          MAINTAINERS_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number || github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || '' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha || '' }}
+          REVIEW_MODEL: ${{ vars.EGM_REVIEW_MODEL || 'gemini-4-argon' }}
+          FALLBACK_MODELS: ${{ vars.EGM_FALLBACK_MODELS || 'gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash-lite' }}
+          FORCE_MANUAL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_manual || 'false' }}
+          PLAN_OUT: ${{ runner.temp }}/review-plan.json
+        run: |
+          set -euo pipefail
+          ARGS=(
+            --repo "$REPO"
+            --default-branch "$DEFAULT_BRANCH"
+            --maintainers-team "$MAINTAINERS_TEAM"
+            --model "$REVIEW_MODEL"
+            --fallback-models "$FALLBACK_MODELS"
+            --out "$PLAN_OUT"
+          )
+          if [[ -n "$PR_NUMBER" ]]; then
+            ARGS+=(--pr "$PR_NUMBER")
+          fi
+          if [[ -n "$HEAD_SHA" ]]; then
+            ARGS+=(--head-sha "$HEAD_SHA")
+          fi
+          if [[ "$FORCE_MANUAL" == "true" ]]; then
+            ARGS+=(--force-manual)
+          fi
+          python .github/scripts/review_pr.py "${ARGS[@]}"
+
+      - name: "Upload review plan artifact"
+        if: steps.plan.outputs.has_action == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: review-plan
+          path: ${{ runner.temp }}/review-plan.json
+          if-no-files-found: error
+          retention-days: 3
+
+  post:
+    name: "Post Review and Route Maintainers"
+    needs: review
+    if: needs.review.outputs.has_action == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: "Download review plan artifact"
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: review-plan
+          path: ${{ runner.temp }}/plan
+
+      - name: "Apply review, labels, and maintainer handoff"
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PLAN_PATH: ${{ runner.temp }}/plan/review-plan.json
+          ALLOWED_TEAM: ${{ vars.EGM_MAINTAINERS_TEAM || 'egm-maintainers' }}
+          FALLBACK_TOKEN: ${{ github.token }}
+        with:
+          github-token: ${{ secrets.EGM_TRIAGE_BOT_TOKEN || github.token }}
+          script: |
+            const fs = require("node:fs");
+            const plan = JSON.parse(fs.readFileSync(process.env.PLAN_PATH, "utf8"));
+            if (!["clean_handoff", "post_findings"].includes(plan.action)) {
+              core.info(`No action required for plan action=${plan.action}`);
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const prNumber = Number(plan.pr_number);
+            if (!Number.isInteger(prNumber) || prNumber <= 0) {
+              core.setFailed(`Invalid PR number in review plan: ${plan.pr_number}`);
+              return;
+            }
+
+            let client = github;
+            let pr;
+            try {
+              ({ data: pr } = await client.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber
+              }));
+            } catch (error) {
+              if (error.status === 401 && process.env.FALLBACK_TOKEN && typeof getOctokit === "function") {
+                core.warning(
+                  "EGM_TRIAGE_BOT_TOKEN returned HTTP 401 (expired or revoked); falling back to GITHUB_TOKEN."
+                );
+                client = getOctokit(process.env.FALLBACK_TOKEN);
+                ({ data: pr } = await client.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: prNumber
+                }));
+              } else {
+                throw error;
+              }
+            }
+            if (pr.state !== "open") {
+              core.info(`Skipping PR #${prNumber}: state is ${pr.state}`);
+              return;
+            }
+            if (plan.head_sha && pr.head.sha !== plan.head_sha) {
+              core.info(`Skipping stale plan for ${plan.head_sha}; PR head is now ${pr.head.sha}`);
+              return;
+            }
+            if (!plan.force_manual && /^[0-9a-f]{7,40}$/i.test(String(plan.head_sha || "")) && typeof client.rest.pulls.listReviews === "function") {
+              const existingReviews = typeof client.paginate === "function"
+                ? await client.paginate(client.rest.pulls.listReviews, { owner, repo, pull_number: prNumber, per_page: 100 })
+                : (await client.rest.pulls.listReviews({ owner, repo, pull_number: prNumber, per_page: 100 })).data;
+              const shaMarkerRe = new RegExp(`<!--\\s*(?:egm-triage-review|egm-triage-bot):sha=${plan.head_sha}\\s*-->`);
+              if (existingReviews.some(r => shaMarkerRe.test(String(r.body || "")))) {
+                core.info(`Skipping duplicate post for ${plan.head_sha}: SHA review marker already present.`);
+                return;
+              }
+            }
+
+            const formatFallbackBullet = comment => {
+              const normalized = String(comment.body || "")
+                .replace(/```suggestion\b/g, "```")
+                .split("\n")
+                .map((line, idx) => (idx === 0 ? line : `  ${line}`))
+                .join("\n");
+              const anchor = comment.line ? `${comment.path}:${comment.line}` : comment.path;
+              return `- \`${anchor}\` ${normalized}`;
+            };
+
+            const payload = plan.review_payload || {};
+            if (payload.body) {
+              const reviewRequest = {
+                owner,
+                repo,
+                pull_number: prNumber,
+                commit_id: payload.commit_id || pr.head.sha,
+                event: "COMMENT",
+                body: payload.body,
+                comments: Array.isArray(payload.comments) ? payload.comments : []
+              };
+              try {
+                await client.rest.pulls.createReview(reviewRequest);
+              } catch (error) {
+                if (error.status === 422 && reviewRequest.comments.length > 0) {
+                  core.warning(`Inline review anchors rejected (422); retrying as summary comment: ${error.message}`);
+                  const fallbackLines = reviewRequest.comments.map(formatFallbackBullet);
+                  await client.rest.pulls.createReview({
+                    ...reviewRequest,
+                    body: `${reviewRequest.body}\n${fallbackLines.join("\n")}`,
+                    comments: []
+                  });
+                } else {
+                  throw error;
+                }
+              }
+            }
+
+            const allowedLabels = new Set(["triage: passed"]);
+            const addLabels = (plan.add_labels || []).filter(label => allowedLabels.has(label));
+            if (addLabels.length > 0) {
+              await client.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: prNumber,
+                labels: addLabels
+              });
+            }
+
+            const removeLabels = (plan.remove_labels || []).filter(label => allowedLabels.has(label));
+            for (const label of removeLabels) {
+              await client.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number: prNumber,
+                name: label
+              }).catch(error => {
+                if (error.status !== 404) throw error;
+              });
+            }
+
+            const allowedTeams = new Set([process.env.ALLOWED_TEAM || "egm-maintainers"].filter(Boolean));
+            const teamReviewers = (plan.team_reviewers || []).filter(team => allowedTeams.has(team));
+            if (teamReviewers.length > 0) {
+              try {
+                await client.rest.pulls.requestReviewers({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  team_reviewers: teamReviewers
+                });
+              } catch (error) {
+                core.warning(
+                  `Could not request team reviewers (${teamReviewers.join(", ")}): ${error.message}. ` +
+                  "Configure or rotate secrets.EGM_TRIAGE_BOT_TOKEN with Pull requests: Read/Write to enable team review delegation."
+                );
+              }
+            }

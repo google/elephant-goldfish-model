@@ -9,7 +9,6 @@ import runpy
 
 import pytest
 
-
 MODULE = runpy.run_path(str(
     Path(__file__).resolve().parents[2] / 'tests/integration/opencode_trace_verifier.py'
 ))

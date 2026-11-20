@@ -6,8 +6,16 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
 
-const layout = readFileSync(new URL('../src/layouts/Base.astro', import.meta.url), 'utf8');
-const source = layout.match(/<script is:inline define:vars=\{\{ gaMeasurementId, pageTitle: title \}\}>([\s\S]*?)<\/script>/)[1];
+const analytics = readFileSync(new URL('../src/components/Analytics.astro', import.meta.url), 'utf8');
+const source = analytics.match(/<script is:inline define:vars=\{\{ gaMeasurementId, pageTitle \}\}>([\s\S]*?)<\/script>/)[1];
+
+test('home and documentation layouts use shared consent handling', () => {
+  for (const file of ['layouts/Base.astro', 'components/docs/Head.astro']) {
+    const layout = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
+    assert.match(layout, /<Analytics pageTitle=/);
+    assert.ok(!layout.includes('glueCookieNotificationBarLoaded'));
+  }
+});
 
 function page({ hostname = 'egm.dev', measurementId = 'G-TEST' } = {}) {
   const elements = [];
@@ -114,14 +122,19 @@ test('stored affirmative choice starts GA once and revocation blocks future even
   assert.equal(p.gaScripts().length, 1);
 });
 
-for (const options of [{ status: 'REJECTED' }, { required: false, status: 'ACCEPTED' }]) {
-  test(`loaded does not imply affirmative consent: ${JSON.stringify(options)}`, () => {
-    const p = page();
-    p.loadConsent(options);
-    assert.equal(p.gaScripts().length, 0);
-    assert.equal(p.window['ga-disable-G-TEST'], true);
-  });
-}
+test('rejected consent never loads GA', () => {
+  const p = page();
+  p.loadConsent({ status: 'REJECTED' });
+  assert.equal(p.gaScripts().length, 0);
+  assert.equal(p.window['ga-disable-G-TEST'], true);
+});
+
+test('regions without a consent requirement follow standard Glue behavior', () => {
+  const p = page();
+  p.loadConsent({ required: false, status: 'ACCEPTED' });
+  assert.equal(p.gaScripts().length, 1);
+  assert.equal(p.window['ga-disable-G-TEST'], false);
+});
 
 test('loaded callback without valid vendor details fails closed', () => {
   const p = page();

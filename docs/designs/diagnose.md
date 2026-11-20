@@ -139,7 +139,8 @@ an intermittent failure.
    contents reached the child or a new run became readable during review and
    its exclusion cannot be verified.
 3. **Register and package.** Add the adapter to the manifest, require the
-   persona and skill in both archives, and regenerate the Claude distribution.
+   persona and skill in both archives, and build the Claude and OpenAI
+   archives from canonical root source.
    Align the README and website entries. Update instructional skill counts in
    OpenCode and Cursor. Preserve dated verification notes.
 4. **Verify.** Run the unit suite, then the opt-in native fixtures. A passing
@@ -153,20 +154,21 @@ an intermittent failure.
 | Create | `.claude-plugin/agents/bug_diagnosis.md` |
 | Modify | `.claude-plugin/plugin.json` |
 | Modify | `README.md` |
+| Create | `.windsurf/workflows/egm-diagnose.md` |
+| Modify | `tests/unit/test_windsurf.py` |
 | Create | `agents/bug_diagnosis.md` |
-| Create | `distributions/claude/.claude-plugin/agents/bug_diagnosis.md` |
-| Modify | `distributions/claude/.claude-plugin/plugin.json` |
-| Modify | `distributions/claude/README.md` |
-| Create | `distributions/claude/agents/bug_diagnosis.md` |
-| Create | `distributions/claude/skills/egm-diagnose/SKILL.md` |
-| Create | `distributions/claude/skills/egm-diagnose/agents/openai.yaml` |
-| Create | `distributions/claude/skills/egm-diagnose/assets/icon.svg` |
 | Modify | `docs/cursor.md` |
 | Modify | `docs/designs/skill_icons.md` |
 | Modify | `docs/opencode.md` |
 | Modify | `scripts/pack_plugin.py` |
 | Modify | `site/src/components/SkillIcon.astro` |
-| Modify | `site/src/components/Skills.astro` |
+| Modify | `site/src/components/Home.astro` |
+| Modify | `docs/site/skills.md` |
+| Create | `docs/site/skills/egm-diagnose.md` |
+| Modify | `site/astro.config.mjs` |
+| Modify | `site/scripts/check-docs.mjs` |
+| Modify | `site/src/components/docs/PageTitle.astro` |
+| Modify | `site/src/styles/docs.css` |
 | Create | `skills/egm-diagnose/SKILL.md` |
 | Create | `skills/egm-diagnose/TEST.md` |
 | Create | `skills/egm-diagnose/agents/openai.yaml` |
@@ -193,8 +195,8 @@ an intermittent failure.
   when two tenants share a slug. Negative trace cases reject early writes,
   leaked inputs, denied reads and missing returns.
 - Build each runtime with `scripts/pack_plugin.py` using the `claude` and
-  `openai` targets. Unit tests compare the checked-in Claude distribution
-  with fresh packaging.
+  `openai` targets. Unit tests compare archive contents with canonical source
+  and check reproducible output.
 - `EGM_CLAUDE_LIVE=1 pytest tests/integration/test_claude_diagnosis.py` checks
   a fresh read-only dispatch, source citations, unchanged source and the
   independent result. With the output directory inside the source root,

@@ -2,7 +2,7 @@
 
 *   **Author:** [@n3wth](https://github.com/n3wth)
 *   **Status:** Draft
-*   **Date:** 2026-10-29
+*   **Date:** 2026-10-29. Revised 2026-11-09: Phase 6 is split, and Phase 6a can run first.
 
 ## Overview
 
@@ -61,7 +61,7 @@ read on 2026-10-29.
 4.  A pull request cannot fail because a generated folder is stale.
 5.  Pull requests still fail if the runtime builder is broken.
 
-Goals 1 and 4 hold after Phase 6 (see Rollout and Rollback). Until then the
+Goals 1 and 4 hold after Phase 6a (see Rollout and Rollback). Until then the
 committed copy and its test remain. Release-to-listing latency, which Goal 2
 depends on, is not measured (see Open Questions).
 
@@ -75,7 +75,7 @@ depends on, is not measured (see Open Questions).
 
 ## Open Questions
 
-1.  **Existing submission and layout** (owner: @n3wth; gates Phase 4): Has anyone submitted this
+1.  **Existing submission and layout** (owner: @n3wth; gates Phase 4 and Phase 6a): Has anyone submitted this
     repository to the directory, from any organization or through the earlier
     Console form at `platform.claude.com/plugins/submissions`? The portal refuses
     a second submission for the same repository and plugin path from another
@@ -84,7 +84,14 @@ depends on, is not measured (see Open Questions).
     If a submission with plugin path `distributions/claude` exists, select that
     prefix before publication and preserve it throughout rollout. Any other
     existing path requires a design update before Phase 4. The author's account has no submission for
-    this repository.
+    this repository. That fact does not answer the question for other
+    organizations. Before Phase 6a merges, a maintainer with the Directory
+    permission in the Google organization checks the developer portal and the
+    earlier Console form, and records the result in [#387](https://github.com/google/elephant-goldfish-model/issues/387).
+    **Answer for Phase 6a (2026-11-09, @n3wth):** the plugin has not been submitted
+    to the directory. People can have installed it from the marketplace catalog.
+    Those installs keep their cached copy until the version changes (see Risks).
+    This answer is from the owner's knowledge. Do the portal check before Phase 4.
 2.  **Portal scan timing**: How soon after a push does the directory scan the new
     commit? The portal documents a scheduled check and an optional push webhook
     but no interval, so release-to-listing latency is unquantified.
@@ -317,18 +324,38 @@ request still fails through
 *   **Reason for Rejection**: The script has unit tests that run on both
     operating systems and a rehearsal on a fork. YAML shell has neither.
 
+### Alternative G: Keep the committed copy until Phases 2 to 5 finish
+
+*   **Pros**: Marketplace installs keep the allowlisted runtime. The rollout
+    keeps one order.
+*   **Cons**: Each change to a packaged source file still needs a manual
+    regeneration, and the freshness test still fails pull requests that omit it
+    (see Problem Statement). Phases 2 to 5 have no schedule and depend on Open
+    Question 1 and on a maintainer's settings changes.
+*   **Reason for Rejection**: The cost continues for an unknown time. The
+    deletion does not depend on the publisher when no submission exists.
+
+Alternative C rejects the repository root for the directory, because the
+directory reviews and lists what it scans. The marketplace catalog is a
+different channel: it copies files to the user's plugin cache and lists
+nothing. The catalog used the repository root before [#347](https://github.com/google/elephant-goldfish-model/pull/347).
+
 ## Risks & Mitigations
 
 | Risk | Mitigation or acceptance |
 |---|---|
 | The 9 policy holds keep a version from listing until a reviewer clears it. | Accepted. This design does not change them. |
-| An existing submission uses a different plugin path. | Open Question 1 (existing submission and layout) gates Phase 4. |
+| An existing submission uses a different plugin path. | Open Question 1 (existing submission and layout) gates Phase 4 and Phase 6a. |
 | The portal's scan interval is undocumented, so latency is unknown (Open Question 2). | Accepted. Measure it in Phase 5 and record it here. |
 | A failed or rejected publish after a release is public leaves the directory on the previous version. | Accepted. The failed run is the signal (CUJ 3). No extra alert is added. |
 | A mistaken release reaches the directory. | See Failure handling and ordering. |
 | Someone with write access pushes a bad commit to `release/claude`. | See Security. The design accepts ordinary pushes by writers. |
 | The new tests have not run on a Windows runner against `main`. | They passed on `windows-2025` in a fork (see Verification Plan). The first run on the real repository is the check. |
-| Between Phases 4 and 6, `release/claude` ships a packaged `docs/releases.md` that still describes the committed folder. | Accepted. The next release after Phase 6 corrects it. |
+| Between Phases 4 and 6a, `release/claude` ships a packaged `docs/releases.md` that still describes the committed folder. | Accepted. The next release after Phase 6a corrects it. This row applies only when Phase 6a runs after Phase 4. |
+| After Phase 6a, a marketplace install copies the full repository, including the website and tests, and not the allowlisted runtime. | Accepted. The catalog used `"source": "./"` before [#347](https://github.com/google/elephant-goldfish-model/pull/347). Both sources install the contents of `main`, so no unreleased content becomes newly reachable. The runtime ZIPs stay allowlisted. |
+| After Phase 6a and before Phase 4, no branch holds a runtime that the directory portal can scan. | Accepted. No submission exists in that case, and Phase 4 creates the branch before any submission. |
+| The cause of the Cowork failure in [#322](https://github.com/google/elephant-goldfish-model/issues/322) is not verified. | The Phase 6a gate requires a Cowork synchronization check before the merge. |
+| Clients that installed from `./distributions/claude` keep their cached copy while `version` stays the same. | Accepted. The next version change refreshes them from the repository root. |
 
 ## Rollout and Rollback
 
@@ -339,18 +366,39 @@ request still fails through
 | 3 | A maintainer adds the two rulesets above. | The rulesets are visible in the repository settings. |
 | 4 | After Open Question 1 is answered, configure the fixed plugin prefix and dispatch from main with the latest release tag. | The selected subtree equals the release ZIP, provenance identities are recorded, and portal Validate passes for that exact repository, branch, and plugin path. |
 | 5 | For a new submission, use the validated path from Phase 4. For an existing submission, preserve its repository and plugin path and change only its tracked branch to `release/claude`. | The portal accepts scanning at the selected path, and the owner confirms the listing now tracks the generated branch. |
-| 6 | One pull request deletes `distributions/claude` and the freshness test, and edits the documents listed in the Detailed Implementation Plan. | Unit tests pass, and adding the pull request branch as a marketplace followed by `claude plugin install egm@egm` succeeds. After the next release, `release/claude` gains that release's commit. |
+| 6a | One pull request deletes `distributions/claude` and the freshness test, restores the catalog source, and makes the Phase 6a edits in the Detailed Implementation Plan. | Unit tests pass. Adding a copy of the pull request branch as a marketplace followed by `claude plugin install egm@egm` succeeds. A maintainer adds a fork whose default branch holds the change as a marketplace in Claude Cowork, and the marketplace synchronizes. |
+| 6b | One pull request makes the Phase 6b edits, which describe the publisher. | After the next release, `release/claude` gains that release's commit. |
 
-Phase 4 selects the layout; Phase 5 preserves that choice. Phase 6 must not start
-until the actual submission has been verified on the generated branch. Keeping
-the same `distributions/claude` prefix on that branch permits deleting the
-generated copy from `main`; it does not change the submission's plugin path.
+Phase 4 selects the layout; Phase 5 preserves that choice.
+
+### Order of Phase 6a
+
+Phase 6b always follows Phase 5. Phase 6a has two permitted positions:
+
+*   **A directory submission tracks `distributions/claude` on `main`.** Phase 6a
+    must not start until Phase 5 has verified that submission on the generated
+    branch. Keeping the same `distributions/claude` prefix on `release/claude`
+    permits deleting the generated copy from `main`; it does not change the
+    submission's plugin path.
+*   **No directory submission exists.** Phase 6a can run after Phase 1 and
+    before Phases 2 to 5. Open Question 1 must have a recorded answer first.
+
+Phase 6a can run first because the committed copy has a cost on every change.
+[#347](https://github.com/google/elephant-goldfish-model/pull/347) pointed the marketplace catalog at `distributions/claude`. It
+attributes the Cowork synchronization failure in [#322](https://github.com/google/elephant-goldfish-model/issues/322) to two Claude
+manifests below the catalog root: the root manifest and the manifest in the
+committed folder. Phase 6a removes the second manifest and restores
+`"source": "./"`. The alternative is in Alternatives Considered (Alternative G).
+
 Rollback for Phases 1 to 4 is to disable the workflow,
 have a maintainer lift the `release/claude` ruleset, and delete the branch. The branch is generated and holds nothing that is not in a
 release. After Phase 5, recovery is forward only (see Failure handling and
-ordering). A wrong plugin path needs a new submission. Restoring the committed folder after
-Phase 6 does not restore the old listing, because the submission no longer
-points at it.
+ordering). A wrong plugin path needs a new submission. When a submission
+exists, restoring the committed folder after Phase 6a does not restore the old
+listing, because the submission no longer points at it. When no submission
+exists, rollback for Phase 6a is to revert its pull request. The revert restores
+the folder, the freshness test, and the [#347](https://github.com/google/elephant-goldfish-model/pull/347) catalog source. If the
+Cowork check fails after the merge, revert the pull request.
 
 ## Additional Resources
 
@@ -430,11 +478,30 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
     *   The command line publishes, repeats as a no-op, and exits nonzero on a
         tampered folder.
 
-#### 4. Phase 6 changes (Modify or Delete)
+#### 4. Phase 6a and Phase 6b changes (Modify or Delete)
 
-*   **Type / Scope**: One pull request.
+*   **Type / Scope**: One pull request for Phase 6a. One pull request for
+    Phase 6b.
+*   **Phase 6b**: the `docs/directory.md` and `docs/releases.md` edits below, and
+    the first `docs/designs/runtime_packaging.md` edit, describe the publisher.
+    When Phase 6a runs before Phase 4, write interim text in those three places:
+    state that `main` holds no generated runtime and that directory publication
+    follows this design. Phase 6b then applies the text below.
+*   **Phase 6a** makes every other change in this list.
 *   **Proposed Changes**:
     *   Delete `distributions/claude/`.
+    *   `.claude-plugin/marketplace.json`: restore `"source": "./"`. The
+        repository root holds `.claude-plugin/plugin.json`.
+    *   `tests/unit/test_harnesses.py`: in
+        `test_marketplace_resolves_shared_package`, expect the Claude catalog
+        source to resolve to the repository root. Check that the root holds
+        exactly one Claude manifest. Do not search `.git`, `.claude`,
+        virtual-environment, or `node_modules` folders, which can hold other
+        checkouts.
+    *   `.gemini/styleguide.md`: remove the Runtime Bundle Parity invariant and
+        the Checked-In `distributions/claude/` Runtime Tree entry.
+    *   `docs/designs/ask.md` and `docs/designs/triz_integration.md`: remove the
+        step that regenerates `distributions/claude`.
     *   In `tests/unit/test_packaging.py`, delete
         `test_published_claude_runtime_is_current`. `build` and `ROOT` stay in use, and no import
         becomes unused.
@@ -466,16 +533,15 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
         do not edit its copies independently." with "Do not edit generated
         copies independently."
     *   Run `grep -rn "distributions/claude" . --exclude-dir=.git
-        --exclude=claude_release_branch_distribution.md` before and after. The
-        expected hits before are `docs/directory.md`, `docs/releases.md`,
+        --exclude=claude_release_branch_distribution.md
+        --exclude=plugin_listing_presentation.md` before and after. The second
+        excluded file is a record of a completed change. The expected hits
+        before are `.claude-plugin/marketplace.json`, `.gemini/styleguide.md`,
+        `docs/directory.md`, `docs/releases.md`, `docs/designs/ask.md`,
         `docs/designs/runtime_packaging.md`, `docs/designs/skill_icons.md`,
-        `tests/unit/test_packaging.py`, and `distributions/claude/docs/releases.md`.
+        `docs/designs/triz_integration.md`, `tests/unit/test_harnesses.py`,
+        `tests/unit/test_packaging.py`, and files below `distributions/claude/`.
         There are none after.
-    *   Not changed: `.claude-plugin/marketplace.json` has `"source": "./"`, which
-        points at the repository root, where `.claude-plugin/plugin.json` exists.
-        Installs through `claude plugin marketplace add
-        google/elephant-goldfish-model` do not read `distributions/claude`. The
-        Phase 6 gate checks this.
 
 ### Verification Plan
 
@@ -517,4 +583,4 @@ group, `publish-claude-branch`, has `cancel-in-progress: false`.
     *   Not run: a push to the real repository, and the portal's Validate step on
         the real repository's `release/claude`. Phase 4 supplies both checks.
 
-*Drafted with EGM (Elephant-Goldfish Model). Revised after three EGM reviews on 2026-10-29.*
+*Drafted with EGM (Elephant-Goldfish Model). Revised after three EGM reviews on 2026-10-29. The Phase 6 split was reviewed with `/egm-review-loop` on 2026-11-09.*

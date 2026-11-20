@@ -18,6 +18,7 @@ name: Tests
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
@@ -31,6 +32,7 @@ concurrency:
 jobs:
   site-validation:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: site
@@ -58,8 +60,32 @@ jobs:
         run: npm run build
         env:
           PUBLIC_GA_MEASUREMENT_ID: G-TEST
+      - run: npm run check:docs
       - name: Verify browser consent ordering
         run: npm run test:browser -- "$RUNNER_TEMP/egm-without-analytics.html"
+
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade "pip>=25.1"
+      - run: python -m pip install --group lint
+      - run: ruff check .
+      - name: Lint workflows
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          curl -fsSLo actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum -c -
+          tar -xzf actionlint.tar.gz actionlint
+          ./actionlint -color
 
   unit:
     strategy:
@@ -67,6 +93,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, windows-2025]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -82,8 +109,9 @@ jobs:
   ci:
     name: CI
     if: ${{ always() }}
-    needs: [unit, site-validation]
+    needs: [unit, site-validation, lint]
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Require successful validation
         env:
