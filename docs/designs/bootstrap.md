@@ -52,7 +52,7 @@ its execution model based on the size of the target codebase:
 2.  **Sequential Execution (Small Trees)**: If the target has 5 or fewer
     subdirectories, the Root Orchestrator crawls and documents them sequentially
     in post-order, avoiding multi-agent coordination and startup overhead.
-3.  **Unbounded Parallel Swarm (Medium/Large Trees)**: If the target has more
+3.  **Capped Parallel Swarm (Medium/Large Trees)**: If the target has more
     than 5 subdirectories, the Root Orchestrator partitions the tree and spawns
     parallel instances of the orchestrator agent itself (using the framework's
     `self` subagent type) as Sub-Orchestrators (one per sub-tree).
@@ -61,10 +61,11 @@ its execution model based on the size of the target codebase:
         `java/`), the Root Orchestrator partitions using adaptive depth,
         descending levels of the discovery map until it splits the directories
         into balanced subtree branches.
-    *   **Unbounded Spawning upon Approval**: The Root Orchestrator removes
-        artificial concurrency limits. If the directory count is large (> 5), it
-        asks for user approval to spawn the required number of
-        Sub-Orchestrators, and then spawns all of them in parallel.
+    *   **Capped Spawning upon Approval**: The Root Orchestrator spawns at most
+        5 Sub-Orchestrators, and each runs at most 5 scouts at a time. If the
+        directory count is large (> 5), it asks for user approval to spawn the
+        required number of Sub-Orchestrators, and then spawns all of them in
+        parallel.
     *   **Direct Swarm Writing & Formatting**: Sub-Orchestrators process their
         subtrees in parallel, write or modify `README.md` files directly in
         their assigned folders, and format them using `mdformat`.
@@ -98,7 +99,7 @@ its execution model based on the size of the target codebase:
 *   **Final Correctness Check**: Perform a final verification pass on all
     modified READMEs as a correctness check before concluding work.
 *   **Safe Scaling**: Handle deep/broad directory trees via dynamic user
-    warnings, incremental BFS scoping, sub-tree partitioning, and unbounded
+    warnings, incremental BFS scoping, sub-tree partitioning, and capped
     parallel execution upon user approval.
 
 ### 1.4 Non-Goals
@@ -123,7 +124,7 @@ its execution model based on the size of the target codebase:
     1.  The Root Orchestrator maps the tree incrementally.
     2.  If directory count <= 5, it processes them sequentially.
     3.  If directory count > 5, it partitions the tree adaptively, requests user
-        approval, and spawns unbounded parallel worker instances of the
+        approval, and spawns up to 5 parallel worker instances of the
         orchestrator agent itself (`self` Sub-Orchestrators).
     4.  Sub-Orchestrators process their sub-trees bottom-up, spawning a
         `goldfish-explorer` agent for each directory node.
@@ -155,7 +156,7 @@ graph TD
     *   Implemented as a single agent configuration.
     *   The **Root Instance** coordinates the pipeline: maps the tree
         incrementally, calculates count/depth, manages safety gates, manages
-        unbounded parallel worker spawning upon user approval, documents
+        capped parallel worker spawning upon user approval, documents
         remaining intermediate directories, compiles the final root README, and
         executes the final correctness check pass.
     *   The **Worker Instances (Sub-Orchestrators)** are spawned by the Root
@@ -397,8 +398,9 @@ not the execution root).
 2.  **Safety Gate**: During the BFS loop, if the total running count of
     discovered directories exceeds **15**, the Root Orchestrator immediately
     pauses the discovery traversal and calls the `ask_question` tool to warn the
-    user of the large execution scope and require confirmation before proceeding
-    with further mapping or worker spawning.
+    user of the large execution scope, estimate the workers and scouts it
+    needs, and require confirmation before proceeding with further mapping or
+    worker spawning.
 3.  **Bottom-up Post-Pruning Pass**: Once the mapping traversal is complete (and
     approved), the Root Orchestrator walks the mapped tree bottom-up (from
     leaves to root). It filters out hidden, system, build-output, test-only, and
@@ -429,10 +431,11 @@ not the execution root).
         *   It spawns a parallel worker (Sub-Orchestrator) for each partition
             subtree, passing parameters `is_worker: true` and `sub_tree_root:
             <path>` to the `self` subagent invocation.
-    *   **Unbounded Spawning upon Approval**: The Root Orchestrator removes
-        artificial concurrency limits. If the directory count is large (> 5), it
-        asks for user approval to spawn the required number of
-        Sub-Orchestrators, and then spawns all of them in parallel.
+    *   **Capped Spawning upon Approval**: The Root Orchestrator spawns at most
+        5 Sub-Orchestrators, and each runs at most 5 scouts at a time. If the
+        directory count is large (> 5), it asks for user approval to spawn the
+        required number of Sub-Orchestrators, and then spawns all of them in
+        parallel.
 6.  **Conditional Branching Control**: The `egm-bootstrap` skill
     configuration (`SKILL.md`) checks these parameters at start:
     *   If `is_worker` is false/unset: Executes the Root Orchestrator role (runs
@@ -747,8 +750,9 @@ All changes will be housed within the open-source repository structure:
 ### 5.3 Risks & Mitigations
 
 *   **LLM Rate Limits**: Partitioning a broad repository tree could trigger too
-    many concurrent API calls. This is mitigated by requiring explicit user
-    approval before spawning unbounded parallel workers.
+    many concurrent API calls. This is mitigated by capping workers at 5,
+    capping each worker's parallel scouts at 5, and requiring explicit user
+    approval on large trees.
 *   **VCS Database Locks**: Mitigated by prohibiting workers and scouts from
     executing any VCS tracking/commit commands (`jj`/`g4`), deferring operations
     to EGM session completion.
@@ -785,7 +789,7 @@ Automated integration test suites in `skills/egm-bootstrap/test_scenarios.yaml` 
 *   `bootstrap_small_tree`: Verifies sequential execution for a tree with <= 5
     directories, ensuring it generates conforming Peanut and Hay READMEs,
     formats them, and runs a final correctness check pass.
-*   `bootstrap_parallel_tree`: Verifies unbounded parallel worker spawning upon
+*   `bootstrap_parallel_tree`: Verifies capped parallel worker spawning upon
     user approval, child context propagation, direct filesystem
     writing/modifying, formatting, and final correctness verification.
 *   `bootstrap_safety_gate`: Verifies the warning gate triggers when the mapped
