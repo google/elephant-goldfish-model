@@ -10,7 +10,9 @@ Issues created through GitHub's web templates receive native issue types from
 template frontmatter, but issues created through the GitHub CLI or API can
 arrive without a type. Those untyped issues also lack consistent topical labels,
 which adds manual triage work for maintainers. This workflow fills that gap
-when title and body text contain clear signals while preserving human choices.
+by assigning types to untyped intake and applying topical labels to every newly
+opened issue, when title and body text contain clear signals, while preserving
+human choices.
 
 ## Goals
 
@@ -18,7 +20,8 @@ when title and body text contain clear signals while preserving human choices.
   a canonical template heading or exactly one type's keyword signals identify
   it clearly.
 - Add every matching label from a fixed allowlist of eight topical labels when
-  its regex matches the issue title or sanitized body text.
+  its regex matches the issue title or sanitized body text, for every newly
+  opened issue including web-template submissions.
 - Preserve types and labels set or removed by a human, and keep issue type and
   label writes isolated so failure in one stage does not prevent the other.
 - Run only when an issue is opened and keep workflow permissions least-privilege.
@@ -68,35 +71,41 @@ The three web issue templates already declare native type frontmatter:
 contributors without write access; users with write access can still open a
 maintainer-only blank issue. GitHub sets these types for web template
 submissions, so the workflow skips type mutation when a type is already
-present. Issues created through `gh issue create` or API calls can still arrive
-without that web-template metadata; those are the main intake paths this
-workflow covers.
+present, but still evaluates topical labels on those submissions. The templates
+do not declare topical labels in frontmatter. Native type assignment covers
+untyped intake from `gh issue create`, API calls, and maintainer-created blank
+issues.
 
-When an untyped issue body follows a canonical template, matching its heading
-provides a deterministic classification signal for CLI/API intake. This does
-couple the workflow to template prose, so heading matches must be covered by
-fixtures and updated with template changes. If no heading matches, keyword
-fallback runs against the issue title and sanitized body. Exactly one matching
-type is required; zero or multiple type matches means no type is assigned.
-
-Before matching either type keywords or topical label regexes, strip HTML
-comments and fenced code blocks from the issue body. Keep the title as supplied.
-This prevents template instructions and code examples from being treated as
-reporter signals. Topical labels are evaluated independently: add every
-allowlisted label whose own regex matches, even when multiple labels match one
-issue. Type ambiguity does not prevent clear topical labels from being added.
+Sanitize the issue body once before any classification matching by removing
+HTML comments and fenced code blocks; keep the title as supplied. Use that same
+sanitized body for canonical template-heading matching, type keyword fallback,
+and topical label regexes. Template-heading matching uses template-specific
+heading combinations: `Expected Behavior` with `Actual Behavior` for bugs,
+`Problem Statement & Motivation` with `Proposed Scope (Goals vs. Non-Goals)`
+for features, and `Objective` with `Completion Criteria` for tasks. A generic
+heading such as `## Scope` alone is not a template match. If headings from more
+than one template match, abstain from type assignment for that issue. This
+couples the workflow to template prose, so heading matches must be covered by
+fixtures and updated with template changes. When there is not a multiple-
+template match, keyword fallback assigns a type only when exactly one type
+matches; zero or multiple type matches means no type is assigned. Topical
+labels are evaluated independently: add every allowlisted label whose own
+regex matches, even when multiple labels match one issue. Type ambiguity does
+not prevent clear topical labels from being added.
 
 | Stage | Target | Selection rule | Preservation guard |
 | :--- | :--- | :--- | :--- |
-| 1. Native issue type | `Bug`, `Feature`, `Task` | Match canonical issue template headings first; otherwise assign only when exactly one type's keyword signals match the title or sanitized body. | Skip if a type is already set or if a human actor previously changed or cleared it. |
-| 2. Topical labels | `ci`, `tests`, `deps`, `docs`, `site`, `harness`, `isolation`, `release` | Independently evaluate each domain regex against the title and sanitized body; add every matching label that exists in the repository. | Never remove labels. Only add allowlisted labels absent from the issue and not previously removed by a human actor. |
+| 1. Native issue type | Untyped intake from CLI, API, or maintainer blank issues; `Bug`, `Feature`, `Task` | Match canonical template-specific heading combinations in sanitized body first; abstain from type assignment on multiple template matches. A generic heading alone is not a template match. If there is no template match, assign only when exactly one type's keyword signals match the title or sanitized body. | Skip if a type is already set or if a non-bot user account previously changed or cleared it; preserve edits when the actor is unavailable or deleted. |
+| 2. Topical labels | Every newly opened issue, including web-template submissions; `ci`, `tests`, `deps`, `docs`, `site`, `harness`, `isolation`, `release` | Independently evaluate each domain regex against the title and sanitized body; add every matching label that exists in the repository. | Never remove labels. Only add allowlisted labels absent from the issue and not previously removed by a non-bot user account; preserve edits when the actor is unavailable or deleted. |
 
 Concurrency prevents overlapping workflow runs from racing each other. Timeline
 checks are still needed because a human can edit the issue after the workflow is
 queued or while the runner is starting. Query current state immediately before
 mutation and inspect `UNLABELED_EVENT`, `ISSUE_TYPE_REMOVED_EVENT`, and
 `ISSUE_TYPE_CHANGED_EVENT` events. Preserve human changes made during that
-window. Use the term `human actor` consistently for these guards.
+window. For these guards, a human actor is a non-bot user account. If the event
+actor is unavailable or the account was deleted, preserve the edit rather than
+assuming automation may overwrite it.
 
 ## Workflow architecture and API use
 
@@ -105,13 +114,16 @@ SHA-pinned `actions/github-script` step, following the checkout-free pattern in
 `.github/workflows/pr-scope-advisory.yml`. Do not check out the repository or
 grant `contents: read`.
 
-Use GraphQL to read repository issue types, repository labels, issue fields,
-and the issue timeline, and to set a selected native issue type. Use the REST
-`issues.addLabels` endpoint to add topical labels. If the type mutation fails,
-log a warning and continue to the topical label stage. Attempt label writes
-independently so a type failure cannot block them; a label failure must not
-undo a successful type write. Report write failures in the job logs and retain
-any successful write.
+Keep native issue-type GraphQL reads separate from issue and label reads. A
+permission failure while reading repository issue types or issue-type timeline
+fields must not fail the query used to read issue fields, labels, or label
+timeline events, and must not prevent topical labeling. Use the REST
+`issues.addLabels` endpoint to add topical labels. Attempt type assignment and
+topical labeling as independent stages, even if either stage encounters an
+error. Preserve successful writes, log warnings for failures, and continue
+attempting the other stage and any independent label writes. Aggregate stage
+failures and fail the workflow job at the end if either stage failed; do not
+report a partially failed run as successful.
 
 ## Alternatives considered
 
@@ -126,17 +138,28 @@ any successful write.
 
 - **Native issue type permissions are unverified**: `issues: write` may not be
   sufficient for GraphQL reads or mutations of organization-backed native issue
-  types. Treat a live permission check in a controlled test repository as a
+  types. Treat a live permission check in an organization-owned test repository
+  with native issue types enabled as a
   Stage 2 gate before rollout. Offline mocks do not prove the workflow token has
   these live permissions.
-- **Token fallback**: Do not add a bot token by default. If the controlled live
-  check proves `GITHUB_TOKEN` cannot read or mutate the required native types,
-  evaluate a narrowly scoped `EGM_TRIAGE_BOT_TOKEN` secret as a fallback. Limit
-  its repository access and document ownership and rotation before enabling it.
+- **Token fallback**: Always use `GITHUB_TOKEN` for topical-label operations.
+  Use it by default for native issue-type operations as well. Only if the
+  required native-type permissions are unavailable through `GITHUB_TOKEN`, use
+  the narrowly scoped `EGM_ISSUE_TRIAGE_BOT_TOKEN` secret for native issue-type
+  operations; do not reuse `EGM_TRIAGE_BOT_TOKEN`, which is used by the PR
+  review workflow. Limit the issue-only secret to the required repository
+  access and document ownership and rotation before enabling it. If the
+  issue-only token is expired or encounters an authentication error, retry the
+  native-type operation using `GITHUB_TOKEN`. A token failure must never
+  prevent topical-label processing: if native-type processing still fails,
+  record and log the failure, continue topical labeling with `GITHUB_TOKEN`,
+  and fail the job at the end as described below.
 - **Partial failure**: Type and label operations are separate writes and cannot
-  be atomic. Isolate them so a type mutation failure logs a warning and does not
-  abort label assignment; preserve a successful write if the other operation
-  fails and surface failures in the workflow result/logs.
+  be atomic. Attempt both independent stages and all independent label writes;
+  preserve successful writes, log warnings for failed operations, and fail the
+  workflow job at the end if either stage fails. A type read or mutation error
+  must not abort topical labeling, and a label error must not undo a successful
+  type write.
 - **Heuristic errors**: Text rules can miss intent or produce false positives.
   Removing HTML comments and fenced code blocks reduces template/example
   matches; conservative type fallback and per-label fixtures reduce the risk.
@@ -155,12 +178,16 @@ any successful write.
   mock GraphQL and REST APIs in `tests/issue_triage.cjs`, plus static workflow
   assertions in `tests/unit/test_issue_triage.py`. Cover template matching,
   sanitized input (HTML comments and fenced code blocks), keyword fallback,
-  abstention when type signals are absent or ambiguous, independent additive
-  label matching, closed-allowlist enforcement, human timeline override
-  preservation, and continuation to label assignment after a type-write error.
-- **Planned live permission check (Stage 2)**: In a controlled test repository,
-  verify that the workflow token can read configured issue types, set a native
-  issue type, and add an allowed topical label. Keep this separate from offline
+  abstention when type signals are absent, ambiguous, or match multiple
+  templates, independent additive label matching, closed-allowlist enforcement,
+  human timeline override preservation, continuation to label assignment after
+  a native-type read or write error, fallback to `GITHUB_TOKEN` after an
+  issue-triage token authentication or expiry error, preservation of successful
+  writes, and a failing job result after either stage fails.
+- **Planned live permission check (Stage 2)**: In an organization-owned test
+  repository with native issue types enabled, verify that the workflow token
+  can read configured issue types, set a native issue type, and add an allowed
+  topical label. Keep this separate from offline
   mocks and do not use a production issue for the permission check. If
   `GITHUB_TOKEN` fails, resolve the token fallback decision described above
   before production rollout.
