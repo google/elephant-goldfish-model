@@ -1,7 +1,7 @@
 # EGM-Lite: Rapid Ad-Hoc Engineering Protocol
 
 *   **Author:** Jonathan Njeunje ([@njeunje](https://github.com/njeunje))
-*   **Status:** Proposed
+*   **Status:** Current
 *   **Date:** 2026-11-10
 
 --------------------------------------------------------------------------------
