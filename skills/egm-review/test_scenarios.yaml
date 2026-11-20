@@ -21,6 +21,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run EGM Review on docs/feature_spec_and_plan.md."
         assertions:
@@ -42,6 +44,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run EGM Review on early-stage feature spec with Preset: Feature Spec Gates Only."
         assertions:
@@ -57,6 +61,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Review this draft: 'The synchronizer will save data to InternalDB using MagicSync.'"
         assertions:
@@ -69,6 +75,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Review this design: 'We will store user profiles in a globally replicated database across multiple read replicas.'"
         assertions:
@@ -81,6 +89,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Review implementation plan: '1. Write the client library. 2. Run verification.'"
         assertions:
@@ -93,6 +103,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Audit the style and structure of this design document draft."
         assertions:
@@ -105,6 +117,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run only Stage 6 (Comprehension Test) on docs/designs/rate_limit.md. Which document standard does the reviewer apply?"
         assertions:
@@ -117,6 +131,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run only Stage 6 (Comprehension Test) on docs/designs/rate_limit.md. The reviewer reports no findings. What goes in comprehension_report.md?"
         assertions:
@@ -129,6 +145,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run EGM Review on docs/design.md with Step: uninterrupted and no additional context. The doc links to ./api.md, /etc/hosts, ../../other-repo/notes.md, and https://example.com/spec."
         assertions:
@@ -158,6 +176,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run EGM Review on docs/design.md with Step: 5 and GoldfishContext [https://redis.io/docs/latest/develop/use/keyspace/]. The doc cites no other sources."
         assertions:
@@ -176,6 +196,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Execute Step 5 (Initial Strategic Review) on docs/designs/storage.md, which states that high write throughput inevitably requires sacrificing durability."
         assertions:
@@ -188,6 +210,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "In Step 5, Inventive Catalyst returned \"No false compromise detected\" and Zoom Out returned two findings. Write the Inventive Catalyst part of zoom_out_report.md."
         assertions:

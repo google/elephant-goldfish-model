@@ -21,6 +21,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "I have a rough idea for a dynamic cache warming service that proactively fetches user profiles before peak morning traffic, but the requirements and operational limits are completely undefined. How should we explore this?"
         assertions:
@@ -36,6 +38,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "We have thoroughly explored the dynamic cache warming problem: it will run as an hourly cron pre-fetching the top 10k active user profiles from Postgres into Redis, constrained to a 5-minute execution window and under 100MB memory footprint. Please summarize the anchored hypothesis and present the readiness gate."
         assertions:
@@ -54,6 +58,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "concepts_brief.md is finalized and saved in the working directory. At the Step 4 gate I select: Proceed to egm-draft (Initialize formal design document)."
         assertions:
@@ -69,6 +75,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "The Goldfish review and iteration loops are finished. I have reviewed and fully approved the finalized concepts_brief.md artifact. Please execute Step 4 (Finalize & Handoff)."
         assertions:
@@ -90,6 +98,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Create a decision matrix comparing Kafka vs RabbitMQ vs Pub/Sub for our pipeline."
         assertions:
@@ -108,6 +118,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "I want to brainstorm a new telemetry aggregator feature. No git user.name or GIT_AUTHOR_NAME is set in the environment."
         assertions:
@@ -123,6 +135,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "We weighed Kafka vs RabbitMQ during ideation, and I rejected RabbitMQ due to partition scaling limits. Format the Alternatives Weighed section."
         assertions:
@@ -138,6 +152,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "We completed the 7-lens Goldfish brainstorm on high-throughput durable event streaming. Inventive Catalyst reported a contradiction between write latency and persistent disk durability, suggesting Preliminary Action (cache warming and pre-allocated buffers) with secondary trade-offs in idle memory consumption. Format the ## Analysis section of concepts_brief.md."
         assertions:
@@ -150,6 +166,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-brainstorm/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Inventive Catalyst returned \"No false compromise detected\" for the event streaming concept. Format the ## Analysis section of concepts_brief.md."
         assertions:

@@ -21,6 +21,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review-loop/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Orchestrate multi-perspective Goldfish review on docs/design.md."
         assertions:
@@ -33,6 +35,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review-loop/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Round 3 of the review loop on docs/design.md returned two Nits and one Major that was contested in round 1. Round 2 was clean. What happens next?"
         assertions:
@@ -45,6 +49,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review-loop/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "The synthesizer summary for round 2 on docs/design.md says: 0 findings; egm-design completed, egm-structural completed. egm-style was also requested. Is round 2 clean?"
         assertions:
@@ -57,6 +63,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review-loop/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run the review loop on docs/design.md, full file, with reviewers design_critic and structural, both on feature-spec-standard, and GoldfishContext [src/cache.py, https://redis.io/docs/latest/develop/use/keyspace/]. I confirm this configuration; start round 1."
         assertions:
@@ -75,6 +83,8 @@ scenarios:
     eval_type: "deterministic"
     system_prompt:
       skill_file: "skills/egm-review-loop/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
     turns:
       - user_input: "Run the review loop on docs/design.md, full file, with reviewers design_critic and structural, both on feature-spec-standard, and GoldfishContext [src/cache.py, https://redis.io/docs/latest/develop/use/keyspace/]. Network access is off in this session, so that page cannot be fetched. I confirm this configuration; start round 1."
         assertions:
