@@ -26,7 +26,7 @@ HOST = {
 }
 SKILLS = (
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop",
+    "egm-lite", "egm-resolve", "egm-review", "egm-review-loop",
 )
 REQUIRED_SHARED = (
     "plugin.json", "LICENSE", "README.md", "assets/icon.svg",
@@ -102,6 +102,8 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
   else:
     references.append(manifest.get("icon", "./.claude-plugin/icon.png"))
   for reference in references:
+    if not isinstance(reference, str):
+      raise ValueError(f"Invalid manifest reference: {reference!r}")
     path = Path(reference)
     if path.is_absolute() or ".." in path.parts or path not in files:
       raise ValueError(f"Unbundled manifest reference: {reference}")

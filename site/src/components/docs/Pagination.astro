@@ -1,0 +1,13 @@
+---
+import Button from '../gb/Button.astro';
+import Symbol from '../gb/Symbol.astro';
+const { prev, next } = Astro.locals.starlightRoute.pagination;
+---
+<nav class="page-links" aria-label="Previous and next pages">
+  {prev && <Button size="sm" href={prev.href} label={`Previous: ${prev.label}`}><Symbol name="arrow_back" />{prev.label}</Button>}
+  {next && <span class="next"><Button size="sm" href={next.href} label={`Next: ${next.label}`}>{next.label}<Symbol name="arrow_forward" /></Button></span>}
+</nav>
+<style>
+  .page-links { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; border-top:1px solid var(--md-sys-color-outline-variant); padding-top:24px; }
+  .next { margin-left:auto; }
+</style>

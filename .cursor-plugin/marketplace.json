@@ -1,0 +1,13 @@
+{
+  "name": "egm",
+  "owner": {
+    "name": "Google"
+  },
+  "plugins": [
+    {
+      "name": "egm",
+      "source": "./",
+      "description": "Develop ideas with context and review documents with fresh eyes."
+    }
+  ]
+}

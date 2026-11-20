@@ -37,7 +37,7 @@ def test_install_preserves_resources_and_native_contract(tmp_path: Path) -> None
     assert config["default_agent"] == "egm"
     assert config["autoupdate"] is False
     assert "model" not in config
-    assert len(config["command"]) == 7
+    assert len(config["command"]) == 8
     for skill in (ROOT / "skills").glob("*/SKILL.md"):
         key = ADAPTER["name"](skill)
         alias = Path(config["skills"]["paths"][0]) / key
@@ -68,7 +68,7 @@ def test_install_preserves_resources_and_native_contract(tmp_path: Path) -> None
             ("*.env.example", "allow"), ("mcp:*", "deny"),
         ]
         assert str(persona) in agent["prompt"]
-        assert "Read-only Protocol" not in agent["prompt"]
+        assert "Read-Only Protocol" not in agent["prompt"]
     primary = config["agent"]["egm"]
     assert primary["permission"]["*"] == "ask"
     assert list(primary["permission"]["read"].items()) == [

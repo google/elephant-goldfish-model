@@ -8,7 +8,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import puppeteer from 'puppeteer-core';
 
-const enabled = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8');
+const route = process.argv[3] ?? '/';
+assert.ok(['/', '/guide'].includes(route), 'Use the home or guide route');
+const enabled = await readFile(new URL(`../dist${route === '/' ? '' : route}/index.html`, import.meta.url), 'utf8');
 assert.ok(process.argv[2], 'Pass the HTML from the build without an analytics ID');
 const disabled = await readFile(process.argv[2], 'utf8');
 const browser = await puppeteer.launch({ channel: 'chrome', executablePath: process.env.CHROME_PATH });
@@ -81,7 +83,7 @@ async function visit(host, { failed = false, holdGtag = false, html = enabled } 
       void respond();
     }
   });
-  await page.goto(`https://${host}/?private=secret&utm_source=test#private`, { waitUntil: 'load' });
+  await page.goto(`https://${host}${route}?private=secret&utm_source=test#private`, { waitUntil: 'load' });
   const gaRequests = () => requests.filter(url => new URL(url).hostname === 'www.googletagmanager.com');
   const collects = () => requests.filter(url => new URL(url).hostname === 'www.google-analytics.com');
   return { page, requests, gaRequests, collects, errors, gtagRequested, releaseGtag: () => releaseGtag() };
@@ -102,7 +104,7 @@ try {
   await delayed.page.waitForFunction(() => window.__gaCommands.some(args => args[0] === 'config'));
   assert.equal(delayed.gaRequests().length, 1);
   const config = await delayed.page.evaluate(() => window.__gaCommands.find(args => args[0] === 'config')[2]);
-  assert.equal(config.page_location, 'https://egm.dev/?utm_source=test');
+  assert.equal(config.page_location, `https://egm.dev${route}?utm_source=test`);
   assert.equal(config.allow_google_signals, false);
   assert.equal(config.allow_ad_personalization_signals, false);
   await delayed.page.waitForNetworkIdle();
@@ -159,7 +161,7 @@ try {
     const initial = await visit('egm.dev');
     await initial.page.evaluate((state, needed) => window.__finishConsent(state, needed), status, required);
     await initial.page.waitForNetworkIdle();
-    const granted = status === 'ACCEPTED' && required;
+    const granted = status === 'ACCEPTED';
     assert.equal(initial.gaRequests().length, granted ? 1 : 0);
     assert.equal(initial.collects().length, granted ? 1 : 0);
     assert.deepEqual(initial.errors, []);

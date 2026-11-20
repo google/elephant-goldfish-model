@@ -151,8 +151,9 @@ the first matching outcome below, retaining findings and validation limits.
    ineffective fix or the fifth round. Write `precommit_report.md` with
    separate review, validation and outcome fields.
 5. **Register and verify the runtime.** Package the skill, persona and Claude
-   adapter, regenerate the Claude distribution, align README/site listings
-   and update instructional skill counts. Unit tests check packaging and
+   adapter, build the Claude and OpenAI archives from canonical source,
+   align README/site listings and update instructional skill counts.
+   Unit tests check packaging and
    scenario structure before any opt-in live calls.
 
 ### Target files
@@ -162,21 +163,21 @@ the first matching outcome below, retaining findings and validation limits.
 | Create | `.claude-plugin/agents/precommit_reviewer.md` |
 | Modify | `.claude-plugin/plugin.json` |
 | Modify | `README.md` |
+| Create | `.windsurf/workflows/egm-precommit-review.md` |
+| Modify | `tests/unit/test_windsurf.py` |
 | Create | `agents/precommit_reviewer.md` |
-| Create | `distributions/claude/.claude-plugin/agents/precommit_reviewer.md` |
-| Modify | `distributions/claude/.claude-plugin/plugin.json` |
-| Modify | `distributions/claude/README.md` |
-| Create | `distributions/claude/agents/precommit_reviewer.md` |
-| Create | `distributions/claude/skills/egm-precommit-review/SKILL.md` |
-| Create | `distributions/claude/skills/egm-precommit-review/agents/openai.yaml` |
-| Create | `distributions/claude/skills/egm-precommit-review/assets/icon.svg` |
-| Create | `distributions/claude/skills/egm-precommit-review/references/evidence.md` |
 | Modify | `docs/cursor.md` |
 | Modify | `docs/designs/skill_icons.md` |
 | Modify | `docs/opencode.md` |
 | Modify | `scripts/pack_plugin.py` |
 | Modify | `site/src/components/SkillIcon.astro` |
-| Modify | `site/src/components/Skills.astro` |
+| Modify | `site/src/components/Home.astro` |
+| Modify | `docs/site/skills.md` |
+| Create | `docs/site/skills/egm-precommit-review.md` |
+| Modify | `site/astro.config.mjs` |
+| Modify | `site/scripts/check-docs.mjs` |
+| Modify | `site/src/components/docs/PageTitle.astro` |
+| Modify | `site/src/styles/docs.css` |
 | Create | `skills/egm-precommit-review/SKILL.md` |
 | Create | `skills/egm-precommit-review/TEST.md` |
 | Create | `skills/egm-precommit-review/agents/openai.yaml` |

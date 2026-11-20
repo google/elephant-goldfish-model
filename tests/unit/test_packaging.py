@@ -51,7 +51,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
   with zipfile.ZipFile(archive) as bundle:
     assert bundle.testzip() is None
     names = set(bundle.namelist())
-    assert len([p for p in names if p.endswith("/SKILL.md")]) == 7
+    assert len([p for p in names if p.endswith("/SKILL.md")]) == 8
     for skill in source.glob("skills/*/SKILL.md"):
       prefix = skill.parent.relative_to(source)
       metadata = yaml.safe_load(bundle.read((prefix / "agents/openai.yaml").as_posix()))
@@ -103,6 +103,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
     ("bootstrap", "#1b6ef3", "#7cacf8"),
     ("brainstorm", "#1b6ef3", "#7cacf8"),
     ("draft", "#1b6ef3", "#7cacf8"),
+    ("lite", "#1b6ef3", "#e86e00"),
     ("resolve", "#1b6ef3", "#7cacf8"),
     ("drift_report", "#e86e00", "#ff8d41"),
     ("review", "#e86e00", "#ff8d41"),
@@ -235,6 +236,56 @@ def test_rejects_escaping_or_missing_scalar_agent_references(
   assert not output.exists()
 
 
+@pytest.mark.parametrize("value", [5, True, None, 1.5, {"path": "x"}, ["x"]])
+def test_rejects_non_string_agent_list_entries(
+    source: Path, tmp_path: Path, value: object,
+) -> None:
+  path = source / ".claude-plugin/plugin.json"
+  manifest = json.loads(path.read_text())
+  manifest["agents"] = ["./.claude-plugin/agents/style.md", value]
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError) as error:
+    build(source, "claude", output)
+  assert str(error.value) == f"Invalid manifest reference: {value!r}"
+  assert not output.exists()
+
+
+@pytest.mark.parametrize("target", ["claude", "openai"])
+@pytest.mark.parametrize("value", [5, ["x"], {"path": "x"}])
+def test_rejects_non_string_icon_references(
+    source: Path, tmp_path: Path, target: str, value: object,
+) -> None:
+  if target == "claude":
+    path = source / ".claude-plugin/plugin.json"
+    manifest = json.loads(path.read_text())
+    manifest["icon"] = value
+  else:
+    path = source / "plugin.json"
+    manifest = json.loads(path.read_text())
+    manifest["extensions"]["com.openai"]["interface"]["logo"] = value
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError) as error:
+    build(source, target, output)
+  assert str(error.value) == f"Invalid manifest reference: {value!r}"
+  assert not output.exists()
+
+
+@pytest.mark.parametrize("key", ["composerIcon", "logo"])
+def test_rejects_non_string_codex_manifest_icons(
+    source: Path, tmp_path: Path, key: str,
+) -> None:
+  path = source / ".codex-plugin/plugin.json"
+  manifest = json.loads(path.read_text())
+  manifest["interface"][key] = 5
+  path.write_text(json.dumps(manifest))
+  output = tmp_path / "output"
+  with pytest.raises(ValueError, match="^Invalid manifest reference: 5$"):
+    build(source, "openai", output)
+  assert not output.exists()
+
+
 @pytest.mark.parametrize("key", ["composerIcon", "logo"])
 def test_rejects_missing_openai_interface_icons(
     source: Path, tmp_path: Path, key: str,
@@ -298,6 +349,7 @@ def test_refuses_unbundled_services(source: Path, tmp_path: Path, field: str) ->
     "skills/egm-brainstorm/SKILL.md",
     "skills/egm-draft/SKILL.md",
     "skills/egm-drift-report/SKILL.md",
+    "skills/egm-lite/SKILL.md",
     "skills/egm-resolve/SKILL.md",
     "skills/egm-review/SKILL.md",
     "skills/egm-review-loop/SKILL.md",
@@ -374,20 +426,3 @@ def test_archive_claimed_after_preflight_is_not_overwritten(
   else:
     assert archive.read_bytes() == b"another build owns this file"
   assert not list(output.glob(".egm-*"))
-
-
-def test_published_claude_runtime_is_current(tmp_path: Path) -> None:
-  """The directory subfolder must contain exactly the reviewed runtime."""
-  generated, _ = build(ROOT, "claude", tmp_path)
-  published = ROOT / "distributions/claude"
-
-  def contents(folder: Path) -> dict[str, bytes]:
-    return {p.relative_to(folder).as_posix(): p.read_bytes()
-            for p in folder.rglob("*") if p.is_file()}
-
-  assert contents(published) == contents(generated), (
-      "Published Claude runtime differs from generated output. Regenerate "
-      "with `python3 scripts/pack_plugin.py --target claude --output "
-      "<output-dir>`; replace `distributions/claude` with the generated "
-      "`egm-claude` folder."
-  )
