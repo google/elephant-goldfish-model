@@ -33,7 +33,7 @@ def test_summary_field_ignores_per_round_status():
 @pytest.mark.parametrize("case", ["ok", "missing", "unrelated", "error", "empty"])
 def test_read_requires_correlated_nonempty_success(case, tmp_path):
     path = tmp_path / "source.py"
-    path.write_text("source\u2028code")
+    path.write_text("source\u2028code", encoding="utf-8")
     trace = event("assistant", type="tool_use", name="Read", id="r", input={"file_path": str(path)})
     if case != "missing":
         trace += "\n" + event("user", type="tool_result", tool_use_id="x" if case == "unrelated" else "r",

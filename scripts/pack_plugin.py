@@ -26,7 +26,8 @@ HOST = {
 }
 SKILLS = (
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop", "egm-precommit-review",
+    "egm-lite", "egm-precommit-review", "egm-resolve", "egm-review",
+    "egm-review-loop",
 )
 REQUIRED_SHARED = (
     "plugin.json", "LICENSE", "README.md", "assets/icon.svg",
