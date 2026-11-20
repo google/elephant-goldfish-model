@@ -241,6 +241,45 @@ test('concurrent trigger race skips duplicate review when SHA marker already exi
   assert.ok(state.infos.some(msg => /already present/.test(msg)))
 })
 
+test('SHA marker from the GITHUB_TOKEN fallback bot skips duplicate review', async () => {
+  const state = createHarness({
+    existingReviews: [{
+      user: { login: 'github-actions[bot]', type: 'Bot' },
+      body: '<!-- egm-triage-review:sha=abc12345 -->\nClean pass.',
+    }],
+  })
+  await state.run({
+    action: 'clean_handoff',
+    pr_number: 42,
+    head_sha: 'abc12345',
+    add_labels: ['triage: passed'],
+    remove_labels: [],
+    team_reviewers: ['egm-maintainers'],
+    review_payload: { commit_id: 'abc12345', body: 'Clean pass.', comments: [] },
+  })
+  assert.equal(state.failed, null)
+  assert.equal(state.reviews.length, 1)
+  assert.equal(state.labels.size, 0)
+})
+
+test('SHA marker from a deleted reviewer does not suppress the bot review', async () => {
+  const state = createHarness({
+    existingReviews: [{ user: null, body: '<!-- egm-triage-review:sha=abc12345 -->' }],
+  })
+  await state.run({
+    action: 'clean_handoff',
+    pr_number: 42,
+    head_sha: 'abc12345',
+    add_labels: ['triage: passed'],
+    remove_labels: [],
+    team_reviewers: ['egm-maintainers'],
+    review_payload: { commit_id: 'abc12345', body: 'Clean pass.', comments: [] },
+  })
+  assert.equal(state.failed, null)
+  assert.equal(state.reviews.length, 2)
+  assert.deepEqual([...state.labels], ['triage: passed'])
+})
+
 test('SHA marker in a human review does not suppress the bot review', async () => {
   const state = createHarness({
     existingReviews: [{
