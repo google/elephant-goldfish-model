@@ -7,10 +7,14 @@
 
 ## Overview
 
-Add `/egm` as one starting point for the existing EGM workflows. A user can
+Make `/egm` the primary user-facing entry point for the existing EGM workflows. A user can
 describe a task or provide an artifact without learning the specialist skill
 names first. The router selects one installed skill, reads its instructions,
 and starts or resumes that skill's next valid phase.
+
+Route from the user's current conversation, workspace, supplied artifacts, and
+active phase. Adapt the explanation to their stated preferences and observed
+familiarity with EGM. Familiarity changes guidance, never workflow requirements.
 
 This is a shared skill for all harnesses. It adds no execution engine,
 reviewer persona, storage, remote service, or new permission. Direct invocation
@@ -32,6 +36,10 @@ The root problem is selecting the next phase, not a shortage of workflows.
 - Route a request to exactly one existing skill using the requested outcome,
   available artifacts, active workflow state, and current tools.
 - Honor explicit skill choices and resume ongoing work instead of restarting.
+- Support explicit actions such as `/egm review` and `/egm draft` while keeping
+  existing specialist commands as compatibility entry points.
+- Give newcomers a brief explanation of the selected workflow, give experienced
+  users a short route notice, and avoid repeated onboarding during active work.
 - Preserve the selected skill's approval pauses, artifact rules, state
   transitions, and independent-review requirements.
 - Support explicit `/egm` invocation and an EGM skill-picker entry. Treat host
@@ -50,6 +58,8 @@ The root problem is selecting the next phase, not a shortage of workflows.
   plugin version. ChatGPT web support is a separate design and implementation.
 - Claiming native host support from static tests or simulating fresh reviewers
   inside the parent conversation.
+- Storing familiarity profiles, inferring expertise from identity, or changing
+  approval and review requirements based on familiarity.
 
 ## Open Questions
 
@@ -107,6 +117,26 @@ The root problem is selecting the next phase, not a shortage of workflows.
   ask one focused question; otherwise name the chosen skill briefly and proceed
   within its existing authority.
 
+### Guidance for new and returning users
+
+- **Given:** The user invokes `/egm` with a task and available project context.
+- **When:** EGM selects or resumes a workflow.
+- **Then:** Use explicit preferences first, then familiarity demonstrated in the
+  conversation. Explain the workflow and next pause briefly for a newcomer;
+  keep the route notice short for an experienced user. If familiarity is unknown,
+  use one plain sentence and proceed without a familiarity questionnaire. Resume
+  active work without repeated onboarding. Keep identical approval and review gates.
+
+### Action overrides and phase triggers
+
+- **Given:** A user supplies `/egm draft` with an aligned brief, or `/egm review`
+  with a design and no active workflow.
+- **Then:** Select the requested specialist. When Lite is active, interpret
+  `review`, `exec`, `checklist`, and `goldfish` through its state machine first;
+  `/egm review` must not abandon an active Lite phase. An explicitly named
+  specialist still takes precedence. Ask only if conflicting context changes
+  the next valid action.
+
 ## Technical Plan (Architecture)
 
 ### Selection contract
@@ -120,6 +150,18 @@ state is introduced.
 Priority is: explicit skill choice, active workflow state, task and artifact,
 then one clarification if a material ambiguity remains. Read only the selected
 skill and resources required by its current phase.
+
+Expose `/egm` in the picker label, quickstart, and skill index. Host namespaces
+may require `/egm:egm`; action words are arguments to this one skill, not new
+host commands. Support `brainstorm`, `draft`, `review`, `resolve`, `review-loop`,
+`lite`, `bootstrap`, `drift-report`, and optional `in-chat` as specialist
+overrides when no active workflow owns that trigger. Preserve direct legacy
+`egm-*` invocations. Do not rename specialist packages or duplicate instructions.
+
+Use task-relevant repository context only when access is available and needed.
+Do not scan unrelated files to infer experience. Explain what happens next
+using the user's terminology. Honor requests for more or less detail; observed
+familiarity only determines explanation length, never route authority or gates.
 
 | Task and state | Selected skill |
 | --- | --- |
@@ -223,9 +265,9 @@ features without making either a prerequisite for the other's tests or merge.
 | `.windsurf/workflows/egm.md` | Forward invocation to the canonical skill and preserve its boundaries. |
 | `adapters/opencode/install.py` | Accept the exact `egm` skill name alongside existing `egm-*` names. |
 | `scripts/pack_plugin.py` | Require the router's runtime files in both existing archive targets. |
-| `README.md` | Add the default entry point while retaining direct specialist links. |
-| `docs/codex.md` | Explain selection/resumption and same-installation, phase-local capability checks. |
-| `docs/site/skills.md` | Introduce the shared entry point in the skill index. |
+| `README.md` | Make `/egm` the quickstart entry point while retaining direct specialist links. |
+| `docs/codex.md` | Explain action overrides, adaptive guidance, resumption, and phase-local capability checks. |
+| `docs/site/skills.md` | Present `/egm` and its action arguments as the primary interface. |
 | `docs/site/skills/egm.md` | Document routing, supported invocation forms to verify, and limitations. |
 | `site/astro.config.mjs` | Add the router page to navigation. |
 | `site/scripts/check-docs.mjs` | Include its Markdown export in the existing route inventory. |
@@ -248,7 +290,9 @@ design, OpenAI-only source, release version, or chat-specific packaging tests.
    page, icon, navigation, and Markdown export resolve.
 3. Run model scenarios for small changes, new ideas, existing designs, explicit
    skill choices, Lite resume triggers, ambiguous state, missing tools, and
-   absent `egm-in-chat`. Assert the chosen skill, preserved phase, and absence
+   absent `egm-in-chat`. Include action overrides, newcomers, experienced users,
+   unknown familiarity, explicit detail preferences, and workspace context.
+   Assert the chosen skill, preserved phase, unchanged gates, and absence
    of unauthorized execution or invented independent review. Syntax-only
    scenario checks do not satisfy behavioral evaluation.
 4. On each claimed host, record version, installed package identity, invocation
