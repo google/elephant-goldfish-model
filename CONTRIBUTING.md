@@ -5,6 +5,12 @@ perspectives are shared across the open-source community.
 
 ## Which track is my change?
 
+For your first contribution, choose an unclaimed
+[good first issue](https://github.com/google/elephant-goldfish-model/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22).
+Comment on the issue to say you want to work on it. Confirm your
+[Google CLA coverage](#contributor-license-agreement-cla) and run the checks
+listed in the issue before you open a PR.
+
 Pick a track before you open an issue or PR. The full rules for each track are
 in [Contribution Tracks & Workflow](#contribution-tracks--workflow); this
 section points to them.
