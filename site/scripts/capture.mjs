@@ -18,7 +18,7 @@
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer-core';
 
@@ -27,9 +27,16 @@ const dist = join(site, 'dist');
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2' };
 
 // Serves dist/ so the built page's absolute /_astro/* asset paths resolve.
+// Requests are contained to dist/: a decoded path that resolves outside dist/
+// (for example an encoded ../ segment) is rejected before any file is read.
 const server = createServer(async (req, res) => {
-  const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
-  const file = join(dist, path.endsWith('/') ? `${path}index.html` : path);
+  const relative = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '');
+  const file = resolve(dist, relative.endsWith('/') ? `${relative}index.html` : relative);
+  const distRoot = resolve(dist);
+  if (file !== distRoot && !file.startsWith(distRoot + sep)) {
+    res.writeHead(403).end();
+    return;
+  }
   try {
     const body = await readFile(file);
     res.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' });
@@ -42,7 +49,8 @@ await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
 
 // channel: 'chrome' finds the installed Chrome on Linux, macOS, and Windows; CHROME_PATH overrides it.
-const browser = await puppeteer.launch({ channel: 'chrome', executablePath: process.env.CHROME_PATH, args: ['--no-sandbox'] });
+// The Chrome sandbox stays enabled; capture only navigates to local build output.
+const browser = await puppeteer.launch({ channel: 'chrome', executablePath: process.env.CHROME_PATH });
 
 async function capture({ url, out, width, height, scheme = 'light', fullPage = false, scale = 1 }) {
   const page = await browser.newPage();
