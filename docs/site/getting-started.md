@@ -26,6 +26,12 @@ and what happens when two requests overlap.
 
 The assistant asks questions and writes a short brief. Read the brief before you continue to [drafting and review](/workflow).
 
+## Return to a project
+
+Use [What to Run Next](https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md#what-to-run-next) to match your brief, draft, or review reports to the step to continue. Files can be partial or belong to another run. Confirm the target and any pending review before proceeding.
+
+For skill choice, use the [skills guide](/skills). For a setup failure, use [Get Help with Setup](https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md#get-help-with-setup).
+
 ## Review another type of document
 
 Save the document as a file. Use [Custom review](/skills/egm-review-loop) to choose reviewers and standards for your task.

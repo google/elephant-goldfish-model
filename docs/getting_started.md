@@ -86,6 +86,49 @@ The "core" workflow looks like:
     > testing strategies, etc. EGM is not opinionated here. Add your skills to
     > your implementation plan!
 
+## What to Run Next
+
+When you return to a project, use the artifacts below to find the step to
+continue. Check the working directory, your configured
+[artifact directory](harnesses.md#artifact-directory), and `scratch/`.
+Designs live in `docs/designs/`.
+
+A file shows that a step started, not that it finished. Match reports to the
+design you mean; they may be partial or left over from another run. These are
+starting points, not a required sequence.
+
+| Artifact (written by) | Next step |
+| :------------------- | :-------- |
+| No artifacts or design yet | `/egm-brainstorm` for a new idea, or `/egm-bootstrap` to document existing code |
+| `concepts_brief.md` (`/egm-brainstorm`) | Review the brief, then use `/egm-draft`. It can also start from notes or `discussion_summary.md` |
+| `design_draft.md` (`/egm-draft`) | Continue the draft until it is ready to save as `docs/designs/<feature>.md` |
+| `docs/designs/<feature>.md` | Use `/egm-review docs/designs/<feature>.md` when the design is ready for review |
+| `zoom_out_report.md`, `comprehension_report.md`, `critic_report.md`, `intermediate_zoom_out_report.md`, `implementation_readiness_report.md`, or `consolidated_review_report.md` (`/egm-review`) | Check where the review stopped. Continue its pending step, or use `/egm-resolve` on findings from a completed review |
+| `goldfish_review_report.md` (`/egm-resolve`) without `Status: resolved` | Return to the pending resolution step, or use `/egm-resolve` on the report |
+| `goldfish_review_report.md` with `Status: resolved` | Confirm the target and that the full review finished. `/egm-review` can resolve findings before later stages run. Send the design for human review, then implement after approval |
+
+Before implementing, confirm which design is in scope, that no review or
+resolution step is pending, and that a human approved the design. A saved
+design or resolved report alone does not establish approval.
+
+Commands above use the same [host-specific forms](../README.md#try-your-first-design)
+as the core loop. For a different task, choose from the
+[skill descriptions](../README.md#choose-a-skill) instead of inferring a stage from files.
+
+## Get Help with Setup
+
+Start with the [harness guide](harnesses.md) and its linked instructions for
+your application. If a skill is missing, check that installation and the
+command form first. If a reviewer cannot read its persona or standards, check
+the application's read permissions. A Goldfish review requires fresh-context
+subagents; without them, stop and use a supported application.
+
+For a usage question the guides do not answer, use
+[Discussions Q&A](https://github.com/google/elephant-goldfish-model/discussions/categories/q-a).
+For a failure, [open an issue](https://github.com/google/elephant-goldfish-model/issues/new?template=bug_report.md)
+with the application version, EGM version or commit, command, and error.
+Remove secrets and private project content from any logs.
+
 ## Drift Detection
 
 To ensure that your design specifications and active codebase remain
