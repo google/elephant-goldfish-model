@@ -294,7 +294,7 @@ Isolate the review in a clean context window to eliminate confirmation bias.
 
 ### A. Subagent Delegation (True Context Separation)
 
-1.  Read `egm_lite_checklist.md` and collect every task change against its
+1.  For an active task, read `egm_lite_checklist.md` and collect every task change against its
     recorded baseline, including changes already committed during the task,
     staged and unstaged edits, deletions, and the contents of new untracked
     files. In Git, use `git diff <starting-commit>` for tracked changes and
@@ -304,7 +304,7 @@ Isolate the review in a clean context window to eliminate confirmation bias.
     missing or any target cannot be inspected, stop and report incomplete
     coverage rather than requesting an LGTM. For non-Git work, capture the
     equivalent before/after content for each target. With no task in
-    progress there is no checklist or baseline: the review input is the
+    progress, skip the checklist and baseline: the review input is the
     workspace changes (tracked and untracked) or the diff or pull request the
     user supplied.
 2.  Pass the checklist (if any), task change inventory, and complete change
@@ -365,8 +365,10 @@ modify repository files in this section.
     spawned the review being handled:
     *   *Pre-Implementation (Spec Review):* Section 2B spawned it (subagent role
         `Goldfish Specification Reviewer`).
-    *   *Post-Implementation (Diff Review):* Section 4 spawned it (subagent role
-        `Goldfish Reviewer`).
+    *   *Post-Implementation (Diff Review):* Section 4 spawned it for an active task.
+    *   *Standalone Diff Review:* Section 4 spawned it with no task in progress.
+        Keep resolution in chat. Use the diff as evidence and skip all checklist
+        reads, checklist writes, and implementation commands.
 2.  **Perfect Execution (LGTM):** If the subagent returns an explicit
     `[✅ LGTM]` with zero findings:
 
@@ -383,6 +385,7 @@ modify repository files in this section.
         completion summary (modified files as clickable links and passing test
         targets), and ask what the user wants to do next. Do not bleed back into
         critique.
+    *   *If Standalone Diff Review:* Report the clean result in chat and stop.
 3.  **Triage Findings (`PROPOSE FIX` vs. `CONTEST`):** If subagent reports
     findings or nits, execute presentation-only triage: do not call file-editing
     or VCS tools.
@@ -420,6 +423,7 @@ modify repository files in this section.
         **`exec`** to update and implement immediately, or **`goldfish`** /
         **`review`** to update and re-review (or, if no revisions remain, to
         confirm that in chat).
+    *   *If Standalone Diff Review:* Present the triaged findings in chat and stop.
     *   *If Post-Implementation (Diff Review):* Instruct user to type
         **`checklist`** to update `egm_lite_checklist.md` with fix tasks, or
         **`exec`** to update checklist and implement fixes immediately (or, if
