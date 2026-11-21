@@ -191,7 +191,9 @@ jobs:
                 ? await client.paginate(client.rest.pulls.listReviews, { owner, repo, pull_number: prNumber, per_page: 100 })
                 : (await client.rest.pulls.listReviews({ owner, repo, pull_number: prNumber, per_page: 100 })).data;
               const shaMarkerRe = new RegExp(`<!--\\s*(?:egm-triage-review|egm-triage-bot):sha=${plan.head_sha}\\s*-->`);
-              if (existingReviews.some(r => shaMarkerRe.test(String(r.body || "")))) {
+              // Anyone can paste a SHA marker, so only bot-authored markers count.
+              const isBot = user => Boolean(user) && (user.type === "Bot" || user.login === "egm-triage-bot");
+              if (existingReviews.some(r => isBot(r.user) && shaMarkerRe.test(String(r.body || "")))) {
                 core.info(`Skipping duplicate post for ${plan.head_sha}: SHA review marker already present.`);
                 return;
               }
