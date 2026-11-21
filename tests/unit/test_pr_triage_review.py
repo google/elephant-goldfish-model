@@ -1101,3 +1101,45 @@ def test_repo_inventory_and_false_positive_filter_prevent_pr_410_regressions(
       parity_checked_deterministically=True,
   )
   assert len(kept) == 2
+
+
+def test_false_positive_filter_resolves_dot_directory_paths() -> None:
+  """A claimed-missing path under a dot directory must still be resolvable."""
+  existing_paths = {
+      ".github/scripts/review_pr.py",
+      ".gemini/config.yaml",
+      "docs/designs/README.md",
+  }
+
+  def claim(path: str) -> dict[str, object]:
+    return {
+        "severity": "Major",
+        "path": "docs/designs/README.md",
+        "line": 3,
+        "summary": (
+            f"The design doc references nonexistent file `{path}` and"
+            " no such file is shipped"
+        ),
+        "fix": f"Point the doc at `{path}`",
+    }
+
+  assert review_pr._extract_concrete_repo_paths(
+      "See `./.github/scripts/review_pr.py` and `/docs/designs/README.md`"
+  ) == [".github/scripts/review_pr.py", "docs/designs/README.md"]
+
+  kept = review_pr.filter_false_positive_findings(
+      [claim(".github/scripts/review_pr.py"), claim(".gemini/config.yaml")],
+      existing_repo_paths=existing_paths,
+      files=[],
+      parity_checked_deterministically=True,
+  )
+  assert kept == []
+
+  # A dot-directory path that is really absent must survive the filter.
+  kept_missing = review_pr.filter_false_positive_findings(
+      [claim(".github/scripts/missing_hook.py")],
+      existing_repo_paths=existing_paths,
+      files=[],
+      parity_checked_deterministically=True,
+  )
+  assert len(kept_missing) == 1
