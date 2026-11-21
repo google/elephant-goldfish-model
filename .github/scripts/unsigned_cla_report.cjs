@@ -26,9 +26,10 @@ async function report(github, repo, core) {
       const issue = { ...repo, issue_number: pr.number, per_page: 100 };
       const pull = { ...repo, pull_number: pr.number, per_page: 100 };
       const runs = await github.paginate(checks.listForRef, {
-        ...repo, ref: pr.head.sha, per_page: 100,
+        ...repo, ref: pr.head.sha, filter: 'all', per_page: 100,
       });
-      const cla = runs.find(run => run.name === 'cla/google' && run.app?.slug === 'google-cla');
+      const cla = runs.filter(run => run.name === 'cla/google' && run.app?.slug === 'google-cla')
+        .sort((a, b) => b.id - a.id)[0];
       if (cla?.conclusion !== 'failure') continue;
 
       const comments = await github.paginate(issues.listComments, issue);
