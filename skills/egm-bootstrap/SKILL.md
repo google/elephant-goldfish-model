@@ -13,8 +13,8 @@ In Muse, read [Muse integration](../../docs/muse.md) first.
 
 ## Overview
 
-This skill automates the creation, correction, formatting, and correctness
-verification of Elephant-and-Goldfish Model (EGM) compliant `README.md` files
+This skill automates the creation, correction, formatting, and verification
+of EGM-compliant `README.md` files
 across a directory tree. It establishes clear architectural contracts
 (interfaces, invariants, and side effects) for both human developers and AI
 assistants.
