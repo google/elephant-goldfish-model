@@ -143,6 +143,12 @@ was for a different project), you probably don't need to do it again.
 Visit <https://cla.developers.google.com/> to see your current agreements or to
 sign a new one.
 
+### Unsigned CLA report
+
+The daily [CLA report](.github/workflows/unsigned-cla-report.yml) summarizes reminder candidates after 7 days and closure candidates after 14 days without a reply or push.
+It marks uncertain push timing in the summary. Triage access can apply `keep-open` to exempt a PR.
+Write access can create the label or run the report from the default branch.
+
 ## Community Guidelines
 
 See our [accessibility statement](ACCESSIBILITY.md) for goals, current limits,
