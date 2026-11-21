@@ -1,13 +1,16 @@
 # Copyright 2026 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Fail closed when native Cursor child read evidence is incomplete."""
+"""Fail closed when native Cursor child read or canary evidence is incomplete."""
 
+import base64
+import gzip
 import json
 from pathlib import Path
 import sqlite3
 import subprocess
 import sys
+import zlib
 
 import pytest
 
@@ -140,3 +143,75 @@ def test_malformed_json_array_fails(tmp_path: Path) -> None:
     )
     assert run.returncode != 0
     assert 'Malformed JSON-looking blob' in run.stderr
+
+
+MARKER = 'EGM-CANARY-0f3c9a7e5b2d4c18a6e1'
+
+
+def store(tmp_path: Path, blobs: list[bytes], extra: bytes | None = None) -> Path:
+    database = tmp_path / 'child.db'
+    with sqlite3.connect(database) as connection:
+        connection.execute('CREATE TABLE blobs (id TEXT PRIMARY KEY, data BLOB)')
+        connection.executemany('INSERT INTO blobs VALUES (?, ?)',
+                               [(str(i), blob) for i, blob in enumerate(blobs)])
+        connection.execute('CREATE TABLE meta (key TEXT, value BLOB)')
+        if extra is not None:
+            connection.execute('INSERT INTO meta VALUES (?, ?)', ('k', extra))
+    return database
+
+
+def scan(database: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(SCRIPT), str(database), *args],
+                          text=True, capture_output=True, check=False)
+
+
+def clean_records(path: str = '/fixture/persona.md') -> list[bytes]:
+    return [json.dumps(call(path)).encode(), json.dumps(result(path)).encode()]
+
+
+def test_absent_canary_passes_with_required_reads(tmp_path: Path) -> None:
+    run = scan(store(tmp_path, clean_records()),
+               '--required', '/fixture/persona.md', '--absent', MARKER)
+    assert run.returncode == 0, run.stderr
+    canary = json.loads(run.stdout)['canary']
+    assert canary['status'] == 'absent'
+    assert canary['cells_scanned'] > 0
+
+
+def leak_text(prefix: str = '') -> bytes:
+    return json.dumps({'role': 'user', 'content': f'{prefix}{MARKER}'}).encode()
+
+
+@pytest.mark.parametrize('leak', [
+    leak_text(),
+    MARKER.encode('utf-16-le'),
+    *(b'{"b":"' + base64.b64encode(b'x' * n + MARKER.encode()) + b'"}' for n in range(3)),
+    gzip.compress(MARKER.encode()),
+    zlib.compress(MARKER.encode()),
+], ids=['json', 'utf16', 'base64-0', 'base64-1', 'base64-2', 'gzip', 'zlib'])
+def test_leaked_canary_fails_in_any_encoding(tmp_path: Path, leak: bytes) -> None:
+    run = scan(store(tmp_path, [*clean_records(), leak]), '--absent', MARKER)
+    assert run.returncode == 1
+    assert json.loads(run.stdout)['canary']['status'] == 'found'
+    assert MARKER not in run.stdout  # The report never repeats the marker.
+
+
+def test_leak_outside_the_blobs_table_fails(tmp_path: Path) -> None:
+    run = scan(store(tmp_path, clean_records(), extra=MARKER.encode()), '--absent', MARKER)
+    assert run.returncode == 1
+    assert json.loads(run.stdout)['canary']['found'][0]['table'] == 'meta'
+
+
+def test_undecodable_compression_is_inconclusive_not_absent(tmp_path: Path) -> None:
+    run = scan(store(tmp_path, [*clean_records(), b'\x28\xb5\x2f\xfd' + b'\0' * 8]),
+               '--absent', MARKER)
+    assert run.returncode == 3
+    canary = json.loads(run.stdout)['canary']
+    assert canary['status'] == 'inconclusive'
+    assert canary['unsearchable'][0]['codec'] == 'zstd'
+
+
+@pytest.mark.parametrize('args', [[], ['--absent', 'short'], ['--absent', 'bad marker 123456']])
+def test_canary_arguments_are_validated(tmp_path: Path, args: list[str]) -> None:
+    run = scan(store(tmp_path, clean_records()), *args)
+    assert run.returncode == 2

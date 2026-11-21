@@ -24,6 +24,14 @@ the explicit Goldfish context. Do not include parent history or deliberation.
 Do not pass earlier findings except where the canonical workflow requires them.
 Do not dispatch the canonical synthesizer or bootstrap orchestrator as a
 generic child. Their native adapters are not included in this experiment.
+An egm-lite Goldfish review has no registered read-only reviewer type here.
+Treat its fresh-context subagent tool as unavailable and follow that skill's
+stop path. Never run it in a generic child, which is not read-only.
+
+If the Task tool or a registered read-only EGM reviewer type is unavailable,
+stop before dispatch. State what is missing, how to remedy it (enable this
+package, reload Cursor, and confirm the EGM reviewers in Customize), and which
+stages and reports were completed and verified before the stop.
 
 Wait for every reviewer completion before advancing the stage.
 Write each completed stage report before dispatching the next stage.

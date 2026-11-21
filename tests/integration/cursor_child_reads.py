@@ -2,20 +2,96 @@
 # Copyright 2026 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Correlate native Cursor ReadFile calls and successes in one child store."""
+"""Correlate native Cursor ReadFile calls and successes in one child store.
+
+With --absent, also scan every cell of the closed store for a parent-only
+canary marker. Exit 0 passes, 1 fails (missing read or marker found), and
+3 is inconclusive (a cell uses a compression format this tool cannot search).
+"""
 
 import argparse
+import base64
+import gzip
 import hashlib
 import json
 from pathlib import Path
+import re
 import sqlite3
+import zlib
+
+INCONCLUSIVE = 3
+# Magic numbers of compressed formats that the standard library cannot decode.
+UNSEARCHABLE_MAGIC = {b'\x28\xb5\x2f\xfd': 'zstd', b'\x04\x22\x4d\x18': 'lz4'}
+
+
+def marker_forms(marker: str) -> dict[str, bytes]:
+    """Byte encodings under which a stored copy of the marker could appear."""
+    raw = marker.encode()
+    forms = {'utf-8': raw, 'utf-16-le': marker.encode('utf-16-le')}
+    # Base64 of any stream holding the marker contains the encoding of the
+    # marker's 3-byte-aligned middle for one of three alignments.
+    for start in range(3):
+        chunk = raw[start:]
+        forms[f'base64+{start}'] = base64.b64encode(chunk[:len(chunk) - len(chunk) % 3])
+    return forms
+
+
+def expand(cell: bytes) -> tuple[list[bytes], str | None]:
+    """Return searchable byte views of a cell, or the name of an opaque codec."""
+    views = [cell]
+    for magic, codec in UNSEARCHABLE_MAGIC.items():
+        if cell.startswith(magic):
+            return views, codec
+    for decode in (gzip.decompress, zlib.decompress):
+        try:
+            views.append(decode(cell))
+        except (OSError, EOFError, zlib.error):
+            continue
+    return views, None
+
+
+def scan_canaries(connection: sqlite3.Connection, markers: list[str]) -> dict:
+    forms = {marker: marker_forms(marker) for marker in markers}
+    found, unsearchable, cells = [], [], 0
+    tables = [name for (name,) in connection.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table'")]
+    for table in tables:
+        quoted = '"' + table.replace('"', '""') + '"'
+        cursor = connection.execute(f'SELECT rowid, * FROM {quoted}')
+        columns = [column[0] for column in cursor.description][1:]
+        for rowid, *values in cursor:
+            for column, value in zip(columns, values):
+                if value is None or isinstance(value, (int, float)):
+                    continue
+                cells += 1
+                data = value.encode() if isinstance(value, str) else bytes(value)
+                views, codec = expand(data)
+                if codec:
+                    unsearchable.append({'table': table, 'column': column,
+                                         'rowid': rowid, 'codec': codec})
+                for index, marker in enumerate(markers):
+                    for encoding, needle in forms[marker].items():
+                        if needle and any(needle in view for view in views):
+                            found.append({'marker_index': index, 'table': table,
+                                          'column': column, 'rowid': rowid,
+                                          'encoding': encoding})
+    status = 'found' if found else 'inconclusive' if unsearchable else 'absent'
+    return {'status': status, 'markers_checked': len(markers), 'cells_scanned': cells,
+            'found': found, 'unsearchable': unsearchable}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('database', type=Path)
-    parser.add_argument('--required', action='append', required=True)
+    parser.add_argument('--required', action='append', default=[])
+    parser.add_argument('--absent', action='append', default=[],
+                        help='parent-only canary marker that must not appear')
     args = parser.parse_args()
+    if not args.required and not args.absent:
+        parser.error('provide --required, --absent, or both')
+    for marker in args.absent:
+        if not re.fullmatch(r'[A-Za-z0-9-]{16,}', marker):
+            parser.error('a canary marker needs 16 or more ASCII letters, digits, or -')
     database = args.database.resolve(strict=True)
     wal = Path(str(database) + '-wal')
     if wal.exists():
@@ -75,6 +151,7 @@ def main() -> int:
                     results[call_id] = success
                 else:
                     raise ValueError(f'Malformed result status {call_id}')
+    canary = scan_canaries(connection, args.absent) if args.absent else None
     connection.close()
     if wal.exists() or hashlib.sha256(database.read_bytes()).hexdigest() != before_hash:
         raise ValueError('SQLite store changed while being read')
@@ -91,9 +168,14 @@ def main() -> int:
         reads.append({'call_id': call_id, 'path': path, 'bytes': len(content.encode()),
                       'sha256': hashlib.sha256(content.encode()).hexdigest()})
     missing = sorted(set(args.required) - {read['path'] for read in reads})
-    print(json.dumps({'database_main_sha256': before_hash, 'opaque_blobs': opaque_blobs,
-                      'reads': reads, 'missing': missing}, indent=2))
-    return bool(missing)
+    report = {'database_main_sha256': before_hash, 'opaque_blobs': opaque_blobs,
+              'reads': reads, 'missing': missing}
+    if canary is not None:
+        report['canary'] = canary  # Never echoes the marker itself.
+    print(json.dumps(report, indent=2))
+    if missing or (canary and canary['status'] == 'found'):
+        return 1
+    return INCONCLUSIVE if canary and canary['status'] == 'inconclusive' else 0
 
 
 if __name__ == '__main__':
