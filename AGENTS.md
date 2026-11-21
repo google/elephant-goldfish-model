@@ -14,10 +14,10 @@ You are assisting development in the EGM repository.
   * `Bug Fix / Minor Patch` (non-test diff `<= 100` lines and `< 3` core files in
     `skills/` or `agents/`; no design doc required, but please update an existing
     design if appropriate).
-  * `Feature / Architectural Change — Stage 1: Design Doc PR` (requires an aligned
+  * `Feature / Architectural Change -- Stage 1: Design Doc PR` (requires an aligned
     issue with `design-ready`, uses `Refs #<issue>`, and adds
     `docs/designs/<name>.md` + updates `docs/designs/README.md`).
-  * `Feature / Architectural Change — Stage 2: Implementation PR` (requires an
+  * `Feature / Architectural Change -- Stage 2: Implementation PR` (requires an
     aligned issue with `pr-ready` and a merged
     `docs/designs/<name>.md`).
 * **Stacks and Labels**: Do not wait for `design-ready` or `pr-ready` before you
