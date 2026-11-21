@@ -6,3 +6,5 @@ venv/
 .pytest_cache/
 eval_results/
 .DS_Store
+.agents/
+openspec/
