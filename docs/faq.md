@@ -63,29 +63,17 @@ answer is the same as when you built things without AI."
 
 #### Q: How can I share a review example safely?
 
-**A**: Sharing is optional. EGM writes files locally and never publishes or
-sends your data (see [EGM data handling](privacy.md)).
+**A**: Sharing is optional; EGM writes files locally and never sends or
+publishes your data (see [EGM data handling](privacy.md)).
 
-Before you publish anything, remove secrets, credentials, personal names,
-internal paths or URLs, and private project data from every excerpt. Because
-review outputs can quote text from the inputs, inspect both the design and the
-review findings before sharing. Do not post raw account-bearing session
-transcripts.
+Before sharing, redact secrets, credentials, personal names, internal paths or
+URLs, and private project data. Check both the design and the review output,
+since findings can quote the inputs, and do not post raw session transcripts.
 
-A useful review example includes:
+Include in a shared example:
 
-*   **Design excerpt before the review**: The section of the draft that the
-    reviewer examined.
-*   **Finding and evidence**: The reviewer's finding and the cited passage or
-    file that supports it.
-*   **Owner decision and reason**: Whether the document owner accepted,
-    contested, or declined the finding, and why. Include findings that you
-    rejected so readers can see false positives alongside useful catches.
-*   **Design excerpt after the change**: The updated text when a finding led to
-    a revision.
-*   **Duration and cost**: The host, model, elapsed time, and token usage when
-    available.
-
-Post sanitized examples in the
-[Show and tell](https://github.com/google/elephant-goldfish-model/discussions/categories/show-and-tell)
-category on GitHub Discussions.
+*   The design excerpt before the review.
+*   The finding and its supporting evidence.
+*   The document owner's decision and reason, including rejected findings.
+*   The design excerpt after the change, if revised.
+*   The duration and cost.
