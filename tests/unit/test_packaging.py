@@ -183,6 +183,7 @@ def test_rejects_escaping_or_missing_manifest_assets(
 @pytest.mark.parametrize("skills,error", [
     ("./missing-skills/", "Unbundled manifest reference"),
     ("../skills/", "Unbundled manifest reference"),
+    (str(ROOT / "skills"), "Unbundled manifest reference"),
     ("", "Invalid manifest skills path"),
     (["./skills/"], "Invalid manifest skills path"),
 ])
