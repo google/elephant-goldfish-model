@@ -1,0 +1,10 @@
+{
+  "name": "egm",
+  "version": "0.1.1",
+  "description": "Elephant-Goldfish Model: design with an elephant, review with a goldfish.",
+  "license": "Apache-2.0",
+  "keywords": ["pi-package"],
+  "pi": {
+    "skills": ["./skills"]
+  }
+}
