@@ -2,6 +2,9 @@
 name: Prepare draft release
 
 on:
+  push:
+    branches: [main]
+    paths: [plugin.json]
   workflow_dispatch:
     inputs:
       tag:
@@ -12,7 +15,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: prepare-release-${{ inputs.tag }}
+  group: prepare-release-${{ inputs.tag || github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -21,6 +24,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       commit: ${{ steps.source.outputs.commit }}
+      tag: ${{ steps.source.outputs.tag }}
     permissions:
       contents: read
       id-token: write
@@ -40,33 +44,48 @@ jobs:
       # Older release tags can predate the workflow's test dependency group.
       - run: python -m pip install --upgrade "pip>=25.1"
       - run: python -m pip install --group test
-      - name: Check out an existing tag contained in main
+      - name: Select the version bump or an existing main tag
         id: source
+        shell: bash
         env:
           RELEASE_TAG: ${{ inputs.tag }}
+          PREVIOUS_COMMIT: ${{ github.event.before }}
         run: |
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            version=$(jq -er '.version' plugin.json)
+            previous=$(git show "$PREVIOUS_COMMIT:plugin.json" | jq -er '.version')
+            [[ "$version" != "$previous" ]] || exit 0
+            RELEASE_TAG="v$version"
+          fi
           [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
-          git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}"
-          git merge-base --is-ancestor "refs/tags/$RELEASE_TAG^{commit}" origin/main
-          git checkout --detach "refs/tags/$RELEASE_TAG"
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            git merge-base --is-ancestor "refs/tags/$RELEASE_TAG^{commit}" origin/main
+            git checkout --detach "refs/tags/$RELEASE_TAG"
+          fi
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
       - run: pytest tests/unit
+        if: steps.source.outputs.tag != ''
       - name: Prepare archives and notes
+        if: steps.source.outputs.tag != ''
         env:
-          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ steps.source.outputs.tag }}
         run: python scripts/prepare_release.py --tag "$RELEASE_TAG" --commit "$(git rev-parse HEAD)" --output release
       - name: Attest runtime archives
         id: attest
+        if: steps.source.outputs.tag != ''
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-path: release/*.zip
           create-storage-record: false
       - name: Keep the provenance bundle with the release files
+        if: steps.source.outputs.tag != ''
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
-          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ steps.source.outputs.tag }}
         run: cp "$BUNDLE_PATH" "release/egm-$RELEASE_TAG.intoto.jsonl"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.source.outputs.tag != ''
         with:
           name: release-candidate
           path: |
@@ -79,6 +98,7 @@ jobs:
 
   draft:
     needs: build
+    if: needs.build.outputs.tag != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -93,10 +113,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
           SOURCE_COMMIT: ${{ needs.build.outputs.commit }}
         run: |
           cd release
           sha256sum -c SHA256SUMS
+          if [[ "$GITHUB_EVENT_NAME" == push ]] &&
+             ! gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" --silent; then
+            tag_object=$(gh api "repos/$GH_REPO/git/tags" \
+              -f tag="$RELEASE_TAG" -f message="EGM $RELEASE_TAG" \
+              -f object="$SOURCE_COMMIT" -f type=commit --jq .sha)
+            gh api "repos/$GH_REPO/git/refs" \
+              -f ref="refs/tags/$RELEASE_TAG" -f sha="$tag_object" --silent
+          fi
           test "$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha)" = "$SOURCE_COMMIT"
           gh release create "$RELEASE_TAG" --verify-tag --draft --title "EGM $RELEASE_TAG" --notes-file RELEASE_NOTES.md ./*.zip SHA256SUMS "egm-$RELEASE_TAG.intoto.jsonl"

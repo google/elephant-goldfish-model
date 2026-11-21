@@ -60,6 +60,20 @@ def test_release_publishes_provenance_bundle() -> None:
   assert '"egm-$RELEASE_TAG.intoto.jsonl"' in create
 
 
+def test_release_drafts_only_when_a_tag_is_selected() -> None:
+  release = yaml.safe_load(
+      (ROOT / ".github/workflows/release.yml").read_text())
+  triggers = release[True]  # PyYAML interprets the unquoted GitHub key on as True.
+  assert triggers["push"] == {"branches": ["main"], "paths": ["plugin.json"]}
+  assert "workflow_dispatch" in triggers
+  draft = release["jobs"]["draft"]
+  assert draft["needs"] == "build"
+  assert draft["if"] == "needs.build.outputs.tag != ''"
+  create = draft["steps"][-1]["run"]
+  assert create.index("sha256sum -c") < create.index("git/refs")
+  assert "--verify-tag --draft" in create
+
+
 @pytest.mark.parametrize("results,success", [
     ({"unit": "success"}, True),
     ({"unit": "failure"}, False),
