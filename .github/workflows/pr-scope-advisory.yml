@@ -175,10 +175,21 @@ jobs:
             if (!hasValidTrack) {
               problems.push("Select exactly one valid track under **Contribution Type**, using Track: or one legacy checked track");
             }
-            if (!/\[[xX]\]\s*I am a human contributor/i.test(body)) {
+            const affirmation = body.split(/^## Human Accountability Affirmation[ \t]*\r?$/m)[1]?.split(/^##[ \t]+/m)[0] || "";
+            const hasAffirmation = /^[ \t]*(?:[-*][ \t]+)?\[[xX]\][ \t]+I am a human contributor\b/im.test(affirmation);
+            if (!hasAffirmation) {
               problems.push("**Human Accountability Affirmation** is not checked");
             }
             const isBot = pr.user?.type === "Bot";
+            const affirmationLabel = "unaffirmed";
+            const issue = { ...context.repo, issue_number: pr.number };
+            if (!isBot && !hasAffirmation) {
+              await github.rest.issues.addLabels({ ...issue, labels: [affirmationLabel] });
+            } else {
+              await github.rest.issues.removeLabel({ ...issue, name: affirmationLabel }).catch(error => {
+                if (error.status !== 404) throw error;
+              });
+            }
             if (problems.length > 0 && !isBot) {
               core.setFailed("PR description does not match .github/PULL_REQUEST_TEMPLATE.md:\n" + problems.join("\n"));
             }

@@ -187,6 +187,19 @@ test('new track descriptions still require human affirmation', async () => {
   state.track = 'Track: Bug Fix / Minor Patch'
   state.affirmation = '[ ] I am a human contributor'
   await assert.rejects(state.run(), /Affirmation/)
+  assert.ok(state.labels.has('unaffirmed'))
+  state.affirmation = '[x] I am a human contributor'
+  state.action = 'edited'
+  await state.run()
+  assert.ok(!state.labels.has('unaffirmed'))
+  assert.ok(state.labels.has('ci'))
+})
+
+test('missing affirmation section is labeled even with a checked box elsewhere', async () => {
+  const state = fixture()
+  state.body = '## Summary of Key Changes\n- [x] I am a human contributor'
+  await assert.rejects(state.run(), /Affirmation/)
+  assert.ok(state.labels.has('unaffirmed'))
 })
 
 test('bots remain exempt from description and affirmation requirements', async () => {
@@ -194,6 +207,7 @@ test('bots remain exempt from description and affirmation requirements', async (
   state.bot = true
   state.body = ''
   await state.run()
+  assert.ok(!state.labels.has('unaffirmed'))
 })
 
 test('filled current PR template passes without deleting track explanations', async () => {
