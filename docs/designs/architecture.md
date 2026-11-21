@@ -94,7 +94,7 @@ sequenceDiagram
     autonumber
     actor Human as Software Engineer
     participant Elephant as Elephant (Brainstorm & Draft)
-    participant Artifact as Side-Panel Artifact / File
+    participant Artifact as Artifact / File
     participant Reviewer as Goldfish Reviewers
     participant VCS as Version Control (PR)
     participant Coder as Implementation Agent
@@ -147,9 +147,12 @@ sequenceDiagram
     Once the human authorizes implementation, coding agents follow the approved
     design and its `Target Scope & File Boundary` list.
 *   **Phase Write Boundaries**: Phases 1–4 should write only design and review
-    materials, including the design index and local copies of approved external
-    review context. Production source and dependency edits belong to Phase 5.
-    Skills communicate this convention to the agent.
+    materials, such as `concepts_brief.md`, design drafts and final designs,
+    review reports, and the design directory's `SITEMAP.md` if present.
+    User-approved external review context can be saved in the working directory
+    or the host's artifact directory. Production source and dependency edits
+    belong to Phase 5. Skills express this boundary as an instruction. Its
+    enforcement depends on host permissions.
 *   **Maintenance**: Run `/egm-drift-report` as needed to
     detect divergence between codebase implementations and checked-in design docs.
 
