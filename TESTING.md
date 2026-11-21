@@ -151,6 +151,16 @@ A harness counts as supported after `/egm-brainstorm`, `/egm-draft`, and
 | omp | v18.12.6 | 2026-10-27 | Pass (community install) | Not run | Not run | Not run | Community verification, not a fixture run: all seven skills discover and resolve via `skill://` in fresh headless sessions; all nine reviewer personas register as native `task` agents. TUI `/skill:` autocomplete for hidden skills unverified; end-to-end fixtures not run. Required manifest fixes: hyphenated skill directory names (underscore dirs are rejected by omp's validator) and no `$schema` key in `plugin.json` (omp's strict agent-plugins validation rejects `disable-model-invocation`); see #186. |
 | Muse | 1.4.14 | 2026-10-30 | Pass (local path install + approve) | Pass (fixture) | Pass (fixture) | Pass (fixture) | Local install from a symlink-free copy of the worktree: plugin valid via Claude-compatible manifest; 7/7 skills valid with zero diagnostics and user-invocable-only activation; 9/9 agents trusted_enabled after approve; 9 tool projections unsupported (reviewers not tool-restricted); 29 validate warnings, 0 errors. Marketplace add discovers 0 plugins (Codex-catalog shadowing). End-to-end fixture (line-count design, `muse-wonder-1.0`, medium, headless `muse exec` in a temporary workspace, installed cache only; prompt named `docs/muse.md` because no skill routes there yet, [#252](https://github.com/google/elephant-goldfish-model/issues/252); approvals simulated up front, interactive approval gates not tested): brainstorm, draft, and uninterrupted review completed; 15 fresh-context reviewers completed (6 brainstorm + 9 stage reviewers across stages 5–9), stage reports sequential by timestamp, final design identical to the reviewed draft, no implementation code written. Isolation probe passed: fresh child returned `UNKNOWN` for a parent-only marker. Named reviewer agents are not spawnable in this runtime (spawn rejected `agent_definition_unavailable`), so every reviewer used the documented general-purpose fallback reading the installed persona first. Review findings on the fixture design are design findings, not workflow execution failures. Tested at commit `91407cf` (skills, agents, and manifests identical to the fixture source; guide and record wording expanded after the run). |
 
+Muse 1.4.15 (R8339.1), tested on 2026-11-21 at `8414530`, validated, installed,
+and exposed seven skills and ten trusted agent definitions. The headless
+line-count fixture produced a brainstorm brief and a draft from the installed
+skill files with simulated approvals. Uninterrupted review was incomplete.
+Named dispatch returned `agent_definition_unavailable`. Generic reviewers
+failed with HTTP 400 (`Recursive JSON schemas are not currently supported`),
+including on an ordered Stage 5 retry with plain-text output. Interactive skill
+invocation and approval gates were not tested. See
+[#519](https://github.com/google/elephant-goldfish-model/issues/519).
+
 ### Interpreting native test results
 
 Keep full run reports in the [PR description](https://github.com/google/elephant-goldfish-model/pull/103).
