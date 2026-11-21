@@ -48,3 +48,7 @@ Document a codebase, make targeted changes, and check whether code matches the p
 - [Check for drift](/skills/egm-drift-report) `/egm-drift-report`
 
   Compare documents with the current source code.
+
+- [Diagnose a bug](/skills/egm-diagnose) `/egm-diagnose`
+
+  Investigate a bug independently, then compare evidence before choosing a fix.
