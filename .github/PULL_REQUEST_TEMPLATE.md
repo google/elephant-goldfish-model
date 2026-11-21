@@ -4,12 +4,12 @@ Example: Explain ignored agents folder warning in Claude Code -->
 
 <!-- Labels: Add applicable labels: docs, site, ci, or deps.
 If you cannot apply labels, suggest them in the description.
-Maintainers control design-ready and pr-ready. Automation manages design-needed and triage: passed. -->
+Automation manages design-needed and triage: passed. -->
 
 ## Summary of Key Changes
 
 <!-- Describe the problem, what changes for the reader or user, and why.
-List key changes if there is more than one. Link related issues or designs. -->
+List key changes if there is more than one. Link related designs, PRs, or issues. -->
 
 ## Contribution Type
 
@@ -22,9 +22,9 @@ Feature / Architectural Change -- Stage 2: Implementation PR
 
 Minor patches: at most 100 non-test lines and fewer than 3 core files in
 skills/ or agents/. No design doc required.
-Stage 1: use Refs #<issue> with design-ready. Add the design and update its index.
-Stage 2: use Closes #<issue> with pr-ready and link the merged design.
-The labels are needed to merge. You can open Stage 2 early as a draft stacked on Stage 1.
+Stage 1: Add docs/designs/<name>.md and update docs/designs/README.md.
+Stage 2: Reference the Stage 1 PR (#<stage1-pr>) and merged design doc.
+You can open Stage 2 early as a draft stacked on Stage 1.
 -->
 
 ## Verification
