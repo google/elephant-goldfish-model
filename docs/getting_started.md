@@ -104,7 +104,7 @@ starting points, not a required sequence.
 | `design_draft.md` (`/egm-draft`) | Continue the draft until it is ready to save as `docs/designs/<feature>.md` |
 | `docs/designs/<feature>.md` | Use `/egm-review docs/designs/<feature>.md` when the design is ready for review |
 | `zoom_out_report.md`, `comprehension_report.md`, `critic_report.md`, `intermediate_zoom_out_report.md`, `implementation_readiness_report.md`, or `consolidated_review_report.md` (`/egm-review`) | Check where the review stopped. Continue its pending step, or use `/egm-resolve` on findings from a completed review |
-| `goldfish_review_report.md` (`/egm-resolve`) without `Status: resolved` | Return to the pending resolution step, or use `/egm-resolve` on the report |
+| `goldfish_review_report.md` (from `/egm-review` or `/egm-resolve`) without `Status: resolved` | Return to the pending resolution step, or use `/egm-resolve` on the report |
 | `goldfish_review_report.md` with `Status: resolved` | Confirm the target and that the full review finished. `/egm-review` can resolve findings before later stages run. Send the design for human review, then implement after approval |
 
 Before implementing, confirm which design is in scope, that no review or
