@@ -42,10 +42,16 @@ def test_all_skills_have_co_located_test_scenarios(
 
     scenarios = data.get("scenarios", [])
     assert scenarios, f"{scenarios_file} must define at least one scenario"
+    scenario_ids = set()
     for sc in scenarios:
       assert "scenario_id" in sc, (
           f"Scenario in {scenarios_file} missing 'scenario_id'"
       )
+      scenario_id = sc["scenario_id"]
+      assert scenario_id not in scenario_ids, (
+          f"Duplicate 'scenario_id' {scenario_id!r} in {scenarios_file}"
+      )
+      scenario_ids.add(scenario_id)
       assert "eval_type" in sc, (
           f"Scenario in {scenarios_file} missing 'eval_type'"
       )
