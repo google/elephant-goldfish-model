@@ -21,8 +21,7 @@ assistants.
 
 *   **Peanuts**: Leaf-level Component Package READMEs containing specific file
     contracts.
-*   **Hay**: Parent-level Repository Blueprints that roll up child interface
-    contracts into high-altitude indexes.
+*   **Hay**: Repository Blueprints that index child interface contracts.
 
 ## Delegation
 
