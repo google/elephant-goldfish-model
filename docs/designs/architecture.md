@@ -41,19 +41,20 @@ failure modes:
 
     *   **The Elephant**: A deep-context agent loaded with system history, CUJs,
         and codebase maps to explore requirements and draft designs.
-    *   **The Goldfish**: Isolated, zero-context subagent reviewers evaluating
-        drafts against rubrics without access to context bias.
+    *   **The Goldfish**: Subagents that start with fresh conversation context
+        and review a draft using supplied material and rubrics. Access to
+        workspace files, host instructions, and memory depends on the
+        [harness](../harnesses.md).
 
 *   **Human Ownership**: AI is a tool for exploration and review; the human
     engineer is responsible for architectural decisions, trade-offs, and owns
     the outcome.
 
 *   **Artifact-First UX**: All long-form deliverables (drafts, summaries, review
-    reports) are rendered into dedicated side-panel markdown artifacts or
-    workspace files with interactive feedback checkpoints.
+    reports) are saved as dedicated artifacts or workspace files.
 
 *   **Living Specifications**: Designs are checked-in artifacts in the source
-    tree (`docs/designs/`), continuously monitored against codebase drift.
+    tree (`docs/designs/`) and checked for drift when requested.
 
 ## System Architecture & Component Model
 
@@ -93,8 +94,8 @@ sequenceDiagram
     autonumber
     actor Human as Software Engineer
     participant Elephant as Elephant (Brainstorm & Draft)
-    participant Artifact as Side-Panel Artifact / File
-    participant Reviewer as Goldfish Reviewers (Synthesizer)
+    participant Artifact as Artifact / File
+    participant Reviewer as Goldfish Reviewers
     participant VCS as Version Control (PR)
     participant Coder as Implementation Agent
 
@@ -103,7 +104,6 @@ sequenceDiagram
     Human->>Elephant: /egm-draft
     Elephant->>Artifact: Write docs/designs/FEATURE.md
     Human->>Reviewer: /egm-review docs/designs/FEATURE.md
-    Note over Reviewer: Zoom Out -> Comprehension -> Critic -> Zoom Out -> Readiness
     Reviewer->>Artifact: Write review reports & findings
     Human->>Reviewer: Triage & resolve findings (/egm-resolve)
     Human->>VCS: Open Pull Request with FEATURE.md
@@ -118,33 +118,22 @@ sequenceDiagram
     then spawns a 7-lens Goldfish swarm to shoot down flawed assumptions.
 *   **Output**: A structured brief written to `concepts_brief.md`.
 
-### Phase 2: Spec Authoring & Semantic Boundaries
+### Phase 2: Spec Authoring
 
 *   **Command**: `/egm-draft`
 *   **Mechanics**: Converts the concepts brief (or discussion notes) into an EGM-compliant
     technical design document written to `docs/designs/<feature>.md`.
-*   **Semantic Boundary Discovery**: Establishes a clear boundary between the
-    high-level architecture (`FeatureRange`) and the detailed implementation
-    plan (`DetailedRange`), enabling targeted subagent reviews.
 
 ### Phase 3: Isolated Verification (The Goldfish)
 
 *   **Command**: `/egm-review`
-*   **Execution**: Executes a five-stage evaluation pipeline:
-    1.  **Step 5: Zoom Out Review**: Evaluates simplicity, YAGNI, and codebase
-        reuse against `zoom-out-standard.md`.
-    2.  **Step 6: Comprehension Test**: Isolated naive reader audits the doc for
-        self-containment and missing background knowledge.
-    3.  **Step 7: Critic Review**: Evaluates system design, scale bottlenecks,
-        and failure modes against `feature-spec-standard.md`.
-    4.  **Step 8: Intermediate Zoom Out**: Re-audits additions made during the
-        Comprehension and Critic stages against `zoom-out-standard.md`.
-    5.  **Step 9: Implementation Readiness Test**: Verifies file paths, function
-        signatures, and test cases against
-        `implementation-readiness-standard.md`.
-*   **Subagent Fan-Out/Fan-In**: The `synthesizer` persona spawns isolated
-    reviewers in parallel, aggregates raw findings, deduplicates overlaps, and
-    writes consolidated markdown reports.
+*   **Execution**: The [review skill](../../skills/egm-review/SKILL.md) defines
+    the full five-stage review and the presets for reviewing just the feature
+    spec or implementation plan. Where needed, the skill identifies the boundary
+    between those two parts of the document.
+*   **Delegation**: The parent launches the comprehension reviewer directly.
+    Other stages can use the synthesizer or direct dispatch, depending on the
+    workflow and harness. Goldfish review requires fresh-context delegation.
 
 ### Phase 4: Human Review & Submission
 
@@ -154,18 +143,19 @@ sequenceDiagram
 
 ### Phase 5: Implementation & Drift Monitoring
 
-*   **Execution**: Coding agents implement code strictly adhering to the
-    approved design document. (No Skill.md is required here because the design 
-    document is complete and detailed.)
-*   **Phase Write Boundaries**: Phases 1-4 (`/egm-brainstorm`, `/egm-draft`,
-    `/egm-review`, and `/egm-resolve`) should write only specification and
-    review artifacts: `concepts_brief.md`, `design_draft.md`, the review
-    reports, the design doc, and `SITEMAP.md` if it exists. They should not
-    change production source code or dependencies. This is a convention, and
-    nothing enforces it. Once Step 9 (Implementation Readiness Test) passes,
-    the plan's `Target Scope & File Boundary` list is the set of files Phase 5
-    implementation may write.
-*   **Maintenance**: `/egm-drift-report` is run periodically (e.g. weekly) to
+*   **Execution**: An implementation-readiness report, when available, informs
+    the human approval decision. A feature-spec-only review covers the spec.
+    Once the human authorizes implementation, coding agents follow the approved
+    design and its `Target Scope & File Boundary` list.
+*   **Phase Write Boundaries**: Phases 1–4 should write only design and review
+    materials, such as `concepts_brief.md`, design drafts and final designs,
+    review reports, and the design directory's `SITEMAP.md` if present.
+    User-approved external review context can be saved in the working directory
+    or the host's artifact directory. Treat saved context as reference material.
+    Production source and dependency edits belong to Phase 5. Skills express
+    this boundary as an instruction. Its
+    enforcement depends on host permissions.
+*   **Maintenance**: Run `/egm-drift-report` as needed to
     detect divergence between codebase implementations and checked-in design docs.
 
 ## Artifact-First UX Protocol
@@ -173,16 +163,9 @@ sequenceDiagram
 To maintain conversation health and prevent context degradation, all EGM skills
 adhere to the following UX protocol:
 
-1.  **Chat Dump Prohibition**: Tools and skills must never dump large proposals,
-    drafts, or review logs into the main chat stream.
-2.  **Artifact Emission**: All content must be written directly to dedicated
-    side-panel artifacts (with `RequestFeedback: true` in Antigravity) or to
-    persistent workspace files.
-3.  **Turn-Yielding Checkpoints**: When user feedback or triage is required, the
-    calling skill notifies the user with a concise message pointing to the
-    artifact and yields execution.
-4.  **Queue Clearance**: Once the user completes a checkpoint review, the
-    calling skill clears pending feedback markers.
+Write proposals, drafts, and review reports to artifacts or workspace files
+using the [host's available surfaces](../harnesses.md). Link to the artifact
+from chat. The selected workflow determines when to pause for feedback.
 
 ## References
 
