@@ -79,8 +79,8 @@ def test_openai_submission_metadata_and_assets() -> None:
   extension = read_json("plugin.json")["extensions"]["com.openai"]
   codex = read_json(".codex-plugin/plugin.json")
   assert extension["interface"] == codex["interface"]
-  assert extension["requires_local_executor"] is True
-  assert codex["requires_local_executor"] is True
+  assert not extension.get("requires_local_executor")
+  assert not codex.get("requires_local_executor")
   assert codex["author"] == read_json("plugin.json")["author"]
   interface = extension["interface"]
   for field, limit in (

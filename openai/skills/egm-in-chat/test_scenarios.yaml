@@ -1,0 +1,77 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+skill: "egm-in-chat"
+description: "Behavioral evaluation scenario suite for egm-in-chat skill."
+
+scenarios:
+  - scenario_id: "same_context_disclosure_no_independent_claim"
+    description: "Asserts a review discloses same-context critique and claims no independent review."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "openai/skills/egm-in-chat/SKILL.md"
+    turns:
+      - user_input: "Review this plan: The goal is 100 signups by Friday. The budget is $500. We spend $300 on ads and $150 on printing."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)same-context"
+            message: "Reply must disclose same-context review."
+          - type: "forbidden_pattern"
+            pattern: '(?i)\b(?:(?:i|we)\s+(?:used|performed|ran|conducted)|this\s+(?:is|was))\s+(?:an?\s+)?(?:fresh eyes|independent review|goldfish review)\b'
+            message: "Reply must not claim fresh-context or Goldfish review."
+
+  - scenario_id: "broken_hard_limit_is_a_blocker"
+    description: "Asserts a recomputed budget overrun is a blocker and the reply holds."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "openai/skills/egm-in-chat/SKILL.md"
+    turns:
+      - user_input: "Review this plan: The budget cap is $500. Line items: $300 venue, $250 catering."
+        assertions:
+          - type: "required_pattern"
+            pattern: "Decision"
+            message: "Reply must open with a Decision."
+          - type: "required_pattern"
+            pattern: "(?i)hold"
+            message: "Reply must hold when a stated hard limit is broken."
+          - type: "required_pattern"
+            pattern: "550"
+            message: "Reply must recompute the $550 total."
+
+  - scenario_id: "repository_request_points_to_full_egm"
+    description: "Asserts a request for repository access or independent reviewers points to full EGM."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "openai/skills/egm-in-chat/SKILL.md"
+    turns:
+      - user_input: "There is no repository access, shell, or subagent tool in this chat. Inspect my repository and run independent reviewers on my diff."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)full EGM"
+            message: "Reply must point to full EGM on a capable host."
+
+  - scenario_id: "capable_chat_routes_to_full_egm"
+    description: "Checks actual capabilities rather than rejecting all web chats."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "openai/skills/egm-in-chat/SKILL.md"
+    turns:
+      - user_input: "This web chat exposes verified fresh-context native subagents, readable EGM resources, and writable artifacts. Which EGM skill should I use for independent review?"
+        assertions:
+          - type: "required_pattern"
+            pattern: "egm-review"
+            message: "Route to full review in the same plugin."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(web (chat|host) cannot|desktop (app )?required)"
+            message: "Do not reject capabilities based on surface alone."
