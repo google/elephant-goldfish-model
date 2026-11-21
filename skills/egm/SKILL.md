@@ -1,10 +1,10 @@
 ---
 name: egm
 license: Apache-2.0
-description: Choose and run the useful next EGM workflow from the user's task, current progress, and available tools. Use when the user asks to use EGM or invokes /egm without choosing a specific EGM skill.
+description: Start or resume EGM from the user's task, project context, and available tools. Use when the user asks to use EGM or invokes /egm, including action arguments such as review or draft. Adapt guidance to stated preferences and observed familiarity.
 ---
 
-# EGM
+# /egm
 
 When running in Codex or ChatGPT Work, first read [Codex integration](../../docs/codex.md).
 In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
@@ -13,6 +13,11 @@ Help the user move forward without making them learn the skill names. Select
 one existing workflow, read its installed `SKILL.md`, and follow it. Load only
 the resources needed for that phase. This skill routes work; it does not
 replace the selected workflow's instructions.
+
+Use `/egm` as the primary entry point. In hosts that namespace plugin commands,
+use the discovered form, such as `/egm:egm`. Action words are arguments to this
+skill, not separately registered host commands. Legacy specialist commands
+remain available.
 
 ## Find the next step
 
@@ -25,6 +30,13 @@ the workflow or run tools.
   resume it using its actual state and artifacts; do not restart intake.
 - For Lite, interpret `checklist`, `exec`, `review`, and `goldfish` using the
   Lite state machine. A checklist or clean spec review is not execution approval.
+- Without an active workflow owning the trigger, honor action arguments:
+  `brainstorm`, `draft`, `review`, `resolve`, `review-loop`, `lite`, `bootstrap`,
+  and `drift-report` select the corresponding `egm-*` skill; `in-chat` selects
+  `egm-in-chat` only when installed. For example, `/egm draft` selects
+  `egm-draft`; `/egm review` selects `egm-review` unless an active workflow
+  owns `review`. An explicitly named specialist takes precedence over active
+  state. Never treat an action argument as permission to skip a phase or gate.
 - If the outcome or active state is unclear enough to change the next action,
   ask one focused question. Otherwise state the selected workflow briefly
   and start its next valid phase.
@@ -40,6 +52,25 @@ the workflow or run tools.
 | Create or update documentation for an existing codebase | `egm-bootstrap` |
 | Compare checked-in documents with current code | `egm-drift-report` |
 | Explore, plan, or critique a document in chat without independent review | `egm-in-chat`, when installed |
+
+## Adapt the guidance
+
+Use explicit requests for explanation length first, then familiarity shown in
+the current conversation. Do not infer expertise from identity or create a
+saved familiarity profile. Read workspace context only when relevant to the
+task; do not scan unrelated files to judge the user.
+
+- For a newcomer, briefly explain the selected workflow, what happens next,
+  and the next approval pause in plain language. Avoid unexplained EGM terms.
+- For an experienced user, give a short route notice and proceed.
+- When familiarity is unknown, use one plain sentence about the next step;
+  do not ask an onboarding questionnaire.
+- When resuming active work, name the next valid phase without repeating
+  onboarding. Give more detail when the user requests it.
+
+Familiarity changes explanation length only. It must never weaken approval
+pauses, independent review, capability checks, or state transitions. Ask a
+question only when uncertainty changes the next valid action.
 
 ## Check the active phase's capabilities
 

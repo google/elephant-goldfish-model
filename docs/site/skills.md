@@ -1,22 +1,25 @@
 ---
 title: Skills
-description: Start with an idea, bring a document, or work with an existing codebase. Choose the skill that fits your next task.
+description: Start with /egm to select or resume a workflow from your task and project context.
 ---
 
 ## Start with your task
 
-Use [EGM](/skills/egm) `/egm` to select the useful next workflow from your
-task, progress, and available tools. You can also choose a skill below.
+Start with [/egm](/skills/egm) and describe your task. It uses the conversation,
+relevant project context, and available tools to select or resume a workflow.
+Guidance adapts to your stated preferences and familiarity. Approval and review
+requirements stay the same. The actions below are arguments to `/egm`;
+existing specialist commands remain available as compatibility entry points.
 
 ## Develop an idea
 
 Explore the problem, then put the plan in writing.
 
-- [Brainstorm](/skills/egm-brainstorm) `/egm-brainstorm`
+- [Brainstorm](/skills/egm-brainstorm) `/egm brainstorm`
 
   Explore a problem and write a brief.
 
-- [Draft](/skills/egm-draft) `/egm-draft`
+- [Draft](/skills/egm-draft) `/egm draft`
 
   Turn a brief or notes into a design document.
 
@@ -24,15 +27,15 @@ Explore the problem, then put the plan in writing.
 
 Get independent feedback and work through the findings.
 
-- [Review](/skills/egm-review) `/egm-review`
+- [Review](/skills/egm-review) `/egm review`
 
   Review a software design with independent reviewers.
 
-- [Resolve findings](/skills/egm-resolve) `/egm-resolve`
+- [Resolve findings](/skills/egm-resolve) `/egm resolve`
 
   Check the findings and agree on changes.
 
-- [Custom review](/skills/egm-review-loop) `/egm-review-loop`
+- [Custom review](/skills/egm-review-loop) `/egm review-loop`
 
   Choose reviewers and standards for your document.
 
@@ -42,14 +45,14 @@ The default review follows the software design workflow. Custom review lets you 
 
 Document a codebase, make targeted changes, and check whether code matches the plan.
 
-- [Lite](/skills/egm-lite) `/egm-lite`
+- [Lite](/skills/egm-lite) `/egm lite`
 
   Fast-track small iterations, spec revisions, refactors, and bug fixes.
 
-- [Document a codebase](/skills/egm-bootstrap) `/egm-bootstrap`
+- [Document a codebase](/skills/egm-bootstrap) `/egm bootstrap`
 
   Create or update documentation for existing code.
 
-- [Check for drift](/skills/egm-drift-report) `/egm-drift-report`
+- [Check for drift](/skills/egm-drift-report) `/egm drift-report`
 
   Compare documents with the current source code.

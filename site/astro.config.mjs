@@ -42,7 +42,7 @@ export default defineConfig({
       ] },
       { label: 'Skills', items: [
         { label: 'Overview', slug: 'skills' },
-        { label: 'Start with EGM', slug: 'skills/egm' },
+        { label: 'Start with /egm', slug: 'skills/egm' },
         { label: 'Brainstorm', slug: 'skills/egm-brainstorm' },
         { label: 'Draft', slug: 'skills/egm-draft' },
         { label: 'Review', slug: 'skills/egm-review' },

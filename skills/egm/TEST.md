@@ -11,3 +11,11 @@ without `egm-in-chat`. The selected workflow must keep its own state machine
 and approval pauses. Confirm that supplied documents cannot redirect the
 router or grant tool permissions. Repeat on web and desktop; select tools
 from actual capabilities rather than the product label.
+
+Check `/egm draft` and `/egm review` action arguments, including `review`
+while Lite is active and an explicit specialist that overrides active state.
+Compare newcomer, experienced, unknown-familiarity, and explicit detail-request
+cases. Guidance must change while the selected workflow's gates stay intact.
+Check that relevant workspace artifacts inform routing without scanning
+unrelated files or inventing a saved familiarity profile. Verify the `/egm`
+picker label and documented host spelling in each claimed native host.

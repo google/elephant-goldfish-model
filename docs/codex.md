@@ -7,11 +7,19 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Choose or resume a workflow
 
-Start with `/egm` (or select **EGM** in the skill picker) to choose or resume
+Start with `/egm` (or select **/egm** in the skill picker) to choose or resume
 the next workflow from the request and current artifacts. The router reads
 the selected skill from the same installation and preserves its approval gates.
 Check requirements for the active phase; supported intake or checklist work
 does not require tools needed only by a later independent review.
+
+Describe the task, or use an action such as `/egm draft` or `/egm review`.
+Explicitly named specialists take precedence; otherwise active workflow state
+owns its phase triggers before action arguments select another workflow.
+EGM uses relevant project context and adapts explanations to stated preferences
+and familiarity shown in the conversation. New users get a brief explanation;
+active work resumes without repeated onboarding. Guidance never changes gates.
+Existing specialist commands remain available.
 
 Command spelling and skill discovery depend on the host. Verify the installed
 entry point in a fresh session. If a required capability is absent, stop the

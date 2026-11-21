@@ -1,6 +1,51 @@
 skill: egm
-description: Default entry point routing and phase boundaries.
+description: Context-aware entry point, action overrides, adaptive guidance, and phase boundaries.
 scenarios:
+  - scenario_id: action_draft
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm draft Use the attached agreed concepts brief."
+        expected: Load egm-draft, use the brief, and preserve its section approval gates.
+  - scenario_id: action_review
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm review docs/designs/webhooks.md. No EGM workflow is active."
+        expected: Load egm-review for independent design review and preserve intake, capabilities, and approval gates.
+  - scenario_id: newcomer_guidance
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm I have never used EGM. Help me explore requirements and options for a substantial new webhook delivery system."
+        expected: Select egm-brainstorm; briefly explain the workflow, next step, and next approval pause in plain language without unexplained EGM terms or extra onboarding questions.
+  - scenario_id: experienced_guidance
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm draft Use the attached agreed brief. I use EGM regularly; keep it terse."
+        expected: Select egm-draft with a short route notice, skip introductory explanations, and preserve every section approval gate.
+  - scenario_id: unknown_familiarity
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm draft Use the attached agreed brief."
+        expected: Select egm-draft with one plain sentence about the next step; do not ask how experienced the user is, invent a familiarity profile, or skip approval gates.
+  - scenario_id: explicit_detail_preference
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm draft Use the attached agreed brief. I use EGM regularly, but explain each step this time."
+        expected: Select egm-draft and honor the explicit request for explanation despite experience; keep the same approval gates.
+  - scenario_id: workspace_context
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm Compare docs/designs/webhooks.md with this repository's implementation. Repository reads are available."
+        expected: Select egm-drift-report and inspect relevant documents and code; do not scan unrelated files to infer familiarity or ask the user to choose a specialist.
+  - scenario_id: action_review_in_active_lite
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm review. Lite is active with an approved checklist awaiting spec review; execution has not been approved. I am new to EGM."
+        expected: Resume egm-lite spec review using its state machine without repeating onboarding, switching to egm-review, or approving execution based on familiarity.
+  - scenario_id: explicit_specialist_over_active_state
+    eval_type: behavioral
+    turns:
+      - user_input: "/egm Use egm-draft for the attached agreed brief instead of the active Lite workflow."
+        expected: Honor the explicitly named egm-draft specialist and preserve its gates; do not interpret this as a Lite phase trigger.
   - scenario_id: resume_lite
     eval_type: behavioral
     turns:
