@@ -45,6 +45,14 @@ def install(destination: Path) -> Path:
     if destination.is_relative_to(ROOT):
         raise ValueError("Install outside the source tree")
     destination.mkdir(parents=True)
+    try:
+        return _install_into(destination)
+    except BaseException:
+        shutil.rmtree(destination, ignore_errors=True)
+        raise
+
+
+def _install_into(destination: Path) -> Path:
     bundle = destination / "bundle"
     bundle.mkdir()
     for directory in ("skills", "agents", "resources", "docs"):

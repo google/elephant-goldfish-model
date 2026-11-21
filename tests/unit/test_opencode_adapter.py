@@ -187,3 +187,20 @@ def test_env_matching_destination_is_rejected(tmp_path: Path, suffix: str) -> No
     with pytest.raises(ValueError, match="read rules"):
         ADAPTER["install"](tmp_path / suffix)
     assert not list(tmp_path.iterdir())
+
+
+def test_install_cleans_up_partial_destination_on_symlink_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "egm-oc"
+
+    def fail_symlink(self: Path, target: Path, target_is_directory: bool = False) -> None:
+        assert (destination / "bundle").is_dir()
+        raise OSError("symlinks disabled")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "symlink_to", fail_symlink)
+        with pytest.raises(OSError, match="symlinks disabled"):
+            ADAPTER["install"](destination)
+    assert not destination.exists()
+    assert ADAPTER["install"](destination).is_file()
