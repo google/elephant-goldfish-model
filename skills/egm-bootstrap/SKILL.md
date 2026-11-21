@@ -7,7 +7,8 @@ description: Bootstrap directory README.md files across a repository subtree.
 
 # EGM Peanuts and Hay Bootstrap (`egm-bootstrap`)
 
-When running in Codex or ChatGPT Work, first read [Codex integration](../../docs/codex.md).
+In Codex or ChatGPT, apply [host preflight](../../docs/codex.md) before each phase.
+Stop and report if the guide is unreadable.
 In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
 
 ## Overview

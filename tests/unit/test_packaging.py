@@ -155,6 +155,16 @@ def test_rejects_symlinked_runtime_paths(
     build(source, "openai", tmp_path / "output")
 
 
+def test_rejects_openai_skill_destination_collision(source: Path, tmp_path: Path) -> None:
+  duplicate = source / "skills/egm-in-chat/SKILL.md"
+  duplicate.parent.mkdir()
+  duplicate.write_text("# Conflicting shared skill", encoding="utf-8")
+  output = tmp_path / "output"
+  with pytest.raises(ValueError, match="Duplicate bundle path"):
+    build(source, "openai", output)
+  assert not output.exists()
+
+
 @pytest.mark.parametrize("missing", [
     "openai/skills/egm-in-chat/SKILL.md",
     "openai/skills/egm-in-chat/agents/openai.yaml",

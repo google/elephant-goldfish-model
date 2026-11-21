@@ -80,6 +80,8 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
         raise ValueError(f"Path outside source: {relative}")
       if path.is_file():
         destination = relative.relative_to("openai") if pattern in extra else relative
+        if destination in sources and sources[destination] != path:
+          raise ValueError(f"Duplicate bundle path: {destination}")
         sources[destination] = path
   for name in REQUIRED_SHARED + (HOST[target][0],) + extra:
     destination = Path(name).relative_to("openai") if name in extra else Path(name)

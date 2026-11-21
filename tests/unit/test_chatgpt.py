@@ -46,6 +46,22 @@ def test_skill_scenarios() -> None:
         re.compile(assertion["pattern"])
 
 
+def test_full_skills_check_openai_capabilities() -> None:
+  for name in PACKER["SKILLS"]:
+    instructions = (ROOT / f"skills/{name}/SKILL.md").read_text(encoding="utf-8")
+    assert "apply [host preflight](../../docs/codex.md) before each phase" in instructions
+
+
+def test_same_context_scenario_allows_denial_of_independence() -> None:
+  data = yaml.safe_load((SKILL / "test_scenarios.yaml").read_text(encoding="utf-8"))
+  scenario = next(s for s in data["scenarios"]
+                  if s["scenario_id"] == "same_context_disclosure_no_independent_claim")
+  pattern = next(a["pattern"] for a in scenario["turns"][0]["assertions"]
+                 if a["type"] == "forbidden_pattern")
+  assert re.search(pattern, "I conducted an independent review.")
+  assert not re.search(pattern, "Same-context review. This is not a Goldfish review.")
+
+
 def test_skill_interface_and_icon() -> None:
   interface = yaml.safe_load(
       (SKILL / "agents/openai.yaml").read_text(encoding="utf-8"))["interface"]
