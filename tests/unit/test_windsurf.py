@@ -7,8 +7,8 @@ from pathlib import Path
 
 from .test_harnesses import EXPECTED_SKILLS, frontmatter
 
-GOLDFISH_SWARM_SKILLS = frozenset(
-    {"egm-brainstorm", "egm-review", "egm-review-loop"}
+GOLDFISH_SKILLS = frozenset(
+    {"egm-brainstorm", "egm-review", "egm-review-loop", "egm-precommit-review"}
 )
 
 
@@ -34,7 +34,7 @@ def test_windsurf_adapter_routes_to_shared_skills_without_copied_text(
     assert (repo_root / "skills" / skill_name / "SKILL.md").is_file()
     assert len(text.splitlines()) <= 15, f"{workflow} must stay a thin pointer"
 
-    if skill_name in GOLDFISH_SWARM_SKILLS:
+    if skill_name in GOLDFISH_SKILLS:
       assert "read-only subagents" in text
       assert "stop" in text
       assert "read-only subagent profile" in text

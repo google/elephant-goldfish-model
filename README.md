@@ -134,6 +134,7 @@ You can use each skill when you need it. You do not have to follow the full sequ
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-lite/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-lite/SKILL.md">Lite</a></td><td>Fast-track small iterations, spec revisions, refactors, and bug fixes.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-review/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-review/SKILL.md">Review</a></td><td>Review a design with fresh agents across five stages.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-review-loop/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-review-loop/SKILL.md">Review&nbsp;loop</a></td><td>Run a configured group of reviewers for a specific review task.</td></tr>
+    <tr valign="top"><td width="160" valign="top"><img src="skills/egm-precommit-review/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-precommit-review/SKILL.md">Precommit&nbsp;review</a></td><td>Review pending code changes independently, with optional fixes and a fresh recheck.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-drift-report/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-drift-report/SKILL.md">Drift&nbsp;report</a></td><td>Compare checked-in documents with the current source code.</td></tr>
   </tbody>
 </table>
