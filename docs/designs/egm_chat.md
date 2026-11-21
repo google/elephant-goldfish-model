@@ -55,7 +55,7 @@ The plugin keeps its existing name and listing; the skill displays as `EGM in Ch
 - Building a hosted EGM service, storing user documents, or adding mandatory MCP or Google OAuth.
 - Publishing the revised package before combined-package web and desktop tests and directory eligibility are confirmed.
 - Adding a second ChatGPT plugin, a web-only ZIP, or a hosted reviewer service.
-- Raising problem recall above an unaided model. The evaluation below shows a single reply cannot do this.
+- Raising problem recall above an unaided model. The recorded prototype evaluation found no recall gain from a single reply.
 
 ## Behavior Rules
 
