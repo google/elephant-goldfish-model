@@ -1,0 +1,7 @@
+interface:
+  display_name: "/egm"
+  short_description: "Start or resume EGM with guidance that fits your context"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#1B6EF3"
+  default_prompt: "Use $egm to choose or resume the next workflow from my task and project context. Adapt the explanation to my stated preferences and familiarity with EGM."

@@ -21,7 +21,7 @@ REVIEWERS = (
 def name(path: Path) -> str:
     """Read the canonical name without a runtime YAML dependency."""
     header = path.read_text(encoding="utf-8").split("---", 2)[1]
-    match = re.search(r"^name: (egm-[a-z-]+)$", header, re.MULTILINE)
+    match = re.search(r"^name: (egm(?:-[a-z-]+)?)$", header, re.MULTILINE)
     if not match:
         raise ValueError(f"Missing canonical name: {path}")
     return match[1]
