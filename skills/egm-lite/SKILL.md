@@ -42,7 +42,8 @@ end the turn, and wait for that trigger. Do not execute subsequent phases.
     are identical aliases bound to the most recently completed section:
     -   *Pre-Implementation (after Section 2A Checklist or Section 5 Spec
         Triage):* Triggers Section 2B (Spec Review) on `egm_lite_checklist.md`.
-    -   *Post-Implementation (after Section 3 Exec or Section 5 Diff Triage):*
+    -   *Post-Implementation (after Section 3 Exec or Section 5 active-task
+        diff triage):*
         Triggers Section 4 (Diff Review) on modified workspace files.
     -   *Standalone Diff:* An explicitly supplied diff or pull request to
         review takes precedence. Otherwise, workspace changes can be reviewed
@@ -293,12 +294,12 @@ Isolate the review in a clean context window to eliminate confirmation bias.
 
 ### A. Subagent Delegation (True Context Separation)
 
-1.  Choose the review scope before reading any checklist. A checklist's
-    presence alone does not establish an active task. For standalone review,
-    use the supplied diff or pull request, or collect tracked and untracked
-    workspace changes when no target was supplied. Skip the checklist and baseline.
-    For active-task review, read `egm_lite_checklist.md` and collect every task change against its
-    recorded baseline, including changes already committed during the task,
+1.  Choose scope before reading a checklist. Its presence alone does not
+    establish an active task. Standalone review uses the supplied diff or PR,
+    or tracked and untracked changes if no target was supplied. If any review
+    material is inaccessible, report incomplete coverage and stop.
+    For active-task review, read `egm_lite_checklist.md` and collect every task
+    change against its recorded baseline, including commits made during the task,
     staged and unstaged edits, deletions, and the contents of new untracked
     files. In Git, use `git diff <starting-commit>` for tracked changes and
     `git ls-files --others --exclude-standard` to discover untracked files.

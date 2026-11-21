@@ -65,6 +65,8 @@ When evaluating or exploring `egm-lite` interactively in chat, verify:
     and once with findings. Both runs report the review in chat without
     reading or creating a checklist or offering `checklist` or `exec`.
     Repeat with an unrelated checklist present and verify it is untouched.
+    Supply an inaccessible PR and verify the assistant reports incomplete
+    coverage without dispatching a reviewer.
 -   **Top-Level Invariants & Graceful Recovery:** `goldfish` and `review` are
     interchangeable aliases bound to state, invalid state leaps (e.g. diff
     review with nothing to review, spec review before checklist creation) emit a
