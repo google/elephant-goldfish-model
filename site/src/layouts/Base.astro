@@ -30,6 +30,14 @@ const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID ?? '';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- GitHub Pages cannot set HTTP headers, so this meta policy is the only
+         CSP the site can ship. Google-origin allowances exist solely for the
+         consent-gated Cookie Notification Bar and GA4 (never loaded in forks,
+         previews, or local builds). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://www.gstatic.com; font-src 'self' data:; img-src 'self' data: https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com; connect-src https://*.google-analytics.com https://*.analytics.google.com; base-uri 'self'; form-action 'none'"
+    />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
