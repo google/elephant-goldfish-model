@@ -114,7 +114,11 @@ def test_rejects_invalid_submission(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-  source = next((EECS481_DIR / track / "submissions").glob("*.json"))
+  sample = (
+      "test_sample_libpng_expansion.json"
+      if track == "hw2-test-expansion" else "test_sample_pr_review.json"
+  )
+  source = EECS481_DIR / track / "submissions" / sample
   data = _load_json(source)
   target = data
   for key in field[:-1]:

@@ -28,7 +28,7 @@ contributions/eecs481/
 
 ## Submission Format and Local Validation
 
-Each HW2 or HW3 benchmark entry lives in its own JSON file inside the corresponding `submissions/` directory and must conform to the JSON schemas in `schemas/hw2_test_expansion.json` or `schemas/hw3_pr_assessment.json`.
+Put each HW2 or HW3 benchmark entry in its own JSON file in the corresponding `submissions/` directory. Use the schemas under `schemas/` for the file structure. The submission tests also check content rules such as non-empty descriptions and nondecreasing HW2 test counts and coverage.
 
 Run the offline unit test suite before pushing your branch:
 
