@@ -6,7 +6,7 @@ You are assisting development in the EGM repository.
 
 * **Google CLA**: Before opening a pull request, ask the human contributor to
   confirm they are covered by the [Google Contributor License Agreement](https://cla.developers.google.com/).
-  If they still need to complete it, wait for them to do so. See
+  Open the pull request only after they confirm coverage. See
   [CONTRIBUTING.md](CONTRIBUTING.md#contributor-license-agreement-cla) for details.
 * **No Autonomous PRs**: You must never automatically open a pull request without
   explicit human review, testing, and approval.
