@@ -13,7 +13,8 @@ Use Check for drift after implementation.
 
 ## What you get
 
-A dated report file that lists the differences for each document. A document with no differences shows "No drift detected."
+A dated report file (`{YYYY-MM-DD}_DRIFT_REPORT.md`) that lists the
+differences for each document. A document with no differences shows "No drift detected."
 
 ## Example
 
