@@ -145,13 +145,9 @@ sign a new one.
 
 ### Unsigned CLA report
 
-The daily [CLA report](.github/workflows/unsigned-cla-report.yml) only writes a
-run summary. With write access, you can run it from the default branch.
-For failed CLA checks, it lists reminder candidates 7 days after the first bot
-notice. It lists closure candidates at day 14 if the author did not reply or
-push an update. It lists uncertain push times separately.
-With triage access, apply `keep-open` to exempt a pull request. You need write
-access to create the label.
+The daily [CLA report](.github/workflows/unsigned-cla-report.yml) summarizes reminder candidates after 7 days and closure candidates after 14 days without a reply or push.
+It marks uncertain push timing in the summary. Triage access can apply `keep-open` to exempt a PR.
+Write access can create the label or run the report from the default branch.
 
 ## Community Guidelines
 

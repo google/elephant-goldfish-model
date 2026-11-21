@@ -1,7 +1,8 @@
 // Copyright 2026 Google LLC. SPDX-License-Identifier: Apache-2.0
 
 const assert = require('node:assert/strict');
-const { classify } = require('../.github/scripts/unsigned_cla_report.cjs');
+const { classify, report } = require('../.github/scripts/unsigned_cla_report.cjs');
+const { test } = require('node:test');
 
 const input = {
   notice: '2026-11-01T12:00:00Z',
@@ -20,3 +21,20 @@ assert.equal(classify({ ...input, authorActivity: ['2026-11-14T00:00:00Z'] }), '
 for (const firstHeadCheck of [undefined, '2026-11-02T00:00:00Z']) {
   assert.equal(classify({ ...input, firstHeadCheck }), 'Head updated or push timing uncertain');
 }
+
+test('empty report explicitly says no PRs matched', async () => {
+  const github = {
+    rest: { pulls: {} },
+    paginate: { async *iterator() {} },
+  };
+  const summary = {
+    addHeading() { return this; },
+    addRaw() { return this; },
+    addList(items) {
+      assert.deepEqual(items, ['No PRs matched.']);
+      return this;
+    },
+    async write() {},
+  };
+  await report(github, {}, { summary });
+});

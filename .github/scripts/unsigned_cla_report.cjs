@@ -61,7 +61,7 @@ async function report(github, repo, core) {
 
   await core.summary.addHeading('Unsigned CLA report')
     .addRaw('Report only. Apply `keep-open` to exempt a PR.', true)
-    .addList(rows.map(row => row.join(' | ')))
+    .addList(rows.length ? rows.map(row => row.join(' | ')) : ['No PRs matched.'])
     .write();
 }
 
