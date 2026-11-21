@@ -11,6 +11,7 @@ Frontmatter and link checks run in `pytest tests/unit` (see [TESTING.md](../../T
 2. **Safety Gate Threshold (>15 Subdirectories)**:
    - Target a directory with 16+ subdirectories.
    - Verify that discovery pauses upon reaching >15 directories and requests user confirmation in chat before proceeding.
+   - Verify that the question states the cost: up to 5 parallel workers and at least one scout per code directory.
 3. **Inline Scout Fallback**:
    - Run in an environment without task delegation tools.
    - Verify that the agent reads source files and performs the scout steps inline, then generates and checks the contracts.

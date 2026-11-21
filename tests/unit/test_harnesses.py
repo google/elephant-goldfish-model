@@ -27,7 +27,7 @@ MARKETPLACES = (
 )
 EXPECTED_SKILLS = {
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop",
+    "egm-lite", "egm-resolve", "egm-review", "egm-review-loop",
 }
 REVIEWERS = (
     "codebase_details", "comprehension", "design_critic",
@@ -108,7 +108,11 @@ def test_compatibility_metadata_matches_root(path: str) -> None:
     assert manifest[field] == canonical[field], f"{path}: {field} drift"
   for field in ("author", "homepage", "repository", "license"):
     if field in manifest:
-      assert manifest[field] == canonical[field], f"{path}: {field} drift"
+      expected = canonical[field]
+      if path == ".claude-plugin/plugin.json" and field == "author":
+        # Anthropic's directory lists Google plugins under the legal entity.
+        expected = {"name": "Google LLC"}
+      assert manifest[field] == expected, f"{path}: {field} drift"
   if "interface" in manifest:
     assert manifest["interface"]["developerName"] == canonical["author"]["name"]
   if "skills" in manifest:
@@ -144,6 +148,10 @@ def test_marketplace_resolves_shared_package(path: str) -> None:
     assert manifest["version"] == canonical["version"]
     for adapter in manifest["agents"]:
       assert (package / adapter).is_file()
+    assert marketplace["owner"] == manifest["author"]
+    assert entry["author"] == manifest["author"]
+    assert entry["homepage"] == canonical["homepage"]
+    assert entry["category"] == "development"
   if "description" in entry:
     assert entry["description"] == canonical["description"]
   if path == ".agents/plugins/marketplace.json":
@@ -221,6 +229,15 @@ def test_scratch_files_use_private_directories() -> None:
       encoding="utf-8").split())
   assert "never a fixed, shared path" in skill
   assert "If neither exists, skip them." in skill
+
+
+def test_bootstrap_caps_parallel_workers_and_scouts() -> None:
+  skill = " ".join((ROOT / "skills/egm-bootstrap/SKILL.md").read_text(
+      encoding="utf-8").split())
+  assert "artificial concurrency limits" not in skill
+  assert "Sub-Orchestrators in parallel, never more than 5." in skill
+  assert "per chunk in parallel, at most 5 at a time" in skill
+  assert "up to 5 parallel workers, and at least one scout" in skill
 
 
 def test_claude_permissions_remain_under_user_control() -> None:
