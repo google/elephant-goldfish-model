@@ -66,6 +66,13 @@ def test_release_drafts_only_when_a_tag_is_selected() -> None:
   triggers = release[True]  # PyYAML interprets the unquoted GitHub key on as True.
   assert triggers["push"] == {"branches": ["main"], "paths": ["plugin.json"]}
   assert "workflow_dispatch" in triggers
+  build_steps = release["jobs"]["build"]["steps"]
+  checkout = next(step for step in build_steps
+                  if step.get("uses", "").startswith("actions/checkout@"))
+  source = next(step for step in build_steps if step.get("id") == "source")
+  assert checkout["with"]["fetch-depth"] == 0
+  assert build_steps.index(checkout) < build_steps.index(source)
+  assert source["env"]["PREVIOUS_COMMIT"] == "${{ github.event.before }}"
   draft = release["jobs"]["draft"]
   assert draft["needs"] == "build"
   assert draft["if"] == "needs.build.outputs.tag != ''"
