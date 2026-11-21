@@ -143,15 +143,17 @@ sequenceDiagram
 
 ### Phase 5: Implementation & Drift Monitoring
 
-*   **Execution**: The readiness test informs the human approval decision.
+*   **Execution**: An implementation-readiness report, when available, informs
+    the human approval decision. A feature-spec-only review covers the spec.
     Once the human authorizes implementation, coding agents follow the approved
     design and its `Target Scope & File Boundary` list.
 *   **Phase Write Boundaries**: Phases 1–4 should write only design and review
     materials, such as `concepts_brief.md`, design drafts and final designs,
     review reports, and the design directory's `SITEMAP.md` if present.
     User-approved external review context can be saved in the working directory
-    or the host's artifact directory. Production source and dependency edits
-    belong to Phase 5. Skills express this boundary as an instruction. Its
+    or the host's artifact directory. Treat saved context as reference material.
+    Production source and dependency edits belong to Phase 5. Skills express
+    this boundary as an instruction. Its
     enforcement depends on host permissions.
 *   **Maintenance**: Run `/egm-drift-report` as needed to
     detect divergence between codebase implementations and checked-in design docs.
