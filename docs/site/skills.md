@@ -8,8 +8,9 @@ description: Start with /egm to select or resume a workflow from your task and p
 Start with [/egm](/skills/egm) and describe your task. It uses the conversation,
 relevant project context, and available tools to select or resume a workflow.
 Guidance adapts to your stated preferences and familiarity. Approval and review
-requirements stay the same. The actions below are arguments to `/egm`;
-existing specialist commands remain available as compatibility entry points.
+requirements stay the same. An active workflow handles its own phase triggers
+first, so `/egm review` can resume Lite. Name a specialist in full, such as
+`egm-review`, to choose it explicitly.
 
 ## Develop an idea
 

@@ -19,7 +19,7 @@ Develop ideas with context and review documents with fresh eyes. EGM is an open-
 
 Start with `/egm` and describe your task. It selects or resumes a workflow from the conversation, relevant project context, and supplied documents. Guidance adapts to your stated preferences and familiarity with EGM; approval and review requirements stay the same.
 
-The built-in draft and design-review workflow targets software specifications. For other documents, choose reviewers and standards with `/egm review-loop`. Bootstrap and drift reporting apply to software codebases.
+The built-in draft and design-review workflow targets software specifications. For other documents, choose reviewers and standards with `/egm-review-loop` (`/egm:egm-review-loop` in Antigravity and Claude Code). Bootstrap and drift reporting apply to software codebases.
 
 https://github.com/user-attachments/assets/93c799a2-10a3-4266-af02-eb79dd33a9a2
 
@@ -57,12 +57,12 @@ Start a new session after installation. For **Claude Cowork** and **ChatGPT Work
 
 ## Try a 60-second review on existing code
 
-Review an existing design document, README, or PR plan against the live code. You do not need to write a new specification. The commands below use the namespaced `/egm:egm` entry point for Antigravity (agy CLI) and Claude Code. In Codex, select **/egm** in the skill picker and supply the same request. Verify command spelling in your installed host.
+Review an existing design document, README, or PR plan against the live code. You can use an existing specification. The commands below use the `/egm:` prefix for Antigravity (agy CLI) and Claude Code. In Codex, select the corresponding specialist in the skill picker. To let EGM select the workflow, describe the same task with `/egm` (`/egm:egm` in namespaced hosts).
 
 <img src="skills/egm-review/assets/icon.svg" width="20" height="20" align="top" alt=""> **Review an existing document**
 
 ```text
-/egm:egm review docs/designs/webhooks.md
+/egm:egm-review docs/designs/webhooks.md
 ```
 
 Use the path to your design doc, or to a PR plan saved as Markdown. Fresh reviewers check the design, its clarity, its fit with the code, and its implementation plan.
@@ -70,7 +70,7 @@ Use the path to your design doc, or to a PR plan saved as Markdown. Fresh review
 <img src="skills/egm-drift-report/assets/icon.svg" width="20" height="20" align="top" alt=""> **Check for drift**
 
 ```text
-/egm:egm drift-report docs/designs/
+/egm:egm-drift-report docs/designs/
 ```
 
 The agent compares each document in the folder with the current source code and reports where they diverge. You decide whether to update the document or the code.
@@ -79,12 +79,12 @@ The agent compares each document in the folder with the current source code and 
 
 Open your project in your coding agent and choose a feature that needs design decisions. This example adds webhook delivery: what should happen when a delivery fails, or the same event arrives twice?
 
-The commands below use `/egm` with optional action arguments. In Antigravity (agy CLI) and Claude Code, use `/egm:egm`, for example `/egm:egm draft`. In Codex, select **/egm** in the skill picker. You can describe the desired outcome instead of naming an action. Existing specialist commands such as `/egm-brainstorm` remain available. Brainstorming and review require a session that can create fresh subagents.
+The examples use specialist commands. In Antigravity (agy CLI) and Claude Code, add the `/egm:` prefix, for example `/egm:egm-brainstorm`. In Codex, select the corresponding specialist in the skill picker. Brainstorming and review require a session that can create fresh subagents.
 
 <img src="skills/egm-brainstorm/assets/icon.svg" width="20" height="20" align="top" alt=""> **Explore the idea**
 
 ```text
-/egm Add webhook delivery to this project. Help me explore the requirements and options.
+/egm-brainstorm Add webhook delivery to this project.
 ```
 
 Discuss requirements and trade-offs with the agent. Fresh reviewers challenge the proposal, and the agent saves the agreed direction in `concepts_brief.md`.
@@ -92,7 +92,7 @@ Discuss requirements and trade-offs with the agent. Fresh reviewers challenge th
 <img src="skills/egm-draft/assets/icon.svg" width="20" height="20" align="top" alt=""> **Draft the specification**
 
 ```text
-/egm draft Use the agreed concepts brief.
+/egm-draft
 ```
 
 The agent turns the brief into `design_draft.md`, pausing after each section for your feedback in chat.
@@ -100,7 +100,7 @@ The agent turns the brief into `design_draft.md`, pausing after each section for
 <img src="skills/egm-review/assets/icon.svg" width="20" height="20" align="top" alt=""> **Review the draft**
 
 ```text
-/egm review design_draft.md
+/egm-review design_draft.md
 ```
 
 Use the draft path returned by the agent.
