@@ -20,7 +20,12 @@ the aligned problem and requirements from the brainstorm phase.
 ## Execution Constraints (CRITICAL)
 
 1.  You **MUST** read and apply the
-    execution instructions in `resources/execution_instructions.md`.
+    execution instructions in `resources/execution_instructions.md` at the
+    plugin root, two directories above this skill's folder. In omp,
+    `skill://` reads cannot leave the skill's folder, so run
+    `realpath skill://egm-draft` first and read the file by absolute path.
+    If you cannot find it after that, tell the user the lookup failed and
+    stop. Do not call the file missing.
 2.  **Artifact-First Delivery (MANDATORY)**: You are **STRICTLY FORBIDDEN** from
     presenting large proposals, drafts, summaries, or plans directly in the chat
     pane. You **MUST** write them directly to the working directory (or your
