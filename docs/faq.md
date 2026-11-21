@@ -60,3 +60,32 @@ part of the process and gets easier the more you use it.
 
 **A**: No. Generally, the answer for this (and many other questions) is "The
 answer is the same as when you built things without AI."
+
+#### Q: How can I share a review example safely?
+
+**A**: Sharing is optional. EGM writes files locally and never publishes or
+sends your data (see [EGM data handling](privacy.md)).
+
+Before you publish anything, remove secrets, credentials, personal names,
+internal paths or URLs, and private project data from every excerpt. Because
+review outputs can quote text from the inputs, inspect both the design and the
+review findings before sharing. Do not post raw account-bearing session
+transcripts.
+
+A useful review example includes:
+
+*   **Design excerpt before the review**: The section of the draft that the
+    reviewer examined.
+*   **Finding and evidence**: The reviewer's finding and the cited passage or
+    file that supports it.
+*   **Owner decision and reason**: Whether the document owner accepted,
+    contested, or declined the finding, and why. Include findings that you
+    rejected so readers can see false positives alongside useful catches.
+*   **Design excerpt after the change**: The updated text when a finding led to
+    a revision.
+*   **Duration and cost**: The host, model, elapsed time, and token usage when
+    available.
+
+Post sanitized examples in the
+[Show and tell](https://github.com/google/elephant-goldfish-model/discussions/categories/show-and-tell)
+category on GitHub Discussions.
