@@ -180,13 +180,21 @@ def test_rejects_escaping_or_missing_manifest_assets(
     build(source, "openai", tmp_path / "output")
 
 
-def test_rejects_unbundled_codex_skills_path(source: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize("skills,error", [
+    ("./missing-skills/", "Unbundled manifest reference"),
+    ("../skills/", "Unbundled manifest reference"),
+    ("", "Invalid manifest skills path"),
+    (["./skills/"], "Invalid manifest skills path"),
+])
+def test_rejects_invalid_codex_skills_path(
+    source: Path, tmp_path: Path, skills: object, error: str,
+) -> None:
   path = source / ".codex-plugin/plugin.json"
   manifest = json.loads(path.read_text())
-  manifest["skills"] = "./missing-skills/"
+  manifest["skills"] = skills
   path.write_text(json.dumps(manifest))
   output = tmp_path / "output"
-  with pytest.raises(ValueError, match="Unbundled manifest reference: missing-skills"):
+  with pytest.raises(ValueError, match=error):
     build(source, "openai", output)
   assert not output.exists()
 
