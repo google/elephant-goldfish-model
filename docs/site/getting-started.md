@@ -28,7 +28,7 @@ The assistant asks questions and writes a short brief. Read the brief before you
 
 ## Return to a project
 
-Use [What to Run Next](https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md#what-to-run-next) to match your brief, draft, or review reports to the step to continue. Files can be partial or belong to another run. Confirm the target and any pending review before proceeding.
+Use [What to Run Next](https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md#what-to-run-next) to match your brief, draft, or review reports to the step to continue. Files can be partial or belong to another run. Confirm the target, any pending review, and any required human approval before proceeding.
 
 For skill choice, use the [skills guide](/skills). For a setup failure, use [Get Help with Setup](https://github.com/google/elephant-goldfish-model/blob/main/docs/getting_started.md#get-help-with-setup).
 
