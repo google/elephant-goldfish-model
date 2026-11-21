@@ -73,6 +73,8 @@ def test_release_drafts_only_when_a_tag_is_selected() -> None:
   assert checkout["with"]["fetch-depth"] == 0
   assert build_steps.index(checkout) < build_steps.index(source)
   assert source["env"]["PREVIOUS_COMMIT"] == "${{ github.event.before }}"
+  assert 'git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"' in source["run"]
+  assert 'test "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"' in source["run"]
   draft = release["jobs"]["draft"]
   assert draft["needs"] == "build"
   assert draft["if"] == "needs.build.outputs.tag != ''"
