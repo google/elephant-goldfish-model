@@ -90,6 +90,10 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
     raise ValueError(f"Invalid manifest agents: {agents!r}")
   references = [agents] if isinstance(agents, str) else list(agents)
   if target == "openai":
+    skills_root = manifest.get("skills", "./skills/")
+    if not isinstance(skills_root, str) or not skills_root:
+      raise ValueError(f"Invalid manifest skills path: {skills_root!r}")
+    references.extend(str(Path(skills_root) / skill / "SKILL.md") for skill in SKILLS)
     # Codex reads the host manifest, so check it as well as the portable copy.
     interfaces = [manifest.get("interface", {})]
     if "interface" in openai:
