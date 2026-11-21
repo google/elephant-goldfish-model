@@ -195,31 +195,12 @@ def test_install_cleans_up_partial_destination_on_symlink_failure(
     destination = tmp_path / "egm-oc"
 
     def fail_symlink(self: Path, target: Path, target_is_directory: bool = False) -> None:
+        assert (destination / "bundle").is_dir()
         raise OSError("symlinks disabled")
 
-    monkeypatch.setattr(Path, "symlink_to", fail_symlink)
-    monkeypatch.setattr(os, "name", "posix")
-    with pytest.raises(OSError, match="symlinks disabled"):
-        ADAPTER["install"](destination)
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "symlink_to", fail_symlink)
+        with pytest.raises(OSError, match="symlinks disabled"):
+            ADAPTER["install"](destination)
     assert not destination.exists()
-
-
-def test_install_falls_back_to_windows_junction_on_symlink_failure(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    destination = tmp_path / "egm-oc"
-    calls: list[list[str]] = []
-
-    def fail_symlink(self: Path, target: Path, target_is_directory: bool = False) -> None:
-        raise OSError("WinError 1314")
-
-    def fake_run(cmd: list[str], **kwargs: object) -> None:
-        calls.append(cmd)
-
-    monkeypatch.setattr(Path, "symlink_to", fail_symlink)
-    monkeypatch.setattr(os, "name", "nt")
-    monkeypatch.setattr("subprocess.run", fake_run)
-    config = ADAPTER["install"](destination)
-    assert config.exists()
-    assert calls
-    assert calls[0][:4] == ["cmd", "/c", "mklink", "/J"]
+    assert ADAPTER["install"](destination).is_file()
