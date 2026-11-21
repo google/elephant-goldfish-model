@@ -85,6 +85,7 @@ the side-panel artifact directory or local workspace:
 *   Executive Summary & Problem Framing
 *   Multi-Lens Analysis & Risk Matrix
 *   Scope Boundaries (Goals vs. Non-Goals)
+*   Alternatives Weighed (each option rejected during ideation, with the reason the author rejected it)
 *   Key Architectural Decisions
 
 ### 4. Step 4: Iterative Refinement & Handoff
