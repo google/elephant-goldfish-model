@@ -13,8 +13,8 @@ description: >-
 
 # EGM-Lite: Rapid Ad-Hoc Engineering Protocol
 
-In Codex or ChatGPT, apply [host preflight](../../docs/codex.md) before each phase.
-Stop and report if the guide is unreadable.
+In Codex or ChatGPT, apply [Codex integration](../../docs/codex.md) preflight
+before each phase. Stop and report if unreadable.
 In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
 
 Act as the user's development partner for small, rapid iterations. Strictly

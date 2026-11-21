@@ -49,7 +49,7 @@ def test_skill_scenarios() -> None:
 def test_full_skills_check_openai_capabilities() -> None:
   for name in PACKER["SKILLS"]:
     instructions = (ROOT / f"skills/{name}/SKILL.md").read_text(encoding="utf-8")
-    assert "apply [host preflight](../../docs/codex.md) before each phase" in instructions
+    assert "apply [Codex integration](../../docs/codex.md) preflight\nbefore each phase" in instructions
 
 
 def test_same_context_scenario_allows_denial_of_independence() -> None:
