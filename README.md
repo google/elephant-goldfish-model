@@ -53,9 +53,14 @@ codex plugin add egm@egm
 
 Start a new session after installation. For **Claude Cowork** and **ChatGPT Work**, see the [setup guide](docs/harnesses.md).
 
+Then choose a starting point:
+
+- **You have a design document, README, or PR plan:** [review it against the code](#try-a-60-second-review-on-existing-code).
+- **You have an idea and no document yet:** [write your first design](#try-your-first-design).
+
 ## Try a 60-second review on existing code
 
-Review an existing design document, README, or PR plan against the live code. You do not need to write a new specification. The commands below use the `/egm:` prefix for Antigravity (agy CLI) and Claude Code. In Codex, select the corresponding EGM skill from the skill picker.
+Review an existing design document, README, or PR plan against the live code. You do not need to write a new specification. The commands below use the `/egm:` prefix for Antigravity (agy CLI) and Claude Code. In Codex, select the corresponding EGM skill from the skill picker. A review requires a session that can create fresh subagents; see [supported environments and verification limits](docs/harnesses.md#support-status--contributing-other-harnesses).
 
 <img src="skills/egm-review/assets/icon.svg" width="20" height="20" align="top" alt=""> **Review an existing document**
 
@@ -65,13 +70,15 @@ Review an existing design document, README, or PR plan against the live code. Yo
 
 Use the path to your design doc, or to a PR plan saved as Markdown. Fresh reviewers check the design, its clarity, its fit with the code, and its implementation plan.
 
+The review runs in stages. Each stage writes its findings to a report file, starting with `zoom_out_report.md`, and the agent gives you the path. Read the report, then choose whether to continue to the next stage, update the document first, or pause the review.
+
 <img src="skills/egm-drift-report/assets/icon.svg" width="20" height="20" align="top" alt=""> **Check for drift**
 
 ```text
 /egm:egm-drift-report docs/designs/
 ```
 
-The agent compares each document in the folder with the current source code and reports where they diverge. You decide whether to update the document or the code.
+The agent compares each document in the folder with the current source code and writes the differences to a dated file named `YYYY-MM-DD_DRIFT_REPORT.md`. For each difference, you decide whether to update the document or the code.
 
 ## Try your first design
 
@@ -85,7 +92,7 @@ The commands below are shown without a prefix. In Antigravity (agy CLI) and Clau
 /egm-brainstorm Add webhook delivery to this project.
 ```
 
-Discuss requirements and trade-offs with the agent. Fresh reviewers challenge the proposal, and the agent saves the agreed direction in `concepts_brief.md`.
+Discuss requirements and trade-offs with the agent. Fresh reviewers challenge the proposal, and the agent saves the agreed direction in `concepts_brief.md`. Read the brief and confirm that it matches what you agreed. Then choose to continue to the draft, keep refining the brief, or stop and keep it for later.
 
 <img src="skills/egm-draft/assets/icon.svg" width="20" height="20" align="top" alt=""> **Draft the specification**
 
@@ -93,7 +100,7 @@ Discuss requirements and trade-offs with the agent. Fresh reviewers challenge th
 /egm-draft
 ```
 
-The agent turns the brief into `design_draft.md`, pausing after each section for your feedback in chat.
+The agent turns the brief into `design_draft.md`, pausing after each section for your feedback in chat. Approve each section or ask for changes before the agent writes the next one.
 
 <img src="skills/egm-review/assets/icon.svg" width="20" height="20" align="top" alt=""> **Review the draft**
 
@@ -103,7 +110,7 @@ The agent turns the brief into `design_draft.md`, pausing after each section for
 
 Use the draft path returned by the agent.
 
-Fresh reviewers check the design, its clarity, its fit with the code, and its implementation plan. Choose which findings to address. When you approve the design, ask your coding agent to implement it.
+Fresh reviewers check the design, its clarity, its fit with the code, and its implementation plan. Each stage writes its findings to a report file and waits for you. Choose which findings to address, either with the agent or by editing the draft yourself. When you approve the design, ask your coding agent to implement it.
 
 See the [workflow guide](docs/getting_started.md) for the full process, including saving approved specifications under `docs/designs/`.
 
