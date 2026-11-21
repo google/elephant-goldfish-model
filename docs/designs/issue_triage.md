@@ -124,24 +124,30 @@ issue labels first, then add all matching allowlisted labels that exist in the
 repository but are missing from the issue in one batched REST
 `issues.addLabels` call, not one API request per label.
 
-The initial issue-field GraphQL query retrieves the current native type
-alongside the other current issue fields. If a type is already present, skip
-the separate repository issue-type catalog and issue-type timeline GraphQL
-reads, and skip type assignment; this includes web-template submissions. If
-the issue is untyped, perform those separate native-type reads to determine
-whether assignment is available and whether a human override exists. Keep
-native-type reads separate from the repository label catalog and label timeline
-reads. If the initial query or either separate native-type read fails, record a
-type-stage runtime error and continue topical labeling using an independent
-read of the issue fields and labels that does not request native-type data.
+The initial issue-field GraphQL query retrieves title, body, and current labels
+under `GITHUB_TOKEN` and does not include the native issue type. A separate
+isolated read using the native-type credential checks whether a type is already
+present. Use `GITHUB_TOKEN` by default, with the optional fallback described
+under Risks and limits. If a type is already present, skip the repository
+issue-type catalog and issue-type timeline GraphQL reads, and skip type
+assignment; this includes web-template submissions. If the issue is untyped,
+perform those separate native-type reads to determine whether assignment is
+available and whether a human override exists. Keep native-type reads separate
+from the repository label catalog and label timeline reads. If either separate
+native-type read fails, record a type-stage runtime error and continue topical
+labeling using the already-fetched issue fields; no reread of issue fields is
+needed.
+
 Assign the selected native type with the GraphQL
 `updateIssueIssueType` mutation; use the REST `issues.addLabels` endpoint for
 topical labels. Keep the type and label stages independent so either is
 attempted if the other encounters an error.
-Expected skips (an issue already has a type; native types are unavailable on a
-personal fork; an allowlisted label is missing from the repository catalog; a
-human override is present; or classification signals are ambiguous) complete
-successfully. Unrecovered authentication or permission failures, 5xx responses,
+
+Expected skips (an issue already has a type; native types are unavailable on
+user-owned repositories or an empty repository issue-type catalog; an
+allowlisted label is missing from the repository catalog; a human override is
+present; or classification signals are ambiguous) complete successfully.
+Unrecovered authentication or permission failures, 5xx responses,
 rate limits, incomplete pagination, and rejected writes are runtime errors:
 record them, continue the independent stage, and fail the workflow job at the
 end if a runtime error occurred. A successful HTTP 401 fallback retry is a
@@ -167,16 +173,21 @@ recovered operation, not a runtime error.
 - **Token fallback**: Always use `GITHUB_TOKEN` for topical-label operations.
   Use it by default for native issue-type operations as well. Only if the
   native types are enabled but required native-type permissions are unavailable
-  through `GITHUB_TOKEN`, use the narrowly scoped
-  `EGM_ISSUE_TRIAGE_BOT_TOKEN` secret for native issue-type operations; do not
-  reuse `EGM_TRIAGE_BOT_TOKEN`, which is used by the PR
-  review workflow. Do not configure this fallback by default. If enabled, limit
-  it to the required repository access and prefer a narrowly scoped GitHub App
-  installation token so automated type edits remain distinguishable from human
-  actor events. Retry a native-type operation with `GITHUB_TOKEN` only when the
+  through `GITHUB_TOKEN`, use a narrowly scoped fallback credential for
+  native issue-type operations; do not reuse `EGM_TRIAGE_BOT_TOKEN`, which is
+  used by the PR review workflow. Do not configure this fallback by default.
+  If enabled, prefer minting a short-lived GitHub App installation token per run
+  (from an App ID and private key secret) for `Bot` actor attribution on
+  timeline events; alternatively, a dedicated static `EGM_ISSUE_TRIAGE_BOT_TOKEN`
+  secret may be used, which carries user-account attribution instead. Maintainers
+  must document ownership and rotation policy before enabling either credential.
+  Limit the credential to the required repository access.
+  Retry a native-type operation with `GITHUB_TOKEN` only when the
   issue-only token returns HTTP 401 for an authentication or expiry error, not
-  for rate limits. If that retry succeeds, the native-type operation succeeds
-  and does not cause a job failure. A token failure must never prevent topical
+  for rate limits. If that retry succeeds, emit a `core.warning` notice and use
+  the successful fallback token for the remainder of the run; the native-type
+  operation succeeds and does not cause a job failure. A token failure must
+  never prevent topical
   labels, which always use `GITHUB_TOKEN`; if native-type processing still
   fails, record and log the failure, continue topical labeling, and fail the
   job at the end as described below.
@@ -210,7 +221,8 @@ recovered operation, not a runtime error.
   skips completing successfully, and human timeline override preservation.
   Verify continuation to label assignment after a native-type read or write
   error; retry with `GITHUB_TOKEN` only after an issue-triage token HTTP 401,
-  with success when that retry succeeds and no retry for rate limits; preserve
+  with a `core.warning` emitted and the fallback token latched for the remainder
+  of the run on a successful retry, and no retry for rate limits; preserve
   successful writes and require a failing job result for runtime errors.
 - **Planned live permission check (Stage 2)**: In an organization-owned test
   repository with native issue types enabled, verify that the workflow token
