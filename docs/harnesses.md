@@ -144,6 +144,15 @@ approval.
 
 ## Support Status & Contributing Other Harnesses
 
+A working installation, a verified workflow, and verified reviewer isolation
+are three separate results. The
+[harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record)
+is the single source of evidence. For each tested version it lists the
+install, brainstorm, draft, and review results. It lists parent-turn
+isolation and instruction-file exclusion in separate columns. A result marked
+`Unverified` has no recorded evidence. The summary below explains those rows
+and does not replace them.
+
 **Antigravity CLI**, **Claude Code**, and **Codex** pass automated installation
 and end-to-end workflow fixtures. Reviewer isolation evidence is narrower:
 parent-turn isolation and host-instruction exclusion are separate results.
