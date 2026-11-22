@@ -17,6 +17,31 @@ The proposed skill adapts fresh review, explicit triage and a bounded fix loop
 from [ClaudeFlows cf-precommit-review](https://github.com/OmniPragmatic/claudeflows/blob/60d180dc6f89d7ffa1166e19ed4a6054a994aff2/plugins/claudeflows/skills/cf-precommit-review/SKILL.md)
 and the earlier [elephant-goldfish implementation](https://github.com/vshvedov/elephant-goldfish).
 
+## Pilot case and scope decision
+
+A concrete staged-versus-working-copy case is already exercised by the
+[fixture](https://github.com/google/elephant-goldfish-model/blob/c939a0ef53fa66a9868922157331578d5aa81dc7/tests/integration/precommit_fixture.py)
+and its [offline regression test](https://github.com/google/elephant-goldfish-model/blob/c939a0ef53fa66a9868922157331578d5aa81dc7/tests/unit/test_precommit_fixture.py):
+
+1. HEAD contains `return owner == user` in `access.py`.
+2. Change it to `return owner != user` and stage that file.
+3. Restore `return owner == user` in the working copy without staging it.
+
+At that point, `git diff HEAD -- access.py` is empty and the working-copy
+unit tests pass. The index still grants access to a different user and
+denies the owner. `git diff --cached -- access.py` exposes that inversion;
+`git diff -- access.py` shows the unstaged correction. A reviewer given only
+the combined diff or current file can miss the defect that would be
+committed. This is a seeded counterexample to single-layer review, not a
+measured comparison with a normal reviewer.
+
+Use a read-only review of those two layers as the first scope candidate.
+The case motivates keeping the layers separate; it does not establish a
+need for a persistent findings ledger or an automated fix loop. Those remain
+proposals in the design below, subject to the scope decision. Give the
+diagnosis design in #312 the first pilot, and keep #293 in draft with further
+implementation changes paused until the minimum scope is agreed.
+
 ## Goals
 
 - Review pending changes, including separate staged and working-copy versions
