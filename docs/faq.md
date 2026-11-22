@@ -48,9 +48,8 @@ the EGM workflow alone does not demonstrate a productivity improvement.
 #### Q: What does a review cost, and how long does it take?
 
 **A**: This answer covers the full review, `/egm-review`; for small changes,
-see the last paragraph. Each reviewer is a fresh subagent that reads the
-design, and most also read a document standard. The cost grows with these
-factors:
+see the last paragraph. Each reviewer is a fresh subagent, and most also read
+a document standard. The cost grows with these factors:
 
 *   **Reviewers and stages**: A full review runs five stages, numbered 5 to 9
     in `egm-review`, one after another.
@@ -58,15 +57,15 @@ factors:
     implementation plan, the `Consolidated report with all review rubrics`
     preset (uninterrupted mode) runs each stage once: 10 reviewer subagents. A
     design with no implementation plan gets Stages 5 to 8 only: 7 reviewers.
-    The other presets pause after each stage and run Stages 7 and 9, when they
-    include them, through `egm-review-loop`. Each round of that loop starts the
-    stage's 3 reviewers again; it asks you before each new round and finishes
-    after two clean rounds in a row. It also stops and asks you at 5 rounds,
-    where you can choose to continue, and on churn, when a new finding sits
-    where a fix was applied and undoing that fix would resolve it. Stages 5, 6,
-    and 8 can run once more after the design changes, and Stages 7 and 9 can
-    run their whole loop once more. An interactive review can therefore start
-    many more than 10 reviewers, and the number depends on your choices.
+    The `Interactive review with all review rubrics` preset pauses after each
+    stage and runs Stages 7 and 9 through `egm-review-loop`. Each round of that
+    loop starts the stage's 3 reviewers again; it asks you before each new round
+    and finishes after two clean rounds in a row. It also stops and asks you at
+    5 rounds, where you can choose to continue, and on churn, when a new finding
+    sits where a fix was applied and undoing that fix would resolve it. Stages
+    5, 6, and 8 can run once more after the design changes, and Stages 7 and 9
+    can run their whole loop once more. An interactive review can therefore
+    start many more than 10 reviewers, and the number depends on your choices.
 *   **Extra subagents**: When a run nests reviewers under `egm-synthesizer`
     (not every host can; see [Delegation](harnesses.md#delegation)), each stage
     or loop round that uses it adds a synthesizer, and the synthesizer may start
@@ -101,8 +100,8 @@ Two measured runs follow. Each is one run, not an average.
     That EGM version did not yet add `egm-inventive-catalyst` to Stage 5, so
     Stages 5 to 8 ran 6 reviewers. Claude Code reported 20,196 to 38,044 tokens
     per reviewer, 176,520 in total, and each reviewer took 27 to 44 seconds. A
-    separate Stage 7 re-audit on the revised 176-line design used another 84,505
-    tokens.
+    later Stage 7 re-audit of the revised 176-line design ran the same 3
+    reviewers and used another 84,505 tokens.
     See the
     [run report](https://github.com/google/elephant-goldfish-model/pull/412#issuecomment-6892400593).
 
@@ -116,6 +115,8 @@ the limit before it finishes. On 2026-10-22, a Claude Cowork run of brainstorm,
 draft, and review (Opus 5.5 Medium) reached its usage limit during review
 Stage 8; see the
 [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record).
+If a review stops this way, you can run the remaining stages later, one at a
+time, with the `Step` input of `egm-review` (stage numbers `5` to `9`).
 
 For a small, well-understood change, use
 [`/egm-lite`](../skills/egm-lite/SKILL.md) or your normal workflow instead.
