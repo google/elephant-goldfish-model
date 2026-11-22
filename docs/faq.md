@@ -47,10 +47,13 @@ the EGM workflow alone does not demonstrate a productivity improvement.
 
 #### Q: What does a review cost, and how long does it take?
 
-**A**: Each reviewer is a fresh subagent that reads the design, and most also
-read a document standard. The cost grows with these factors:
+**A**: This answer covers the full review, `/egm-review`; for small changes,
+see the last paragraph. Each reviewer is a fresh subagent that reads the
+design, and most also read a document standard. The cost grows with these
+factors:
 
-*   **Reviewers and stages**: A review runs five stages, one after another.
+*   **Reviewers and stages**: A full review runs five stages, numbered 5 to 9
+    in `egm-review`, one after another.
     Reviewers in the same stage can run in parallel. For a design with an
     implementation plan, the `Consolidated report with all review rubrics`
     preset (uninterrupted mode) runs each stage once: 10 reviewer subagents. A
@@ -65,16 +68,18 @@ read a document standard. The cost grows with these factors:
     run their whole loop once more. An interactive review can therefore start
     many more than 10 reviewers, and the number depends on your choices.
 *   **Extra subagents**: When a run nests reviewers under `egm-synthesizer`
-    (Claude Cowork cannot), each stage or loop round that uses it adds a
-    synthesizer, and the synthesizer may start two copies of each reviewer. A
+    (not every host can; see [Delegation](harnesses.md#delegation)), each stage
+    or loop round that uses it adds a synthesizer, and the synthesizer may start
+    two copies of each reviewer. In `egm-review-loop` and the synthesizer, a
     reviewer that fails is started once more. The counts above are minimums.
 *   **Design and context size**: Every reviewer reads the design, so a longer
-    design costs more in each one. Reviewers also read the files you pass as
-    `GoldfishContext` and the files the design links to inside the working
-    directory, and some reviewers search the code.
+    design costs more in each one. Reviewers in every stage except Stage 6
+    also read `GoldfishContext`: the files you pass, the files the design links
+    to inside the working directory, and any outside links or saved pages you
+    approve. Some reviewers also search the code.
 *   **Your own session**: The main session runs `egm-resolve` after each loop
-    round and writes every report. An interactive review also waits for your
-    answer at each checkpoint.
+    round and writes the reports, except those a synthesizer writes. An
+    interactive review also waits for your answer at each checkpoint.
 
 Two measured runs follow. Each is one run, not an average.
 
@@ -96,7 +101,8 @@ Two measured runs follow. Each is one run, not an average.
     That EGM version did not yet add `egm-inventive-catalyst` to Stage 5, so
     Stages 5 to 8 ran 6 reviewers. Claude Code reported 20,196 to 38,044 tokens
     per reviewer, 176,520 in total, and each reviewer took 27 to 44 seconds. A
-    Stage 7 re-run on the revised 176-line design used another 84,505 tokens.
+    separate Stage 7 re-audit on the revised 176-line design used another 84,505
+    tokens.
     See the
     [run report](https://github.com/google/elephant-goldfish-model/pull/412#issuecomment-6892400593).
 
@@ -111,8 +117,9 @@ draft, and review (Opus 5.5 Medium) reached its usage limit during review
 Stage 8; see the
 [harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record).
 
-For a small, well-understood change, skip the review and use your normal
-workflow. Save the review for uncertain or consequential designs, as the
+For a small, well-understood change, use
+[`/egm-lite`](../skills/egm-lite/SKILL.md) or your normal workflow instead.
+Save the full review for uncertain or consequential designs, as the
 [answer on developer velocity](#q-does-this-workflow-degrade-developer-velocity)
 explains.
 
