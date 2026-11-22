@@ -11,6 +11,9 @@ Maintainers control design-ready and pr-ready. Automation manages design-needed 
 <!-- Describe the problem, what changes for the reader or user, and why.
 List key changes if there is more than one. Link related issues or designs. -->
 
+<!-- Use Refs #<issue> for design or partial work. Use Closes #<issue> only
+when merging this PR into the default branch completes the issue. -->
+
 ## Contribution Type
 
 Track: <choose one track>
@@ -31,7 +34,8 @@ The labels are needed to merge. You can open Stage 2 early as a draft stacked on
 
 <!-- List relevant checks, commands or evidence links, and results.
 Call out failures and meaningful checks not run, with the reason.
-For Stage 1, record egm-review, egm-resolve, and any remaining findings.
+For Stage 1, record the design reviewed, egm-review and egm-resolve results,
+findings addressed, accepted risks, and checks still open.
 For harness support, record host/version, installation, and evidence for
 egm-brainstorm, egm-draft, and egm-review.
 -->

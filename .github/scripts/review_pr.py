@@ -127,6 +127,10 @@ CONTRIBUTION_SECTION_RE = re.compile(
     r"^## Contribution Type[ \t]*\r?$([\s\S]*?)(?=^##[ \t]+|\Z)",
     re.MULTILINE,
 )
+VERIFICATION_SECTION_RE = re.compile(
+    r"^## Verification[ \t]*\r?$([\s\S]*?)(?=^##[ \t]+|\Z)",
+    re.MULTILINE,
+)
 TRACK_LINE_RE = re.compile(
     r"^[ \t]*Track:[ \t]*(.*)$", re.MULTILINE | re.IGNORECASE
 )
@@ -386,6 +390,10 @@ def validate_pr_template(body: str) -> list[str]:
     )
   if not HUMAN_AFFIRMATION_RE.search(text):
     problems.append("Human Accountability Affirmation is not checked")
+  visible_text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+  verification = VERIFICATION_SECTION_RE.search(visible_text)
+  if verification and not verification.group(1).strip():
+    problems.append("Add check results or explain why checks were not run")
   return problems
 
 
