@@ -18,6 +18,30 @@ from [ClaudeFlows cf-bug](https://github.com/OmniPragmatic/claudeflows/blob/60d1
 and the earlier [elephant-goldfish implementation](https://github.com/vshvedov/elephant-goldfish).
 Its benefit to bug-fix outcomes remains unmeasured.
 
+## Pilot evidence and decision
+
+The existing cache-key fixture supplies a concrete comparison, but it is a
+seeded defect rather than a bug encountered in development. In the retained
+Claude run, the parent began with "TTL expiration is broken." The fresh
+reviewer found that the cache reads and writes use `slug`, while the records
+use `(tenant, slug)`. With a 60-second TTL, north's lookup at time 0 populates
+`guide`; south's lookup at time 1 returns north's still-valid entry. Expiry
+works as written and does not explain crossing the tenant boundary. The
+reviewer proposed repeating the calls with a one-second TTL to distinguish
+the cache key from expiration. That Claude run did not execute the check.
+
+The [fixture source](https://github.com/google/elephant-goldfish-model/blob/4ab7789b85dd45817e6739c25a6746564bcc92fb/tests/fixtures/diagnosis/catalog.py)
+and [native test](https://github.com/google/elephant-goldfish-model/blob/4ab7789b85dd45817e6739c25a6746564bcc92fb/tests/integration/test_claude_diagnosis.py)
+make the setup inspectable. The parent hypothesis was supplied by the test,
+so this demonstrates the comparison protocol, not a naturally occurring
+miss or evidence that a dedicated skill improves diagnosis.
+
+Before deciding the scope, collect one development bug with the parent's
+initial account recorded before dispatch, the fresh reviewer's citations,
+and the result of a check that distinguishes their explanations. Keep the
+implementation in draft and defer additional packaging and host work while
+that pilot is reviewed. A dedicated skill is still a proposal.
+
 ## Goals
 
 - Start from a symptom, expected behavior and a concrete reproduction or trace.
