@@ -118,6 +118,29 @@ follows the EGM Spec-Driven Development process:
 *   **Limits**: The track limits apply to the whole stack. Do not split a
     feature into minor patches to avoid the design process.
 
+## Issues and review comments
+
+Search existing issues and pull requests by affected skill, host, and version
+before opening an issue. Add new reproduction steps or evidence to an existing
+issue when it covers the same behavior. Link related work when the scope differs.
+
+Choose Bug for behavior that fails, Feature for new behavior or architecture,
+and Task for scoped maintenance, documentation, or validation. If you file
+outside the GitHub issue chooser, copy the matching
+[issue template](.github/ISSUE_TEMPLATE) and set the native issue type
+explicitly. For example, pass `--type Task` to `gh issue create` for a Task.
+
+When a maintainer confirms a duplicate, use GitHub's `Duplicate of #123` comment
+and preserve any unique reproduction steps or PR links on the canonical issue.
+Ask usage questions in [Discussions Q&A](https://github.com/google/elephant-goldfish-model/discussions/categories/q-a).
+
+Before commenting on a PR, read the current diff and existing review threads.
+Reply in the existing thread when it covers the finding. For a new finding, cite
+the affected line or behavior, explain the impact, and ask for a concrete change.
+For example, “The help example uses the old flag, so the command exits with an
+unknown-option error. Update the example to use `--dry-run`.”
+For template feedback, link the [PR template](.github/PULL_REQUEST_TEMPLATE.md).
+
 ## Automated Validation & Testing
 
 *   **Skill Definitions**: Ensure all `SKILL.md` files contain valid YAML

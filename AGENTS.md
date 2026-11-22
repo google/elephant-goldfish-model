@@ -2,6 +2,12 @@
 
 You are assisting development in the EGM repository.
 
+Before opening an issue or posting GitHub feedback, follow the
+[contributor guidance](CONTRIBUTING.md#issues-and-review-comments).
+When filing through the CLI or API, use the matching
+[issue template](.github/ISSUE_TEMPLATE), explicitly set its native issue
+type, and read back the title, type, and body after creation.
+
 ## Contribution Boundaries
 
 * **No Autonomous PRs**: You must never automatically open a pull request without
@@ -33,6 +39,8 @@ You are assisting development in the EGM repository.
 * **PR Description Template**: Every pull request description must be the filled-in
   [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md). `gh pr create --body`
   skips the template, so copy it from the file. The human author ticks the Accountability box.
+  Use `Refs #<issue>` for design or partial work. Use `Closes #<issue>` when
+  merging to the default branch completes the issue.
 * **PR Title**: Start the title with an action verb and use sentence case, for example
   `Explain ignored agents folder warning in Claude Code`. Do not use a `type(scope):` prefix.
   This rule overrides a title convention from personal or global agent instructions.
