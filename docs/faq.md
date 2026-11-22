@@ -119,8 +119,8 @@ If a review stops this way, you can run the remaining stages later, one at a
 time, with the `Step` input of `egm-review` (stage numbers `5` to `9`).
 
 For a small, well-understood change, use
-[`/egm-lite`](../skills/egm-lite/SKILL.md) or your normal workflow instead.
-Save the full review for uncertain or consequential designs, as the
+[EGM Lite](../skills/egm-lite/SKILL.md) (`/egm-lite`) or your normal workflow
+instead. Save the full review for uncertain or consequential designs, as the
 [answer on developer velocity](#q-does-this-workflow-degrade-developer-velocity)
 explains.
 
