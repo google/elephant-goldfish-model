@@ -177,8 +177,8 @@ def test_claude_reviewers_are_read_only_with_fresh_context(name: str) -> None:
   assert "tools" not in canonical
   assert "omitClaudeMd" not in canonical
   persona = (ROOT / "agents" / f"{name}.md").read_text(encoding="utf-8")
-  assert "NO tools" not in persona
-  assert "even if your tools allow it" in persona
+  assert "no tools" not in persona.lower()
+  assert "Do not modify the workspace, write files, or compile code." in persona
 
 
 def test_claude_synthesizer_adapter_is_tool_restricted() -> None:

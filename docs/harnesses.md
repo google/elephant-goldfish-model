@@ -133,6 +133,10 @@ allows.
 | omp | Unverified: the personas register as native `task` agents, but whether omp limits their tools the way the Claude adapters do is unverified ([#186](https://github.com/google/elephant-goldfish-model/issues/186)) |
 | Muse | Prompt only: agent tool projections are unsupported (see the [Muse guide](https://github.com/google/elephant-goldfish-model/blob/main/docs/muse.md#fresh-context-reviewers)) |
 
+The table covers the built-in reviewer personas. Reviewers that `egm-lite`
+starts, and `egm-review-loop` reviewers loaded from a custom path, run without
+these adapters and can use whatever tools the session allows.
+
 For the hosts above, no test records a reviewer write being denied.
 Host-enforced means the adapters' tool lists leave out write and shell tools,
 not that a run has shown a write refused. The experimental Cursor, GitHub
