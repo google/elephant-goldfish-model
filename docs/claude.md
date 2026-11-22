@@ -137,8 +137,10 @@ Claude adapters in `.claude-plugin/agents/` declare `tools: [Read, Grep, Glob]`,
 `model: inherit`, and `omitClaudeMd: true`. Each adapter reads its canonical
 persona from `agents/` through `${CLAUDE_PLUGIN_ROOT}`. Keep Claude tool names
 out of shared persona frontmatter: other hosts can interpret `tools` themselves.
-Reviewers cannot edit files or run shell commands, and no persistent `memory`
-is configured. The synthesizer adapter declares
+Adapter reviewers cannot edit files or run shell commands, and no persistent
+`memory` is configured. Reviewers that `egm-lite` starts and custom-path
+reviewers are not adapters and keep the session's tools; see
+[Reviewer Tools](harnesses.md#reviewer-tools). The synthesizer adapter declares
 `tools: [Agent, Read, Grep, Glob, Write]` so it can spawn reviewers and write
 reports but cannot run shell commands or use the session's MCP connectors.
 A plugin subagent's `tools` field cannot restrict Write to specific paths, and
