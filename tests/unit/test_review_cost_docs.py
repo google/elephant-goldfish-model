@@ -16,6 +16,8 @@ def flat(path: str) -> str:
 def uninterrupted_reviewers() -> dict[str, list[str]]:
   """Return the reviewers each stage of the uninterrupted flow starts."""
   flow = flat("skills/egm-review/SKILL.md")
+  if "### Subflow: Uninterrupted Full Flow" not in flow:
+    return {}
   flow = flow.split("### Subflow: Uninterrupted Full Flow", 1)[1]
   flow = flow.split("**Cross-Stage Synthesis", 1)[0]
   stages = {}
@@ -31,7 +33,11 @@ def uninterrupted_reviewers() -> dict[str, list[str]]:
 
 def test_review_cost_counts_match_egm_review() -> None:
   stages = uninterrupted_reviewers()
-  assert sorted(stages) == ["5", "6", "7", "8", "9"], stages
+  assert sorted(stages) == ["5", "6", "7", "8", "9"], (
+      "Could not read the Stage 5-9 reviewers from the Uninterrupted Full "
+      f"Flow in skills/egm-review/SKILL.md (found {stages}). If the skill "
+      "changed, recheck the counts in docs/faq.md and "
+      "docs/getting_started.md, then update this parser.")
   assert all(stages.values()), stages
   full = sum(len(names) for names in stages.values())
   loop_stage = len(stages["7"])
