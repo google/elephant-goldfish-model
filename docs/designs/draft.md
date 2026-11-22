@@ -130,7 +130,8 @@ Drafts the execution section:
     separated by a horizontal rule delimiter (`--------------------------------------------------------------------------------`)
     after trailing open questions.
 *   Writes the document to `docs/designs/<FEATURE>.md`.
-*   Registers the document in `docs/designs/SITEMAP.md` if present. This repository
+*   Registers the document in the design index: `docs/designs/SITEMAP.md` if
+    present, otherwise `docs/designs/README.md`. This repository
     uses `docs/designs/README.md`; contributors update it as required by
     [CONTRIBUTING.md](../../CONTRIBUTING.md).
 *   Formats markdown using standard markdown formatters.
@@ -196,7 +197,7 @@ The drafting capability is implemented across the following skill and reference 
 
 | File Path | Type | Purpose & Reason for Existence |
 | :-------- | :--- | :----------------------------- |
-| `skills/egm-draft/SKILL.md` | Skill Definition | Implements `/egm-draft` section-by-section markdown compilation, sitemap registration, and formatting. |
+| `skills/egm-draft/SKILL.md` | Skill Definition | Implements `/egm-draft` section-by-section markdown compilation, design-index registration, and formatting. |
 | `skills/egm-draft/TEST.md` | Unit Tests | Verification test scenarios validating the drafting and finalization workflow. |
 | `skills/egm-draft/test_scenarios.yaml` | Evaluation Benchmark | Co-located behavioral eval suite evaluating model adherence to the drafting protocol. |
 | `skills/egm-draft/references/design_doc.md` | Document Template | Canonical markdown design document template defining required sections and layout. |

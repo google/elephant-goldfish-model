@@ -152,7 +152,7 @@ SDK protocol operations without sending a prompt:
 
 1. `session.create` creates a session with a local rejecting provider.
 2. `session.agent.list` returns eight `source: plugin` records with absolute profile paths.
-3. `session.skills.list` returns seven enabled skills with absolute canonical paths.
+3. `session.skills.list` returns eight enabled skills with absolute canonical paths.
 4. `session.destroy` removes the session.
 
 The test checks exact IDs, paths, tool lists, reviewer `userInvocable: false`,

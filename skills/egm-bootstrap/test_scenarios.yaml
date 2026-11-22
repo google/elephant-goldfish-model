@@ -39,6 +39,9 @@ scenarios:
           - type: "required_pattern"
             pattern: "(confirm|warn|proceed|scope|approval|threshold)"
             message: "Bootstrap skill must warn user about large execution scope and gate execution."
+          - type: "required_pattern"
+            pattern: "(?i)\\b(up to|at most|no more than)\\s+(5|five)\\s+(parallel\\s+)?(workers?|sub-?orchestrators?)\\b"
+            message: "The safety gate must state the worker cap so the user can judge the cost."
 
   - scenario_id: "bootstrap_code_grounding"
     description: "Verifies contracts cite real code symbols in [file:symbol] form, emit None for empty invariants, and do not infer interfaces from directory names."
