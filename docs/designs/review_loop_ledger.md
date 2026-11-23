@@ -51,6 +51,9 @@ lost before the loop reaches its stop check.
 *   The ledger records how the run ended and who decided: converged, the
     user's answer at cap or churn, or a manual halt.
 *   The completion message names the run folder.
+*   After compaction, the run folder shows the finding ids, the reviewer
+    status, each finding's decision, and the next checkpoint. A checkpoint
+    still waiting for the user is asked again, never assumed.
 *   This design does not change the convergence, cap, and churn rules in
     §2.4, or which findings count as settled. It records what those rules
     decided.
@@ -68,10 +71,11 @@ lost before the loop reaches its stop check.
     stays with host tool limits
     ([#261](https://github.com/google/elephant-goldfish-model/issues/261),
     [#262](https://github.com/google/elephant-goldfish-model/issues/262)).
-*   Resume. The ledger is a record for a human to read, not state the loop
-    restores from.
-    [#63](https://github.com/google/elephant-goldfish-model/issues/63) keeps
-    its own acceptance criteria.
+*   Resume. The ledger is a record, not state the loop restores from. After
+    compaction the Elephant reads it only to find the checkpoint that is
+    waiting, and asks it again. It does not pick up a round part-way.
+    [#63](https://github.com/google/elephant-goldfish-model/issues/63) owns
+    interruption recovery and stale-state invalidation.
 *   A new default output folder.
     [#110](https://github.com/google/elephant-goldfish-model/issues/110) stays
     open as is. If
@@ -121,6 +125,18 @@ revision. They belong to the re-opening work in #344 and to
     outputs, with a first line stating that the file is self-reported. The
     ledger header reads `**Dispatch:** direct (self-reported)`.
 
+### CUJ 4: Compaction while a decision is waiting
+
+*   **Given**: Round 1 is resolved. The user upheld a contest, left an
+    escalated owner question without an answer, and has not yet said whether
+    to run round 2. The Elephant's context is then compacted.
+*   **When**: The Elephant reads the run folder.
+*   **Then**: It names the id of the settled finding, whose decision is
+    `contest upheld`, and of the open owner question, whose decision is
+    `no decision`. It names the reviewer status from round 1's row and the
+    waiting checkpoint: whether to run another round. It asks the user that question again and does not
+    start round 2 until the user answers.
+
 ## Technical Plan (Architecture)
 
 ### Run folder
@@ -155,10 +171,22 @@ with its id in place of `[Issue N]`, keeping the rest of today's heading:
 ``### [<id>] [`<ReviewerPersona>`] - Severity: <severity>``. The ids arrive in
 the `FindingsList` (§2.2 step 2 already assigns them). When `ReportPath` is
 set, the Step 4 message names `round-NN-resolved.md`, so the user's comments
-go into the round file. Resolve also copies the round file to
-`goldfish_review_report.md` when it writes it at Step 3, and again at Step 5
-after marking it resolved, so that file never shows an older round. Readers of
-that file see the id in place of `[Issue N]` and nothing else changes.
+go into the round file.
+
+At Step 5, when it adds the `Status: resolved` line, resolve also adds a
+`Decision:` line under each finding heading with what was done with that item:
+`fix applied`, `skipped`, `contest upheld`, `contest overruled`,
+`confirmed (no change)`, `fact added`, or `declined`. A `CONTEST` item that
+auto accept skips is `contest upheld`. Resolve writes `no decision` when the
+user's reply did not address the item, for example `continue`, or an
+`ESCALATE` item that auto accept bypassed. Today these decisions live only in
+the Elephant's context. The loop's settled rule is unchanged; the line writes
+down what that rule reads.
+
+Resolve also copies the round file to `goldfish_review_report.md` when it
+writes it at Step 3, and again at Step 5 after marking it resolved, so that
+file never shows an older round. Readers of that file see the id in place of
+`[Issue N]` and a `Decision:` line under each finding; nothing else changes.
 `egm-review`'s resolve step names that file as its fallback source of findings,
 and the draft `egm-ask` design (`docs/designs/ask.md`) reads it to detect
 review state. That file is the latest view; the round files are the record.
@@ -254,10 +282,39 @@ Rules:
     For a cap or churn answer, `open findings` copies the short list of open
     findings by severity that §2.4 already writes before it asks; otherwise it
     is empty. Every outcome except `continued` ends the run. A ledger whose
-    last block is a round block has no recorded ending: the run was abandoned
-    or the session ended.
+    last block is a round block has no recorded ending: a checkpoint is still
+    waiting for the user. The files cannot tell a run that is waiting from one
+    that was abandoned; either way, the next section names the checkpoint.
 *   **Append-only.** The loop appends each round block and each run decision
     block when it is decided, and never edits earlier blocks.
+
+### Reading where a run stands
+
+After compaction, or in a new session, the Elephant can rebuild the state of a
+run from its folder alone:
+
+*   **Finding ids**: the finding headings in each `round-NN-resolved.md`, and
+    the `blocking` column.
+*   **Reviewer status**: `completed` and `not run` in each round row.
+*   **Each finding's decision**: the `Decision:` line under its heading. A
+    contest the user upheld is settled; an escalated owner question with
+    `no decision` is still open.
+*   **Next checkpoint**: the first row below that matches.
+
+| Run folder shows | Waiting checkpoint |
+| --- | --- |
+| Last block is a round block; that round's `round-NN-review.md` has findings, and its `round-NN-resolved.md` is missing or has no `Status: resolved` line | `egm-resolve` Step 4: the user's choice for that round's findings. If the file is missing, resolve runs first and stops at Step 4. |
+| Last block is a round block with `stop` `cap` or `churn` | §2.4: accept and proceed, continue past the cap, or return to drafting |
+| Last block is a round block with `stop` `continue` | Turn-taking: whether to run another round |
+| Last block is a round block with `stop` `converged` | None: the loop appends the `converged` run decision, which needs no answer |
+| Last block is a run decision with outcome `continued` | None: the user already chose to go on, so the next round starts |
+| Last block is any other run decision | None: the run has ended |
+
+A waiting checkpoint is asked again in full. The Elephant does not take a
+missing answer as approval: it does not apply fixes from an unresolved round,
+start another round, or write a run decision until the user answers. This is a
+read of the record, not resume. Picking up a round part-way, and deciding when
+the record no longer matches the target, stay with #63.
 
 ### Completion message
 
@@ -273,7 +330,7 @@ as `egm-review`, so the caller's own stage message does not replace it.
 | In direct dispatch the Elephant writes `round-NN-review.md`, so the record shows the decisions are consistent with what was recorded, not what reviewers said. | Mark the file and the ledger header self-reported, and state the limit in the skill text. |
 | With the synthesizer, `round-NN-review.md` is the synthesizer's consolidated text, not the reviewers' raw output, so a finding it dropped or merged leaves no trace in the run folder. | State it as a limit. The trace runs from the ledger to the review report, not to raw reviewer output. |
 | The ledger records which findings blocked a round, not why other findings did not (for example, a finding the Elephant judged already settled). A wrong match is not visible from the ledger. | State it as a limit. Recording matches across rounds is the re-opening work in #344. A reader can still compare each round's review report with the earlier resolve reports by hand. |
-| Compaction or a session ending during resolve. Fixes may be applied with no record of the user's decisions. | The round block is written before resolve, so the clean decision, the blocking ids, and the stop result survive. Per-finding decisions are in `round-NN-resolved.md` once resolve marks it resolved at Step 5. Resuming the round is #63's scope. |
+| Compaction or a session ending during resolve. Fixes may be applied with no record of the user's decisions. | The round block is written before resolve, so the clean decision, the blocking ids, and the stop result survive. Per-finding decisions are in the `Decision:` lines of `round-NN-resolved.md` once resolve marks it resolved at Step 5. Decisions made before Step 5 and lost to compaction leave the round unresolved, so Step 4 is asked again (see Reading where a run stands). Resuming the round is #63's scope. |
 | Two runs on the same target start in the same second. | Numeric suffix on an existing folder name. |
 | `egm-review` calls `egm-resolve` again at its stage checkpoint, after the loop returns. Those decisions are not in the run folder. | State it as a limit. That call is outside the loop and out of scope here. |
 | #344, [#287](https://github.com/google/elephant-goldfish-model/pull/287), and #433 edit the same text (§2.4, `review.md`, `synthesizer.md`, and the `egm-resolve` report template). | Whichever lands second rebases. The changes here are additive: round file names, one ledger write per round, one per ending, and the id in each resolve finding heading. |
@@ -382,7 +439,9 @@ as `egm-review`, so the caller's own stage message does not replace it.
 *   **Proposed Changes**:
     *   New "Run Record" section: run folder name, location, and collision
         suffix; file names; the ledger format (round block and run decision
-        block); and the stated limits from Risks and Mitigations.
+        block); how to read where a run stands, including the rule that a
+        waiting checkpoint is asked again; and the stated limits from Risks
+        and Mitigations.
     *   §2.2: pass `round-NN-review.md` in the run folder to the synthesizer.
         In direct dispatch, the Elephant writes that file and marks it
         self-reported. After consolidating, append the round block to
@@ -398,7 +457,8 @@ as `egm-review`, so the caller's own stage message does not replace it.
 *   **Type / Scope**: Skill instructions.
 *   **Proposed Changes**: Optional input `ReportPath`. When it is given, write
     the annotated report there, start each finding's heading with its id in
-    place of `[Issue N]`, and name it in the Step 4 message. Copy it to
+    place of `[Issue N]`, and name it in the Step 4 message. At Step 5, add
+    a `Decision:` line under each finding heading. Copy it to
     `goldfish_review_report.md` at Step 3, and again at Step 5 after marking
     it resolved. Standalone behavior is unchanged.
 
@@ -413,7 +473,9 @@ as `egm-review`, so the caller's own stage message does not replace it.
     findings skips resolve and still gets a round block; each ending
     (converged, each answer at cap or churn, and a halt) appends a run
     decision block with who decided, and a cap answer copies the open
-    findings; the completion message names the run folder.
+    findings; the completion message names the run folder; and, given a run
+    folder whose ledger ends on a round block, the loop names the waiting
+    checkpoint and asks it again instead of starting the next round.
 
 #### 4. `skills/egm-review-loop/TEST.md` (Modify)
 
@@ -424,8 +486,10 @@ as `egm-review`, so the caller's own stage message does not replace it.
 
 *   **Type / Scope**: Behavioral eval scenarios.
 *   **Proposed Changes**: With `ReportPath`, each finding heading in the
-    report starts with its id and `goldfish_review_report.md` is also
-    written. Without it, behavior matches today.
+    report starts with its id, each finding gets a `Decision:` line at
+    Step 5 (including `no decision` for an escalated item that auto accept
+    bypassed), and `goldfish_review_report.md` is also written. Without it,
+    behavior matches today.
 
 #### 6. `skills/egm-resolve/TEST.md` (Modify)
 
@@ -477,6 +541,19 @@ as `egm-review`, so the caller's own stage message does not replace it.
     id is a heading in that round's resolve report, that the ledger ends with
     a run decision block, and that the completion message names the run
     folder.
+*   **Compaction case (Claude Code)**: Following
+    [the validation case on #278](https://github.com/google/elephant-goldfish-model/issues/278#issuecomment-7101543824),
+    run the loop in Claude Code until round 1 is resolved with a settled
+    finding (a contest the user upholds), an owner question left without an
+    answer (an escalated item with `no decision`), and the question whether
+    to run round 2 still waiting. Compact the context at that point using
+    Claude Code's own compaction, not a Messages API tool runner. Check that
+    the Elephant, reading the run folder, names both findings' ids and
+    decisions, the reviewer status from round 1's row, and the waiting
+    question, and that it asks the question again and does not start round 2
+    until the user answers. The implementation PR records how compaction was
+    triggered (`/compact` or automatic), the Claude Code version, and the
+    host OS.
 
 --------------------------------------------------------------------------------
 
