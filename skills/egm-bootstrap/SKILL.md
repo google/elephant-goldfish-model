@@ -7,7 +7,8 @@ description: Bootstrap directory README.md files across a repository subtree.
 
 # EGM Peanuts and Hay Bootstrap (`egm-bootstrap`)
 
-When running in Codex or ChatGPT Work, first read [Codex integration](../../docs/codex.md).
+In Codex or ChatGPT, apply [Codex integration](../../docs/codex.md) preflight
+before each phase. Stop and report if unreadable.
 In Claude Code or Cowork, read `${CLAUDE_PLUGIN_ROOT}/docs/claude.md` first.
 
 ## Overview
@@ -20,8 +21,7 @@ assistants.
 
 *   **Peanuts**: Leaf-level Component Package READMEs containing specific file
     contracts.
-*   **Hay**: Parent-level Repository Blueprints that roll up child interface
-    contracts into high-altitude indexes.
+*   **Hay**: Repository Blueprints that index child interface contracts.
 
 ## Delegation
 
