@@ -70,6 +70,7 @@ def test_runtime_bundle_is_complete_and_reproducible(
     assert "agents/design_critic.md" in names
     assert "docs/codex.md" in names
     assert "docs/claude.md" in names
+    assert "docs/muse.md" in names
     assert "assets/icon.svg" in names
     for image in re.findall(r'<img\b[^>]*\bsrc="([^"]+)"', bundle.read("README.md").decode()):
       assert image in names, f"Unbundled README image: {image}"

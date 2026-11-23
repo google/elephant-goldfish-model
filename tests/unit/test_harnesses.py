@@ -266,6 +266,9 @@ def test_bundled_prompt_dependencies_and_harness_guides() -> None:
     targets = re.findall(r"\[Codex integration\]\(([^)]+)\)", text)
     assert len(targets) == 1
     assert (skill.parent / targets[0]).resolve() == ROOT / "docs/codex.md"
+    muse_targets = re.findall(r"\[Muse integration\]\(([^)]+)\)", text)
+    assert len(muse_targets) == 1, f"{skill}: missing Muse integration link"
+    assert (skill.parent / muse_targets[0]).resolve() == ROOT / "docs/muse.md"
 
   prompts = skills + list((ROOT / "agents").glob("*.md"))
   for prompt in prompts:
