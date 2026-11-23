@@ -60,6 +60,29 @@ def test_release_publishes_provenance_bundle() -> None:
   assert '"egm-$RELEASE_TAG.intoto.jsonl"' in create
 
 
+def test_release_drafts_only_when_a_tag_is_selected() -> None:
+  release = yaml.safe_load(
+      (ROOT / ".github/workflows/release.yml").read_text())
+  triggers = release[True]  # PyYAML interprets the unquoted GitHub key on as True.
+  assert triggers["push"] == {"branches": ["main"], "paths": ["plugin.json"]}
+  assert "workflow_dispatch" in triggers
+  build_steps = release["jobs"]["build"]["steps"]
+  checkout = next(step for step in build_steps
+                  if step.get("uses", "").startswith("actions/checkout@"))
+  source = next(step for step in build_steps if step.get("id") == "source")
+  assert checkout["with"]["fetch-depth"] == 0
+  assert build_steps.index(checkout) < build_steps.index(source)
+  assert source["env"]["PREVIOUS_COMMIT"] == "${{ github.event.before }}"
+  assert 'git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"' in source["run"]
+  assert 'test "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"' in source["run"]
+  draft = release["jobs"]["draft"]
+  assert draft["needs"] == "build"
+  assert draft["if"] == "needs.build.outputs.tag != ''"
+  create = draft["steps"][-1]["run"]
+  assert create.index("sha256sum -c") < create.index("git/refs")
+  assert "--verify-tag --draft" in create
+
+
 @pytest.mark.parametrize("results,success", [
     ({"unit": "success"}, True),
     ({"unit": "failure"}, False),
