@@ -271,7 +271,6 @@ def test_bundled_prompt_dependencies_and_harness_guides() -> None:
       assert "`resources/execution_instructions.md`" not in text
       assert "`docs/harnesses.md`" not in text
       assert "${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md" in text
-      assert f"realpath skill://{skill.parent.name}" in text
       exec_targets = re.findall(r"\[execution instructions\]\(([^)]+)\)", text)
       assert len(exec_targets) == 1
       assert (

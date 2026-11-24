@@ -16,16 +16,12 @@ directories above each skill's folder (`<plugin-root>/skills/<skill-name>/`).
 *   **Claude Code and Cowork**: Read
     `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md` (or
     `${CLAUDE_PLUGIN_ROOT}/<path>`).
-*   **omp**: `skill://` reads are confined to the skill's own folder and reject
-    `..` traversal. Resolve the physical root first by running
-    `realpath skill://<skill-name>` (or read `skill://<skill-name>` and take the
-    physical path from the result header), go two directories up to
-    `<plugin-root>`, and read bundled files by absolute path. Pass spawned
-    subagents the absolute paths of their persona file and standard.
 *   **Pathless `<SKILL>` injection**: If the harness injects a skill without its
     file path, check `~/.gemini/config/plugins/egm/<path>`.
 
-A failed skill-relative lookup does not mean the file is absent from the plugin.
+Pass spawned subagents the resolved absolute paths of their persona file and
+standard when `<plugin-root>` is known. A failed skill-relative lookup does not
+mean the file is absent from the plugin.
 Never substitute workspace files with similar names for bundled personas,
 standards, or execution instructions. If you cannot read a required plugin-root
 file after resolving `<plugin-root>`, say so instead of calling it missing; apply
