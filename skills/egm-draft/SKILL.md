@@ -20,7 +20,15 @@ the aligned problem and requirements from the brainstorm phase.
 ## Execution Constraints (CRITICAL)
 
 1.  You **MUST** read and apply the
-    execution instructions in `resources/execution_instructions.md`.
+    [execution instructions](../../resources/execution_instructions.md),
+    including the *Plugin-Root Resource Paths* section (the
+    *Drafting-Only Execution Rules* apply to this skill; Claude Code:
+    `${CLAUDE_PLUGIN_ROOT}/resources/execution_instructions.md`; pathless
+    `<SKILL>`: `~/.gemini/config/plugins/egm/resources/execution_instructions.md`;
+    **omp**: `skill://` reads cannot leave this skill's folder, so run
+    `realpath skill://egm-draft` or read `skill://egm-draft` and go two
+    directories up from its physical header path to read plugin-root files
+    by absolute path).
 2.  **Artifact-First Delivery (MANDATORY)**: You are **STRICTLY FORBIDDEN** from
     presenting large proposals, drafts, summaries, or plans directly in the chat
     pane. You **MUST** write them directly to the working directory (or your

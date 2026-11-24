@@ -41,6 +41,11 @@ Evaluate the raw feature concept from a high-altitude Contrarian / YAGNI perspec
 ### IF Mode: REVIEW (Document Audit)
 Audit the target document file specified by the caller:
 
+The standard sits at the plugin root. Use the absolute path from the
+caller. If the caller gave no path, read `skill://egm-review` in omp. Then
+go two directories up from the physical path in its header. If you cannot
+resolve it, say so instead of auditing without the standard.
+
 1. **Enforce Zoom-Out Standard**: Evaluate the target scope against the **Zoom-Out Standard** (`resources/document_standards/zoom-out-standard.md`). Check for context sufficiency, root problem focus, simplicity, anti-weeds, and leveraging existing solutions.
 2. **Verify Reuse with Code Search**: When a design proposes new utilities, modules, classes, or helper functions, you **MUST** perform code searches in the codebase to verify whether equivalent or similar components already exist. If matches are found, suggest reuse instead of writing new code.
 3. **Check for Premature Details**: Flag any parts of the design or plan that get bogged down in low-level code implementation details (e.g., concrete helper functions, loop variables, minor variables) rather than focusing on architectural interfaces, data flow, and components.
