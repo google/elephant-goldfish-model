@@ -61,6 +61,9 @@ The caller or user provides exactly these parameters:
     directory) and pass its absolute path instead. If a page cannot be saved,
     ask the user for a local copy and end your turn; if no one can answer,
     as in a headless run, leave it out, tell the user, and keep going.
+*   **`Attachments`** (Optional): Reading list of diagrams, screenshots, or
+    data files. If omitted or empty, only `TargetFile` and `GoldfishContext`
+    are inventoried.
 
 ## Path & Standard Resolution Logic
 
@@ -99,6 +102,13 @@ Evaluate the provided inputs (`TargetFile`, `SemanticTarget`, `Reviewers`,
         and `codebase_details`.
 4.  **Confirm Configuration**: Display the consolidated plan (Target, Reviewers,
     and mapped Standards) and ask the user to confirm before proceeding.
+5.  **Input Preflight Verification**: Before launching reviewers in Step 2:
+    *   Confirm the count, type (`text`, `image`, `attachment`), and identity of
+        each input (`TargetFile`, `GoldfishContext`, `Attachments`).
+    *   Verify that the agent can read each input.
+    *   If any required input is absent or unreadable, stop immediately before
+        execution with an actionable error.
+    *   Record the preflight result (counts by type, verified items, and status).
 
 ### Step 2: The Sharpening Loop (Iterative Cycle)
 

@@ -90,6 +90,29 @@ Applies strictly to `egm-brainstorm`, `egm-draft`, and `egm-review` (not
     first, then output visible chat text and invoke the gate alone to yield).
     Ask open-ended text inputs (such as file paths or lists) in plain chat.
 
+## Input Preflight & Verification
+
+Applies before starting long-running review runs (`egm-review` and `egm-review-loop`):
+
+Before dispatching subagents or beginning a review run, perform a preflight check
+on all required and declared inputs (`TargetFile`, `GoldfishContext`, and any
+referenced attachments, diagrams, or context files):
+
+1. **Inventory**: Confirm and record the count, type, and identity (path or filename)
+   of each input. Classify inputs into:
+   * **`text`**: Text files, specifications, markdown, code, and saved URL pages.
+   * **`image`**: Diagrams, screenshots, and visual mockups (.png, .jpg, .jpeg, .svg, .webp).
+   * **`attachment`**: Other referenced resources, binaries, or data files.
+2. **Readability Verification**: Confirm that the agent can read each inventoried
+   input before execution begins.
+3. **Early Halt on Missing or Unreadable Inputs**: If any required input is absent
+   (missing file) or unreadable (inaccessible format, permission failure, or
+   unsupported payload), **STOP the run immediately before execution**. Output an
+   actionable error specifying the input identity, type, and exact remediation
+   needed. Never proceed with a partial or missing evidence baseline.
+4. **Preflight Record**: Record the preflight results (counts by type, verified
+   items, and status) at the start of the execution record.
+
 ## Drafting-Only Execution Rules (`egm-draft` Only)
 
 Applies **strictly** during `egm-draft` (never during `egm-bootstrap`,

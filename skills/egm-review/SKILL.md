@@ -26,6 +26,9 @@ Reviews and validates a design document through specialized reviewer personas.
 
 * **`TargetFile`**: Absolute or relative path to the design document.
 * **`GoldfishContext`** (Optional): Reading list establishing the system baseline (empty list or "no additional context" counts as provided; if omitted, holds Step 1.3 linked files).
+* **`Attachments`** (Optional): Reading list of diagrams, screenshots, or data
+  files. If omitted or empty, only `TargetFile` and `GoldfishContext` are
+  inventoried.
 * **`Step`** (Optional): `interactive`, `uninterrupted`, `feature_spec`, `implementation`, or an individual stage `5`, `6`, `7`, `8`, `9`. Prompts user if omitted.
 
 ## Workflow
@@ -40,6 +43,7 @@ Reviews and validates a design document through specialized reviewer personas.
    * If any link resolves outside the working directory or is a URL, list those links in plain chat, ask which to include, and end your turn (if unattended/headless, leave them all out and continue). Add only approved links and tell the user which were left out.
    * Because some reviewers cannot open URLs, save the raw page of each URL in `GoldfishContext` as a new file in the working (or harness artifact) directory and pass its absolute path instead. If saving fails, ask the user for a local copy and end your turn (if unattended/headless, leave it out, tell the user, and continue).
    * Pass `GoldfishContext` to every stage except Stage 6 (which reads the document alone); tell any synthesizer to give these files to each reviewer.
+4. **Input Preflight**: Before proceeding to Step 2, inventory all declared inputs (`TargetFile`, `GoldfishContext`, and any referenced images/attachments), confirming the count, type (`text`, `image`, `attachment`), and identity of each. Verify readability of each input. Stop immediately with an actionable error if any input is absent or unreadable; record the preflight result.
 
 ### Step 2: Curated Pipeline Preset Selection
 
