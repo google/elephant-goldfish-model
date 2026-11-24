@@ -1,0 +1,260 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Managed Agents Eval
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".claude-plugin/plugin.json"
+      - "plugin.json"
+  pull_request:
+    paths:
+      - "skills/**"
+      - "agents/**"
+      - "resources/**"
+      - "plugin.json"
+      - ".claude-plugin/**"
+      - "tools/managed_agents_eval/**"
+      - ".github/workflows/managed-agents-eval.yml"
+  workflow_dispatch:
+    inputs:
+      backend:
+        description: "Managed Agents API backend"
+        required: false
+        default: "gcp"
+        type: choice
+        options:
+          - gcp
+          - anthropic
+      skill:
+        description: "Optional skill directory name filter"
+        required: false
+        default: ""
+        type: string
+      harness_mode:
+        description: "Harness orchestration mode"
+        required: false
+        default: "both"
+        type: choice
+        options:
+          - both
+          - multiagent
+          - single-agent
+      model:
+        description: "Claude model ID"
+        required: false
+        default: "claude-sonnet-4-6"
+        type: string
+      max_iterations:
+        description: "Max outcome evaluation iterations"
+        required: false
+        default: "1"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || format('{0}-{1}', github.ref, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  managed-agents-eval:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OUTPUT_DIR: ${{ runner.temp }}/eval_results
+      SUMMARY_PATH: ${{ runner.temp }}/eval_results/summary.md
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML dependency
+        run: python3 -m pip install --quiet pyyaml==6.0.3
+
+      - name: Determine changed skills on pull requests
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+          HARNESS_MODE: ${{ inputs.harness_mode || 'both' }}
+          SKILL_FILTER: ${{ inputs.skill || '' }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" == "pull_request" && -z "${SKILL_FILTER}" ]]; then
+            CHANGED_SKILLS=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" \
+              | awk -F/ '/^skills\/[^/]+\// {print $2}' | sort -u)
+            COUNT=$(printf '%s\n' "${CHANGED_SKILLS}" | sed '/^$/d' | wc -l)
+            if [[ "${COUNT}" -eq 1 && -f "skills/${CHANGED_SKILLS}/test_scenarios.yaml" ]]; then
+              SKILL_FILTER="${CHANGED_SKILLS}"
+            fi
+          fi
+          if [[ -n "${SKILL_FILTER}" && ! "${SKILL_FILTER}" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+            echo "Invalid skill filter: ${SKILL_FILTER}" >&2
+            exit 2
+          fi
+          echo "harness_mode=${HARNESS_MODE}" >> "${GITHUB_OUTPUT}"
+          echo "skill_filter=${SKILL_FILTER}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run Managed Agents evaluation suite
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_SAME_REPO_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+          REQUESTED_BACKEND: ${{ inputs.backend || '' }}
+          GCP_TOKEN: ${{ secrets.GCP_ACCESS_TOKEN }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+          DIRECT_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          HARNESS_MODE: ${{ steps.scope.outputs.harness_mode }}
+          SKILL_FILTER: ${{ steps.scope.outputs.skill_filter }}
+          INPUT_MODEL: ${{ inputs.model || 'claude-sonnet-4-6' }}
+          INPUT_MAX_ITERATIONS: ${{ inputs.max_iterations || '1' }}
+        run: |
+          set -euo pipefail
+          TOKEN_FILE=""
+          cleanup() {
+            if [[ -n "${TOKEN_FILE}" && -f "${TOKEN_FILE}" ]]; then
+              rm -f "${TOKEN_FILE}"
+            fi
+          }
+          trap cleanup EXIT
+
+          if [[ ! "${INPUT_MODEL}" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+            echo "Invalid model input: ${INPUT_MODEL}" >&2
+            exit 2
+          fi
+          if [[ ! "${INPUT_MAX_ITERATIONS}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Invalid max_iterations input: ${INPUT_MAX_ITERATIONS}" >&2
+            exit 2
+          fi
+
+          TRUSTED="false"
+          if [[ "${EVENT_NAME}" != "pull_request" || "${IS_SAME_REPO_PR}" == "true" ]]; then
+            TRUSTED="true"
+          fi
+
+          BACKEND="${REQUESTED_BACKEND:-gcp}"
+          LIVE_ENABLED="false"
+
+          if [[ "${TRUSTED}" == "true" ]]; then
+            if [[ "${BACKEND}" == "gcp" && -n "${GCP_TOKEN}" && -n "${GCP_PROJECT_ID}" && -n "${WORKSPACE_ID}" ]]; then
+              TOKEN_FILE="${RUNNER_TEMP}/gcp_access_token"
+              printf '%s' "${GCP_TOKEN}" > "${TOKEN_FILE}"
+              chmod 600 "${TOKEN_FILE}"
+              export CLOUDSDK_AUTH_ACCESS_TOKEN_FILE="${TOKEN_FILE}"
+              export GCP_PROJECT_ID
+              export ANTHROPIC_WORKSPACE_ID="${WORKSPACE_ID}"
+              LIVE_ENABLED="true"
+            elif [[ -z "${REQUESTED_BACKEND}" && -n "${DIRECT_API_KEY}" ]]; then
+              BACKEND="anthropic"
+              export ANTHROPIC_API_KEY="${DIRECT_API_KEY}"
+              LIVE_ENABLED="true"
+            elif [[ "${BACKEND}" == "anthropic" && -n "${DIRECT_API_KEY}" ]]; then
+              export ANTHROPIC_API_KEY="${DIRECT_API_KEY}"
+              LIVE_ENABLED="true"
+            fi
+          fi
+
+          ARGS=(
+            --repo-root=.
+            --backend="${BACKEND}"
+            --harness-mode="${HARNESS_MODE}"
+            --model="${INPUT_MODEL}"
+            --max-iterations="${INPUT_MAX_ITERATIONS}"
+            --output-dir="${OUTPUT_DIR}"
+            --markdown-summary="${SUMMARY_PATH}"
+          )
+          if [[ -n "${SKILL_FILTER}" ]]; then
+            ARGS+=(--skill="${SKILL_FILTER}")
+          fi
+          if [[ "${LIVE_ENABLED}" != "true" ]]; then
+            ARGS+=(--dry-run)
+          fi
+          python3 tools/managed_agents_eval/runner.py "${ARGS[@]}"
+
+      - name: Write GitHub Step Summary
+        if: always()
+        run: |
+          if [[ -f "${SUMMARY_PATH}" ]]; then
+            cat "${SUMMARY_PATH}" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload evaluation trajectory artifacts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: managed-agents-eval-results
+          path: ${{ env.OUTPUT_DIR }}/
+          retention-days: 7
+
+  comment:
+    name: Post PR Summary Comment
+    needs: managed-agents-eval
+    if: always() && needs.managed-agents-eval.result != 'cancelled' && needs.managed-agents-eval.result != 'skipped' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Download evaluation artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: managed-agents-eval-results
+          path: ${{ runner.temp }}/eval_results
+
+      - name: Post or update PR summary comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          SUMMARY_PATH: ${{ runner.temp }}/eval_results/summary.md
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('node:fs');
+            const marker = '<!-- egm-managed-agents-eval -->';
+            const summary = fs.existsSync(process.env.SUMMARY_PATH)
+              ? fs.readFileSync(process.env.SUMMARY_PATH, 'utf8')
+              : 'Managed Agents evaluation finished without a summary file.';
+            const body = `${marker}\n${summary}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
