@@ -106,5 +106,29 @@ def test_json_output_is_machine_readable(
   report = json.loads(out)
   assert code == 1
   assert report["ok"] is False
-  assert report["version"] == "0.1.1"
+  expected_version = json.loads((ROOT / "plugin.json").read_text(encoding="utf-8"))["version"]
+  assert report["version"] == expected_version
   assert {item["status"] for item in report["findings"]} >= {"PASS", "FAIL", "UNKNOWN"}
+
+
+def test_missing_skills_fails(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+  root = install(tmp_path)
+  shutil.rmtree(root / "skills")
+  code, out = run(root, capsys)
+  assert code == 1
+  assert "No skills found" in out
+
+
+def test_host_version_failure_falls_back_to_unknown(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+  import subprocess
+  monkeypatch.setattr(shutil, "which", lambda cmd: "/bin/fake" if cmd == "claude" else None)
+  class FakeCompletedProcess:
+    returncode = 1
+    stdout = ""
+    stderr = "error: command failed"
+  monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: FakeCompletedProcess())
+  main(["--root", str(install(tmp_path))])
+  out = capsys.readouterr().out
+  assert "[UNKNOWN] host: Claude Code: `--version` exited with code 1" in out

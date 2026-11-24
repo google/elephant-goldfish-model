@@ -58,8 +58,11 @@ def check_resources(root: Path) -> list[dict]:
 
 def check_skills(root: Path) -> list[dict]:
   """Confirm every skill has frontmatter with a name and description."""
+  skills = sorted(root.glob("skills/*/SKILL.md"))
+  if not skills:
+    return [finding("skill", "FAIL", "No skills found under skills/*/SKILL.md", WHOLE_PLUGIN)]
   results = []
-  for skill in sorted(root.glob("skills/*/SKILL.md")):
+  for skill in skills:
     match = FRONTMATTER.match(skill.read_text(encoding="utf-8", errors="replace"))
     keys = set(re.findall(r"^([A-Za-z-]+):", match.group(1), re.MULTILINE)) if match else set()
     if not {"name", "description"} <= keys:
@@ -84,8 +87,12 @@ def check_hosts(execute: bool) -> list[dict]:
       try:
         run = subprocess.run([path, "--version"], capture_output=True, text=True,
                              timeout=5, check=False)
-        version = (run.stdout or run.stderr).strip().splitlines()[0]
-        results.append(finding("host", "PASS", f"{label}: {version}"))
+        if run.returncode == 0:
+          version = (run.stdout or run.stderr).strip().splitlines()[0]
+          results.append(finding("host", "PASS", f"{label}: {version}"))
+        else:
+          results.append(finding("host", "UNKNOWN",
+                                 f"{label}: `--version` exited with code {run.returncode}"))
       except (OSError, IndexError, subprocess.TimeoutExpired):
         results.append(finding("host", "UNKNOWN", f"{label}: version not readable"))
   results.append(finding(
