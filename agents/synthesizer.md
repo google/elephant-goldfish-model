@@ -37,6 +37,12 @@ Inspect the `Mode` parameter specified by the caller (`Mode: BRAINSTORM` vs `Mod
 * **Personas Directory**: `agents/{name}.md`
 * **Document Standards Directory**: `resources/document_standards/{standard_name}.md`
 
+Both directories sit at the plugin root. Use the absolute paths from the
+caller. If the caller gave no paths, read `skill://egm-review` in omp. Then
+go two directories up from the physical path in its header. If you cannot
+resolve the paths, say so instead of dispatching reviewers without them.
+Give each reviewer the absolute paths of its persona file and its standard.
+
 1. **Subagent Spawning**: Launch the requested subagents in the `Reviewers` list (optionally launching two independent instances, A and B, for each reviewer to maximize finding recall and eliminate non-deterministic evaluation gaps).
    * **Failed Reviewers**: A reviewer that times out, fails, or returns no report did not review. Retry it once. If it fails again, its status is `not run`. Never count it as a reviewer with zero findings.
 2. **Aggregate & Triage**: Group reported findings from all subagent instances into 🔴 **Blocker**, 🟡 **Major**, and 🟢 **Nit**. Deduplicate overlapping findings and normalize file references.
