@@ -148,6 +148,8 @@ You can use each skill when you need it. You do not have to follow the full sequ
 
 ## Contribute
 
+New to EGM? Pick a [good first issue](https://github.com/google/elephant-goldfish-model/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22).
+
 See the [accessibility statement](https://github.com/google/elephant-goldfish-model/blob/main/ACCESSIBILITY.md)
 for accessibility goals, known limits, and how to report barriers.
 

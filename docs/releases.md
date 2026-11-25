@@ -18,10 +18,12 @@ paths, and report formats. Do not change published artifacts under the same tag.
    `.plugin/plugin.json`) to the same version in a reviewed PR.
    `scripts/prepare_release.py` rejects a tag when any of them differs.
 2. Run `pytest tests/unit`. Include any migration notes in the PR.
-3. After merge, a maintainer creates and pushes an annotated `vMAJOR.MINOR.PATCH`
-   tag on the selected main commit. Never move an existing release tag.
-4. Run **Prepare draft release** from `main`, supplying that existing tag.
-   The tagged commit must include the release scripts and pass unit tests.
+3. A version change in `plugin.json` on `main` starts **Prepare draft release**.
+   It tests and packages that commit before creating an annotated
+   `vMAJOR.MINOR.PATCH` tag. An existing tag must point to the same commit.
+4. To prepare a draft manually, create and push an annotated tag on a reviewed
+   `main` commit, then dispatch **Prepare draft release** from `main` with that
+   tag. Never move an existing release tag.
 5. Review the draft's two runtime ZIPs, `SHA256SUMS`, the provenance bundle
    (`egm-vMAJOR.MINOR.PATCH.intoto.jsonl`), and source commit.
    Verify both ZIP attestations as described below. Replace
@@ -29,9 +31,10 @@ paths, and report formats. Do not change published artifacts under the same tag.
    artifact host-verification evidence. Unverified hosts remain unverified.
 6. Publish the draft manually only after review. Directory publication is separate.
 
-The workflow does not create tags, overwrite releases, publish automatically,
-or run paid live tests. A duplicate release attempt fails instead of replacing
-an existing release. Fix a failed build before creating a new candidate version.
+The workflow creates drafts and leaves publication to a maintainer. It does not
+overwrite releases or run paid live tests. A duplicate release attempt fails
+instead of replacing an existing release. Fix a failed build before creating a
+new candidate version.
 For local preparation, use a fresh output directory:
 
 ```sh

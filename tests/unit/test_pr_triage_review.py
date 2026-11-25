@@ -55,6 +55,22 @@ VALID_PR_BODY = (
 )
 
 
+@pytest.mark.parametrize(
+    ("evidence", "expected"),
+    [
+        ("", ["Add check results or explain why checks were not run"]),
+        ("<!-- Example check\nwith a second line -->", [
+            "Add check results or explain why checks were not run"
+        ]),
+        ("- Unit tests passed.", []),
+        ("- Live check not run: host unavailable.", []),
+    ],
+)
+def test_pr_template_verification(evidence: str, expected: list[str]) -> None:
+  body = VALID_PR_BODY.replace("Ran `python3 -m pytest tests/unit`.", evidence)
+  assert review_pr.validate_pr_template(body) == expected
+
+
 def test_workflow_enforces_zizmor_ready_for_review_and_two_job_boundary() -> None:
   raw = WORKFLOW_PATH.read_text(encoding="utf-8")
   data = yaml.safe_load(raw)

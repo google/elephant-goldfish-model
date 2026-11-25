@@ -60,6 +60,13 @@ When evaluating or exploring `egm-lite` interactively in chat, verify:
     forbids premature task closure; Post-Implementation diff review triage
     offers `checklist` or `exec`), and persists accepted `CONTEST` rationales in
     `egm_lite_checklist.md`.
+-   **Standalone Diff Review:** In a fresh session, ask for a review of a
+    supplied diff with no checklist. Run once with a clean reviewer response
+    and once with findings. Both runs report the review in chat without
+    reading or creating a checklist or offering `checklist` or `exec`.
+    Repeat with an unrelated checklist present and verify it is untouched.
+    Supply an inaccessible PR and verify the assistant reports incomplete
+    coverage without dispatching a reviewer.
 -   **Top-Level Invariants & Graceful Recovery:** `goldfish` and `review` are
     interchangeable aliases bound to state, invalid state leaps (e.g. diff
     review with nothing to review, spec review before checklist creation) emit a
