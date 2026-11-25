@@ -740,12 +740,17 @@ def evaluate_sweep_gate(
       return GateDecision(
           False, f"SKIP_ALREADY_REVIEWED_BY_HUMAN:{reviewer}"
       )
+    # Anyone can paste a SHA marker, so only bot-authored markers count.
+    if not _is_bot_actor(review.get("user") or review.get("author")):
+      continue
     body = str(review.get("body") or "")
     for match in SHA_MARKER_RE.finditer(body):
       if head_sha and match.group(1) == head_sha and not force_manual:
         return GateDecision(False, f"SKIP_SHA_ALREADY_REVIEWED:{head_sha}")
 
   for comment in issue_comments:
+    if not _is_bot_actor(comment.get("user") or comment.get("author")):
+      continue
     body = str(comment.get("body") or "")
     for match in SHA_MARKER_RE.finditer(body):
       if head_sha and match.group(1) == head_sha and not force_manual:

@@ -275,6 +275,46 @@ def test_evaluate_sweep_gate_uses_author_association_dynamically() -> None:
   assert not same_sha.should_review
   assert same_sha.reason == "SKIP_SHA_ALREADY_REVIEWED:deadbeef"
 
+  triage_bot = {
+      "user": {"login": "egm-triage-bot", "type": "User"},
+      "author_association": "MEMBER",
+      "body": "<!-- egm-triage-review:sha=deadbeef -->",
+  }
+  for reviews, issue_comments in (([triage_bot], []), ([], [triage_bot])):
+    bot_marker = review_pr.evaluate_sweep_gate(
+        {
+            "state": "open",
+            "draft": False,
+            "body": VALID_PR_BODY,
+            "user": {"login": "alice"},
+            "head": {"sha": "deadbeef"},
+        },
+        reviews=reviews,
+        issue_comments=issue_comments,
+        files=[{"filename": "README.md", "changes": 4}],
+    )
+    assert bot_marker.reason == "SKIP_SHA_ALREADY_REVIEWED:deadbeef"
+
+  spoofed = {
+      "user": {"login": "alice", "type": "User"},
+      "author_association": "CONTRIBUTOR",
+      "body": "<!-- egm-triage-review:sha=deadbeef -->",
+  }
+  for reviews, issue_comments in (([spoofed], []), ([], [spoofed])):
+    human_marker = review_pr.evaluate_sweep_gate(
+        {
+            "state": "open",
+            "draft": False,
+            "body": VALID_PR_BODY,
+            "user": {"login": "alice"},
+            "head": {"sha": "deadbeef"},
+        },
+        reviews=reviews,
+        issue_comments=issue_comments,
+        files=[{"filename": "README.md", "changes": 4}],
+    )
+    assert human_marker.should_review
+
 
 def test_sanitization_nonce_boundary_and_source_first_diff_packing() -> None:
   # Strips duplicate [High]: prefixes, BLUF labels, and neutralizes @mentions
