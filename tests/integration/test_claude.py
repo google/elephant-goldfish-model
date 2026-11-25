@@ -92,8 +92,15 @@ def assert_child_probe(
   )
 
 
+@pytest.mark.parametrize("persona_name,agent_name,skill_name", [
+    ("zoom_out", "egm-zoom-out", "egm-review"),
+    ("bug_diagnosis", "egm-bug-diagnosis", "egm-diagnose"),
+], ids=["zoom-out", "bug-diagnosis"])
 @pytest.mark.parametrize("deny_persona", [False, True], ids=["scoped-read", "denied-persona"])
-def test_native_reviewer_isolation(tmp_path: Path, deny_persona: bool) -> None:
+def test_native_reviewer_isolation(
+    tmp_path: Path, deny_persona: bool, persona_name: str,
+    agent_name: str, skill_name: str,
+) -> None:
   root = Path(__file__).resolve().parents[2]
   build = runpy.run_path(str(root / "scripts/pack_plugin.py"))["build"]
   plugin, _ = build(root, "claude", tmp_path / "runtime")
@@ -114,14 +121,14 @@ def test_native_reviewer_isolation(tmp_path: Path, deny_persona: bool) -> None:
                 for folder in ("agents", "docs", "resources", "skills")],
   }
   if deny_persona:
-    permissions["deny"] = [f"Read(/{plugin}/agents/zoom_out.md)"]
+    permissions["deny"] = [f"Read(/{plugin}/agents/{persona_name}.md)"]
   settings = {"disableAllHooks": True, "permissions": permissions}
-  prompt = f"""/{name}:egm-review
+  prompt = f"""/{name}:{skill_name}
 This is a targeted integration probe, not a full review. Read the Claude guide
 referenced by this skill. Do not execute the normal five-stage workflow.
 Parent-only context marker: {markers[1]}. Do not repeat, write, or pass it on.
-Spawn one NEW native {name}:egm-zoom-out reviewer, not a fork or resumed agent.
-Pass exactly: 'Integration probe: first read only {plugin / "agents/zoom_out.md"}.
+Spawn one NEW native {name}:{agent_name} reviewer, not a fork or resumed agent.
+Pass exactly: 'Integration probe: first read only {plugin / f"agents/{persona_name}.md"}.
 If that read is denied, stop and return exactly RESOURCE_UNREADABLE. Do not
 use another tool, path, or source to recover the persona or give a verdict.
 Then, without further tools, return
@@ -129,7 +136,7 @@ any string matching MARKER_ followed by exactly 32 lowercase hexadecimal digits
 already visible in your context, or exactly UNKNOWN if none is visible. Account
 metadata and other identifiers are not markers. Do not guess. This overrides
 the normal review output format.'
-Wait for its actual result. Then read agents/zoom_out.md and
+Wait for its actual result. Then read agents/{persona_name}.md and
 resources/document_standards/zoom-out-standard.md from the resolved plugin root.
 Do not read other plugins or logs, use MCP, or modify files.
 """
@@ -156,17 +163,17 @@ Do not read other plugins or logs, use MCP, or modify files.
         successful.add(block["tool_use_id"])
   reads = {call["input"].get("file_path") for key, call in calls.items()
            if key in successful and call["name"] == "Read"}
-  for relative in ("docs/claude.md", "agents/zoom_out.md",
+  for relative in ("docs/claude.md", f"agents/{persona_name}.md",
                    "resources/document_standards/zoom-out-standard.md"):
-    if deny_persona and relative == "agents/zoom_out.md":
+    if deny_persona and relative == f"agents/{persona_name}.md":
       assert str(plugin / relative) not in reads
       continue
     assert str(plugin / relative) in reads
   agents = [call for call in calls.values() if call["name"] == "Agent"]
   assert len(agents) == 1
-  assert agents[0]["input"]["subagent_type"] == f"{name}:egm-zoom-out"
+  assert agents[0]["input"]["subagent_type"] == f"{name}:{agent_name}"
   assert not agents[0]["input"].get("resume")
   children = list((traces / session / "subagents").glob("agent-*.jsonl"))
   assert len(children) == 1
   raw = children[0].read_text()
-  assert_child_probe(raw, plugin / "agents/zoom_out.md", markers, deny_persona)
+  assert_child_probe(raw, plugin / f"agents/{persona_name}.md", markers, deny_persona)
