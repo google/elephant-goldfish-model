@@ -1,11 +1,16 @@
 # EGM Ask: Read-Only Contextual Help & Next-Step Guidance
 
 *   **Author:** Smit Parmar ([@smituparmar01](https://github.com/smituparmar01))
-*   **Status:** Draft
+*   **Status:** Not planned
 *   **Date:** 2026-10-28
 *   **Issue:** [#175](https://github.com/google/elephant-goldfish-model/issues/175)
 
 --------------------------------------------------------------------------------
+
+The separate command was declined in [#298](https://github.com/google/elephant-goldfish-model/pull/298).
+Workflow guidance is retained in [What to Run Next](../getting_started.md#what-to-run-next)
+under [#492](https://github.com/google/elephant-goldfish-model/issues/492).
+The proposal below is historical; `/egm-ask` is not an available skill.
 
 ## Overview
 
