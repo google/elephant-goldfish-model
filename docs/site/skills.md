@@ -48,3 +48,7 @@ Document a codebase, make targeted changes, and check whether code matches the p
 - [Check for drift](/skills/egm-drift-report) `/egm-drift-report`
 
   Compare documents with the current source code.
+
+- [Precommit review](/skills/egm-precommit-review) `/egm-precommit-review`
+
+  Review pending code changes independently, with optional fixes and a fresh recheck.
