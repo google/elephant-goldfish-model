@@ -7,6 +7,7 @@ operational guardrails.
 | Document | Author | Primary Component |
 | :------- | :----- | :---------------- |
 | [site_documentation.md](site_documentation.md)<br>Proposed multi-page guide, skill reference, and shared site interface. | [@n3wth](https://github.com/n3wth) | Website and documentation |
+| [diagnose.md](diagnose.md)<br>Draft independent bug diagnosis that keeps the Elephant's hypothesis out of a fresh Goldfish's input and compares the two before a fix. | [@vshvedov](https://github.com/vshvedov) | `egm-diagnose` (#294) |
 | [lite.md](lite.md)<br>Rapid ad-hoc engineering protocol enforcing a decoupled 5-phase state machine with Elephant and Goldfish persona switching for small, rapid iterations, specification revisions, code refactors, and bug fixes. | [@njeunje](https://github.com/njeunje) | [`egm-lite`](../../skills/egm-lite/SKILL.md) |
 | [triz_integration.md](triz_integration.md)<br>Draft Soviet TRIZ method integration introducing the Inventive Catalyst persona to eliminate false architectural compromises in `/egm-brainstorm` and Step 5 of `/egm-review`. | [@briansuchy](https://github.com/briansuchy) | [`egm-brainstorm`](../../skills/egm-brainstorm/SKILL.md), [`egm-review`](../../skills/egm-review/SKILL.md) (#37) |
 | [ask.md](ask.md)<br>Not planned. Workflow guidance is retained in the getting-started docs. | [@smituparmar01](https://github.com/smituparmar01) | Historical `egm-ask` proposal (#175) |
