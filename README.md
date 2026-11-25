@@ -17,7 +17,9 @@ Develop ideas with context and review documents with fresh eyes. EGM is an open-
 
 **Elephant** holds your project context and drafts the specification. **Goldfish** reviewers examine the draft and referenced source material without the earlier conversation, helping expose unstated assumptions and blind spots. **You** make the architectural trade-offs and approve the specification before implementing.
 
-The built-in draft and design-review workflow targets software specifications. For other documents, choose reviewers and standards with `/egm-review-loop`. Bootstrap and drift reporting apply to software codebases.
+Start with `/egm` and describe your task. It selects or resumes a workflow from the conversation, relevant project context, and supplied documents. Guidance adapts to your stated preferences and familiarity with EGM; approval and review requirements stay the same.
+
+The built-in draft and design-review workflow targets software specifications. For other documents, choose reviewers and standards with `/egm-review-loop` (`/egm:egm-review-loop` in Antigravity and Claude Code). Bootstrap and drift reporting apply to software codebases.
 
 https://github.com/user-attachments/assets/93c799a2-10a3-4266-af02-eb79dd33a9a2
 
@@ -55,7 +57,7 @@ Start a new session after installation. For **Claude Cowork** and **ChatGPT Work
 
 ## Try a 60-second review on existing code
 
-Review an existing design document, README, or PR plan against the live code. You do not need to write a new specification. The commands below use the `/egm:` prefix for Antigravity (agy CLI) and Claude Code. In Codex, select the corresponding EGM skill from the skill picker.
+Review an existing design document, README, or PR plan against the live code. You can use an existing specification. The commands below use the `/egm:` prefix for Antigravity (agy CLI) and Claude Code. In Codex, select the corresponding specialist in the skill picker. To let EGM select the workflow, describe the same task with `/egm` (`/egm:egm` in namespaced hosts).
 
 <img src="skills/egm-review/assets/icon.svg" width="20" height="20" align="top" alt=""> **Review an existing document**
 
@@ -77,7 +79,7 @@ The agent compares each document in the folder with the current source code and 
 
 Open your project in your coding agent and choose a feature that needs design decisions. This example adds webhook delivery: what should happen when a delivery fails, or the same event arrives twice?
 
-The commands below are shown without a prefix. In Antigravity (agy CLI) and Claude Code, add the `/egm:` prefix, for example `/egm:egm-brainstorm`. On agy CLI 1.4.10 an unprefixed name is completed to the prefixed command ([#220](https://github.com/google/elephant-goldfish-model/issues/220)), but 1.4.8 does not ([#196](https://github.com/google/elephant-goldfish-model/issues/196)), so keep the prefix. In Codex, select the corresponding EGM skill from the skill picker. Brainstorming and review require a session that can create fresh subagents.
+The examples use specialist commands. In Antigravity (agy CLI) and Claude Code, add the `/egm:` prefix, for example `/egm:egm-brainstorm`. In Codex, select the corresponding specialist in the skill picker. Brainstorming and review require a session that can create fresh subagents.
 
 <img src="skills/egm-brainstorm/assets/icon.svg" width="20" height="20" align="top" alt=""> **Explore the idea**
 
@@ -122,11 +124,12 @@ Goldfish reviews require fresh subagent contexts. If your agent cannot create th
 
 ## Choose a skill
 
-You can use each skill when you need it. You do not have to follow the full sequence.
+Start with `/egm` to select or resume the next workflow. You can also name an action or invoke a specialist directly. You do not have to follow the full sequence.
 
 <table>
   <thead><tr><th align="left">Skill</th><th align="left">Use it to…</th></tr></thead>
   <tbody>
+    <tr valign="top"><td width="160" valign="top"><a href="skills/egm/SKILL.md">/egm</a></td><td>Start or resume the next workflow from your task and project context.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-brainstorm/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-brainstorm/SKILL.md">Brainstorm</a></td><td>Test an idea and write a concept brief.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-draft/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-draft/SKILL.md">Draft</a></td><td>Turn a brief or existing notes into a design document.</td></tr>
     <tr valign="top"><td width="160" valign="top"><img src="skills/egm-resolve/assets/icon.svg" width="20" height="20" alt="" align="top">&nbsp;<a href="skills/egm-resolve/SKILL.md">Resolve</a></td><td>Work through review findings and agree on changes.</td></tr>
