@@ -176,6 +176,12 @@ def test_claude_reviewers_are_read_only_with_fresh_context(name: str) -> None:
   assert canonical["name"] == config["name"]
   assert "tools" not in canonical
   assert "omitClaudeMd" not in canonical
+  persona = (ROOT / "agents" / f"{name}.md").read_text(encoding="utf-8")
+  assert "no tools" not in persona.lower()
+  # Reviewers added later may word their read-only rule differently.
+  if "**Strict Read-Only Protocol**" in persona:
+    assert ("Do not modify the workspace, write files, or compile code."
+            in persona)
 
 
 def test_claude_synthesizer_adapter_is_tool_restricted() -> None:
