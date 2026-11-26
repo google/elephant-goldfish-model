@@ -1,0 +1,17 @@
+{
+  "contributor_id": "sample-eecs481-student",
+  "target_project": "libpng",
+  "baseline_commit": "libpng-1.6.37",
+  "baseline_test_count": 10,
+  "final_test_count": 50,
+  "baseline_coverage_percent": 20.0,
+  "final_coverage_percent": 38.4,
+  "test_cases": [
+    {
+      "test_name": "test_png_handle_PLTE_out_of_order_ihdr",
+      "test_code": "png_read_info(png_ptr, info_ptr); /* verify PLTE rejection before IHDR */",
+      "targets_defect": true,
+      "defect_description": "Catches missing chunk-order state check when PLTE precedes IHDR."
+    }
+  ]
+}
