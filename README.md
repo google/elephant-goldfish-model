@@ -8,6 +8,7 @@
   <a href="#install">Install</a> &ensp;·&ensp;
   <a href="#try-your-first-design">Quickstart</a> &ensp;·&ensp;
   <a href="docs/getting_started.md">Documentation</a> &ensp;·&ensp;
+  <a href="https://securityscorecards.dev/viewer/?repo=github.com/google/elephant-goldfish-model">OpenSSF Scorecard</a> &ensp;·&ensp;
   <a href="https://egm.dev">Website</a>
 </p>
 
