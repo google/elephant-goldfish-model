@@ -16,6 +16,23 @@ skill: "egm-review"
 description: "Behavioral evaluation scenario suite for egm-review skill."
 
 scenarios:
+  - scenario_id: "preflight_missing_attachment_halts_before_execution"
+    description: "Verifies that preflight stops execution with an actionable error if a declared attachment is missing."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review/SKILL.md"
+      rules:
+        - "resources/execution_instructions.md"
+    turns:
+      - user_input: "Review docs/design.md with attachments [diagrams/arch.png]. The file diagrams/arch.png does not exist in the workspace. Start the review."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(preflight|missing|absent|not found|cannot read|unable to read|error)"
+            message: "Preflight must detect the absent attachment and halt with an actionable error."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(starting stage 5|spawning subagent|launching reviewer|dispatching reviewer)"
+            message: "Review must not proceed to execution when an attachment is absent."
+
   - scenario_id: "intake_preset_selection_before_split_discovery"
     description: "Asserts that Step 2 Curated Pipeline Preset selection precedes Step 3 Semantic Split Discovery."
     eval_type: "deterministic"

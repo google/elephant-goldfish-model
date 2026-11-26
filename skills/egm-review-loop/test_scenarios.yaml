@@ -81,3 +81,18 @@ scenarios:
           - type: "required_pattern"
             pattern: "(?i)\\b(local\\s+(copy|file|version)|copy|path)\\b[^\\n]{0,60}\\?"
             message: "The loop must ask the user for a local copy of the page it cannot save."
+
+  - scenario_id: "preflight_missing_attachment_halts_before_execution"
+    description: "Verifies that preflight stops execution with an actionable error if a declared input or attachment is missing."
+    eval_type: "deterministic"
+    system_prompt:
+      skill_file: "skills/egm-review-loop/SKILL.md"
+    turns:
+      - user_input: "Run the review loop on docs/design.md with attachments [diagrams/arch.png]. The file diagrams/arch.png does not exist in the workspace. Start the review loop."
+        assertions:
+          - type: "required_pattern"
+            pattern: "(?i)(preflight|missing|absent|not found|cannot read|unable to read|error)"
+            message: "Preflight must detect absent input and halt with an actionable error."
+          - type: "forbidden_pattern"
+            pattern: "(?i)(starting round 1|spawning subagent|launching reviewer|dispatching reviewer)"
+            message: "The loop must not proceed to execution when an input is absent."
