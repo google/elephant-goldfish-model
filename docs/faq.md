@@ -45,6 +45,85 @@ rework by exposing missing decisions earlier.
 Compare total time, useful findings, and rework on your own tasks. Completing
 the EGM workflow alone does not demonstrate a productivity improvement.
 
+#### Q: What does a review cost, and how long does it take?
+
+**A**: This answer covers the full review, `/egm-review`; for small changes,
+see the last paragraph. Each reviewer is a fresh subagent, and most also read
+a document standard. The cost grows with these factors:
+
+*   **Reviewers and stages**: A full review runs five stages, numbered 5 to 9
+    in `egm-review`, one after another.
+    Reviewers in the same stage can run in parallel. For a design with an
+    implementation plan, the `Consolidated report with all review rubrics`
+    preset (uninterrupted mode) runs each stage once: 10 reviewer subagents. A
+    design with no implementation plan gets Stages 5 to 8 only: 7 reviewers.
+    The `Interactive review with all review rubrics` preset pauses after each
+    stage and runs Stages 7 and 9 through `egm-review-loop`. Each round of that
+    loop starts the stage's 3 reviewers again; it asks you before each new round
+    and finishes after two clean rounds in a row. It also stops and asks you at
+    5 rounds, where you can choose to continue, and on churn, when a new finding
+    sits where a fix was applied and undoing that fix would resolve it. Stages
+    5, 6, and 8 can run once more after the design changes, and Stages 7 and 9
+    can run their whole loop once more. An interactive review can therefore
+    start many more than 10 reviewers, and the number depends on your choices.
+*   **Extra subagents**: When a run nests reviewers under `egm-synthesizer`
+    (not every host can; see [Delegation](harnesses.md#delegation)), each stage
+    or loop round that uses it adds a synthesizer, and the synthesizer may start
+    two copies of each reviewer. In `egm-review-loop` and the synthesizer, a
+    reviewer that fails is started once more. The counts above are minimums.
+*   **Design and context size**: Every reviewer reads the design, so a longer
+    design costs more in each one. Reviewers in every stage except Stage 6
+    also read `GoldfishContext`: the files you pass, the files the design links
+    to inside the working directory, and any outside links or saved pages you
+    approve. Some reviewers also search the code.
+*   **Your own session**: The main session runs `egm-resolve` after each loop
+    round and writes the reports, except those a synthesizer writes. An
+    interactive review also waits for your answer at each checkpoint.
+
+Two measured runs follow. Each is one run, not an average.
+
+*   **Antigravity CLI, 2026-10-22**: Antigravity CLI 1.4.5 ran brainstorm,
+    draft, and review on a test design for a tool that counts nonblank lines.
+    Approvals were given in advance, and the review ran in uninterrupted mode,
+    one pass per stage, with reviewers dispatched directly. The session used the
+    CLI's default model. The whole run, brainstorm and draft included, took
+    1,398.7 seconds and reported 309,915 tokens. The five review stages took 17
+    minutes 56 seconds, from the first Stage 5 reviewer start to the last Stage
+    9 reviewer finish. Its review stages ran 9 reviewers; Stage 5 has since
+    added `egm-inventive-catalyst`. See the
+    [run report](https://github.com/google/elephant-goldfish-model/pull/103#issuecomment-6350669488).
+*   **Claude Code, 2026-11-15**: Claude Code 2.1.325 reviewed a 169-line
+    design with no implementation plan, in uninterrupted mode, one pass per
+    stage, with reviewers dispatched directly. The main session used Opus 5.5.
+    The reviewers were set to Sonnet by hand instead of using the main
+    session's model. `GoldfishContext` held `README.md` and `docs/harnesses.md`.
+    That EGM version did not yet add `egm-inventive-catalyst` to Stage 5, so
+    Stages 5 to 8 ran 6 reviewers. Claude Code reported 20,196 to 38,044 tokens
+    per reviewer, 176,520 in total, and each reviewer took 27 to 44 seconds. A
+    later Stage 7 re-audit of the revised 176-line design ran the same 3
+    reviewers and used another 84,505 tokens.
+    See the
+    [run report](https://github.com/google/elephant-goldfish-model/pull/412#issuecomment-6892400593).
+
+The run reports do not record the Antigravity run's model name or design size,
+whether its token count includes the reviewers' own sessions, or the Claude
+Code run's main-session tokens and total duration. No run measures an
+interactive review or `egm-review-loop`, and no record gives a cost in money.
+
+On a plan with a usage limit, such as a subscription plan, a review can reach
+the limit before it finishes. On 2026-10-22, a Claude Cowork run of brainstorm,
+draft, and review (Opus 5.5 Medium) reached its usage limit during review
+Stage 8; see the
+[harness test record](https://github.com/google/elephant-goldfish-model/blob/main/TESTING.md#harness-test-record).
+If a review stops this way, you can run the remaining stages later, one at a
+time, with the `Step` input of `egm-review` (stage numbers `5` to `9`).
+
+For a small, well-understood change, use
+[EGM Lite](../skills/egm-lite/SKILL.md) (`/egm-lite`) or your normal workflow
+instead. Save the full review for uncertain or consequential designs, as the
+[answer on developer velocity](#q-does-this-workflow-degrade-developer-velocity)
+explains.
+
 #### Q: Is expecting design documentation to be complete enough for a zero-context agent realistic?
 
 **A**: Sometimes, but not always. EGM's approach captures strategy and an
