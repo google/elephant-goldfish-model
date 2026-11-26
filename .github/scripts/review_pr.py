@@ -629,7 +629,10 @@ def _extract_concrete_repo_paths(text: str) -> list[str]:
   """Extracts concrete repo-like relative paths from backtick spans."""
   extracted: list[str] = []
   for match in BACKTICK_TOKEN_RE.finditer(text):
-    token = match.group(1).strip().lstrip("./")
+    token = match.group(1).strip()
+    if token.startswith("./"):
+      token = token.removeprefix("./")
+    token = token.lstrip("/")
     if (
         "/" not in token
         or " " in token
