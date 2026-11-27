@@ -71,19 +71,26 @@ unavailable, fall back to a general-purpose subagent that reads the persona
 file first. Match it by `name` frontmatter, not filename: `egm-design` is
 `agents/design_critic.md`. On Muse 1.4.14 the named `egm/egm-*`
 definitions report `trusted_enabled` in the plugin inventory but spawning
-one is rejected (`agent_definition_unavailable`), so the general-purpose
-fallback is the working path in practice.
+one is rejected (`agent_definition_unavailable`). General-purpose reviewers
+completed the fixture on 1.4.14. On 1.4.15 (R8339.1), named dispatch was still
+rejected and generic reviewers failed with HTTP 400
+(`Recursive JSON schemas are not currently supported`). A generic child
+asked only to reply with a fixed string hit the same error on both 1.4.15
+and 1.4.24 (R9131.1).
+Track the regression in [#519](https://github.com/google/elephant-goldfish-model/issues/519).
 
 Require the reviewer to read its persona, target, and every supplied standard
 before returning findings. A missing read or inaccessible file is an incomplete
 review, not a clean result. Verify native tool results when the host exposes
 them; a parent-written completion summary is not equivalent evidence.
 
-Wait for actual reviewer completion before synthesizing findings. Propagate
-failures and timeouts; a launched reviewer is not a completed review. If
-nesting is unavailable, dispatch reviewers directly from the parent while
-preserving the same isolation. If the available tool cannot establish a fresh
-context, stop the Goldfish review and report that limitation.
+Wait for actual reviewer completion before synthesizing findings. In
+uninterrupted review, run stages 5 through 9 in order and finish each stage
+before dispatching the next. Propagate failures and timeouts. Check child
+results even if `muse exec` exits zero. If nesting is unavailable, dispatch
+reviewers directly from the parent while preserving the same isolation. If the
+available tool cannot establish a fresh context, stop the Goldfish review and
+report that limitation.
 
 Fresh conversation context does not isolate the filesystem, configured memory
 services, or project instructions. Do not retrieve conversation history or
