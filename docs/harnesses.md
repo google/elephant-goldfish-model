@@ -49,6 +49,13 @@ appears in the plugin list and that its skills (`egm-brainstorm`, `egm-draft`,
 `egm-review`) are available. The command form for these skills in the
 Antigravity App and Antigravity for IDEs has not been verified.
 
+In Antigravity CLI (`agy`), plugin-bundled subagents in `agents/*.md` run with
+default read-only tools because canonical EGM personas omit host-specific tool
+declarations. Consequently, `egm-synthesizer` and
+`egm-bootstrap-orchestrator` lack `invoke_subagent` and `write_file`. Skills
+running on Antigravity should use direct parallel dispatch of reviewers from
+the root agent instead of delegating to `egm-synthesizer`.
+
 ## Manifests
 
 Root `plugin.json` is the canonical source for plugin identity, version,
@@ -92,7 +99,7 @@ phrase to its own tool:
 
 | Harness | Subagent tool | Named personas | Nesting |
 | --- | --- | --- | --- |
-| Antigravity | `invoke_subagent` | Yes | Yes |
+| Antigravity | `invoke_subagent` | Yes | No (use direct dispatch) |
 | Claude Code | Agent (Task) tool | Yes | Up to 3 levels by default |
 | Claude Cowork | Cowork subagents | Yes | Subagents run inside Cowork |
 | Codex | Native spawn/wait tools; inspect the available schema | No | Detect at runtime; direct dispatch fallback |

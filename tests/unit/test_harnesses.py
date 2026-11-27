@@ -248,6 +248,13 @@ def test_claude_permissions_remain_under_user_control() -> None:
   assert not (ROOT / "hooks/hooks.json").exists()
 
 
+def test_antigravity_delegation_requires_direct_dispatch() -> None:
+  """Antigravity plugin subagents need the root agent to dispatch reviewers."""
+  guide = (ROOT / "docs/harnesses.md").read_text(encoding="utf-8")
+  assert "| Antigravity | `invoke_subagent` | Yes | No (use direct dispatch) |" in guide
+  assert "direct parallel dispatch" in guide
+
+
 def test_claude_manifest_agents_and_shared_personas_resolve() -> None:
   paths = read_json(".claude-plugin/plugin.json")["agents"]
   assert all((ROOT / path).is_file() for path in paths)

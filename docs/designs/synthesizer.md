@@ -12,7 +12,7 @@ The **EGM Synthesizer Persona** (`synthesizer`) is an intermediate
 orchestration layer, responsible for starting multiple subagents and
 deduplicating feedback across them. It is used to consolidate feedback across
 the various subagents started by EGM skills and prevent context window bloat in
-runtimes that support nested subagents (e.g., Antigravity).
+runtimes that support nested subagents (e.g., Claude Code).
 
 ## The Problem
 
