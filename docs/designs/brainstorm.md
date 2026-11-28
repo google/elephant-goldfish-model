@@ -82,10 +82,11 @@ concept from distinct, conflicting perspectives:
 The synthesizer consolidates the multi-lens feedback into `concepts_brief.md` in
 the side-panel artifact directory or local workspace:
 
-*   Executive Summary & Problem Framing
-*   Multi-Lens Analysis & Risk Matrix
-*   Scope Boundaries (Goals vs. Non-Goals)
-*   Key Architectural Decisions
+*   `## Overview`
+*   `## Analysis`
+*   `## Goals vs. Non-Goals`
+*   `## Alternatives Weighed`
+*   `## Key Decisions & Staging for Next Steps`
 
 ### 4. Step 4: Iterative Refinement & Handoff
 
@@ -108,27 +109,26 @@ delegates directly to the shared EGM subagent swarm and document standards:
 | :-------- | :--- | :----------------------------- |
 | `skills/egm-brainstorm/SKILL.md` | Skill Definition | Implements `/egm-brainstorm` workflow, multi-turn open-ended drilling, shootdown delegation, and brief finalization. |
 | `skills/egm-brainstorm/TEST.md` | Unit Tests | Verification test scenarios validating the brainstorm ideation and multi-lens critique flow. |
-| `skills/egm-brainstorm/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating brainstorm ideation and multi-lens critique flow. |
+| `skills/egm-brainstorm/test_scenarios.yaml` | Scenario Definitions | Co-located behavioral scenario definitions for brainstorm ideation and multi-lens critique flow (schema-validated by `tests/unit/test_scenario_coverage.py`). |
 
 ### Referenced Personas & Infrastructure Components
 
 The ideation shootdown swarm relies on intermediate orchestration and
-specialized Goldfish personas defined in `agents/` and document standards:
+specialized Goldfish personas defined in `agents/` (invoked via their `egm-*`
+agent names in `SKILL.md` and mapped to snake_case file stems in
+`agents/synthesizer.md`):
 
 *   **Intermediate Orchestration**:
     [`agents/synthesizer.md`](../../agents/synthesizer.md) (`Mode: BRAINSTORM`)
     coordinates the parallel fan-out and compiles `concepts_brief.md`.
 *   **7-Lens Goldfish Personas**:
-    *   [`agents/zoom_out.md`](../../agents/zoom_out.md): Contrarian / YAGNI Lens.
-    *   [`agents/design_critic.md`](../../agents/design_critic.md): Cost, Quota & Resource Economics Lens.
-    *   [`agents/comprehension.md`](../../agents/comprehension.md): UX & Developer Ergonomics Lens.
-    *   [`agents/implementation_readiness.md`](../../agents/implementation_readiness.md): Migration & Compatibility Lens.
-    *   [`agents/codebase_details.md`](../../agents/codebase_details.md): Observability & SRE Debuggability Lens.
-    *   [`agents/structural.md`](../../agents/structural.md): Maintainability & Tech Debt Lens.
-    *   [`agents/inventive_catalyst.md`](../../agents/inventive_catalyst.md): Contradiction Elimination & Inventive Transforms Lens.
-*   **Referenced Standards**: Evaluates concepts against
-    [`zoom-out-standard.md`](../../resources/document_standards/zoom-out-standard.md)
-    and [`heilmeier-standard.md`](../../resources/document_standards/heilmeier-standard.md).
+    *   [`agents/zoom_out.md`](../../agents/zoom_out.md) (`egm-zoom-out`): Contrarian / YAGNI Lens.
+    *   [`agents/design_critic.md`](../../agents/design_critic.md) (`egm-design`): Cost, Quota & Resource Economics Lens.
+    *   [`agents/comprehension.md`](../../agents/comprehension.md) (`egm-comprehension`): UX & Developer Ergonomics Lens.
+    *   [`agents/implementation_readiness.md`](../../agents/implementation_readiness.md) (`egm-implementation-readiness`): Migration & Compatibility Lens.
+    *   [`agents/codebase_details.md`](../../agents/codebase_details.md) (`egm-codebase-details`): Observability & SRE Debuggability Lens.
+    *   [`agents/structural.md`](../../agents/structural.md) (`egm-structural`): Maintainability & Tech Debt Lens.
+    *   [`agents/inventive_catalyst.md`](../../agents/inventive_catalyst.md) (`egm-inventive-catalyst`): Contradiction Elimination & Inventive Transforms Lens.
 
 ## References
 
