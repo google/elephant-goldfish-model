@@ -43,4 +43,4 @@ Help me choose reviewers and standards
 for the opening schedule and responsibilities.
 ```
 
-Check the review settings. Check the findings before you change the plan.
+Check the review settings. Check the findings before you change the plan. See the [non-software review example](/non-software-example) for a complete walkthrough of this plan.

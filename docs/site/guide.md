@@ -21,7 +21,7 @@ A student can bring a project proposal. An architect can bring a design brief. A
 
 In each case, write down the background, constraints, and decisions a reviewer needs to understand.
 
-The built-in draft and design-review workflow targets software. For other documents, use [Custom review](/skills/egm-review-loop) and choose reviewers and standards that fit the work. Codebase documentation and drift reporting apply to software projects.
+The built-in draft and design-review workflow targets software. For other documents, use [Custom review](/skills/egm-review-loop) and choose reviewers and standards that fit the work (see the [non-software review example](/non-software-example)). Codebase documentation and drift reporting apply to software projects.
 
 ## Learn more
 
