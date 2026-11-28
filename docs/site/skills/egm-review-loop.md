@@ -26,6 +26,8 @@ Help me choose reviewers and standards
 for the opening schedule and responsibilities.
 ```
 
+See the [non-software review example](/non-software-example) for a full walkthrough with recorded findings and revisions.
+
 ## Full instructions
 
 The assistant follows the [Custom review skill instructions](../../../skills/egm-review-loop/SKILL.md) in the repository.

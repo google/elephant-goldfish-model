@@ -39,6 +39,7 @@ export default defineConfig({
         { label: 'Install', slug: 'install' },
         { label: 'Getting started', slug: 'getting-started' },
         { label: 'Drafting and review', slug: 'workflow' },
+        { label: 'Non-software review example', slug: 'non-software-example' },
       ] },
       { label: 'Skills', items: [
         { label: 'Overview', slug: 'skills' },
