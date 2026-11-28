@@ -15,8 +15,8 @@ review, understand, and explain every submitted change.
    or large changes (`> 100` non-test lines or `>= 3` core files in `skills/` or
    `agents/`) should:
    * **a)** Reach out to maintainers first via a
-     [Feature Inquiry Issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
-     (`.github/ISSUE_TEMPLATE/feature_proposal.md`) to receive
+     [Feature Inquiry Issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.yml)
+     (`.github/ISSUE_TEMPLATE/feature_proposal.yml`) to receive
      `design-ready`.
    * **b)** Submit and merge a full EGM design document PR
      (`docs/designs/<name>.md` authored via `/egm-brainstorm`, `/egm-draft`,

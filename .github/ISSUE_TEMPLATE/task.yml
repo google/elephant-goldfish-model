@@ -1,0 +1,26 @@
+# Copyright 2026 Google LLC. SPDX-License-Identifier: Apache-2.0
+name: "Task"
+description: "Track maintenance, documentation, validation, or other scoped work"
+type: Task
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: Describe the work and why it is needed. Use the Feature / Architectural Inquiry form for new features or architectural changes.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: State what is included and any relevant limits.
+    validations:
+      required: true
+  - type: textarea
+    id: completion
+    attributes:
+      label: Completion criteria
+      description: List the observable results and validation needed to finish this task.
+    validations:
+      required: true

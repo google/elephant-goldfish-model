@@ -125,7 +125,7 @@ subagents; without them, stop and use a supported application.
 
 For a usage question the guides do not answer, use
 [Discussions Q&A](https://github.com/google/elephant-goldfish-model/discussions/categories/q-a).
-For a failure, [open an issue](https://github.com/google/elephant-goldfish-model/issues/new?template=bug_report.md)
+For a failure, [open an issue](https://github.com/google/elephant-goldfish-model/issues/new?template=bug_report.yml)
 with the application version, EGM version or commit, command, and error.
 Remove secrets and private project content from any logs.
 
