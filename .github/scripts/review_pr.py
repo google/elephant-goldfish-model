@@ -82,8 +82,13 @@ LEADING_LABEL_PREFIX_RE = re.compile(
 BARE_MENTION_RE = re.compile(
     r"(?<![\w`])@([A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)?)"
 )
-INLINE_CODE_SPLIT_RE = re.compile(r"(`[^`]+`)")
-FENCED_CODE_SPLIT_RE = re.compile(r"(```.*?```)", re.DOTALL)
+# A CommonMark code span: a backtick run closed by the next run of the same
+# length, so ```a`b``` is one span.
+INLINE_CODE_RE = re.compile(r"(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)", re.DOTALL)
+# A fence opener: three or more backticks or tildes, indented at most three
+# spaces. A backtick fence's info string cannot contain a backtick.
+FENCE_OPEN_RE = re.compile(r" {0,3}(`{3,}(?![^\r\n]*`)|~{3,})")
+LINE_RE = re.compile(r"[^\r\n]*(?:\r\n|\r|\n)|[^\r\n]+")
 HUNK_HEADER_RE = re.compile(r"^@@\s+-\d+(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@")
 
 TRUSTED_REVIEW_ASSOCIATIONS: frozenset[str] = frozenset({
@@ -841,19 +846,76 @@ def build_diff_context(
   return "\n".join(sections), omitted
 
 
+def _split_fenced_code(text: str) -> list[tuple[str, bool]]:
+  """Splits text into (segment, is_code) pairs around fenced code blocks.
+
+  Only fences that GitHub renders as code in the posted comment count:
+
+  * The first line never opens a fence, because format_inline_comment_body
+    puts the text after a severity label on the same line.
+  * A fence closes on a line of its character at least as long as the
+    opener, as in CommonMark.
+  * An indented fence can sit in a list item, which a less indented line
+    ends. Such a line before the closer makes the rest of the text
+    ambiguous, so no later fence counts as code.
+  * An unclosed fence stays prose, because the caller appends text to it.
+
+  Every fence line still ends a segment, because GitHub starts a block
+  there and no code span crosses it.
+  """
+  lines = LINE_RE.findall(text)
+  segments: list[tuple[str, bool]] = []
+  start = 0
+  idx = 1
+  ambiguous = False
+  while idx < len(lines):
+    opener = FENCE_OPEN_RE.match(lines[idx])
+    if opener is None:
+      idx += 1
+      continue
+    fence = opener.group(1)
+    closer_re = re.compile(
+        rf" {{0,3}}{fence[0]}{{{len(fence)},}}[ \t]*(?:\r\n|\r|\n)?"
+    )
+    end = None
+    later = idx + 1
+    while not ambiguous and end is None and later < len(lines):
+      line = lines[later]
+      if line.strip() and len(line) - len(line.lstrip(" ")) < opener.start(1):
+        ambiguous = True
+      elif closer_re.fullmatch(line):
+        end = later
+      later += 1
+    segments.append(("".join(lines[start:idx]), False))
+    if end is None:
+      segments.append((lines[idx], False))
+      start = idx + 1
+    else:
+      segments.append(("".join(lines[idx : end + 1]), True))
+      start = end + 1
+    idx = start
+  segments.append(("".join(lines[start:]), False))
+  return segments
+
+
 def _neutralize_bare_mentions(text: str) -> str:
   """Wraps bare @user and @org/team handles in backticks to block ping abuse."""
-  # Fenced blocks are split out first: a stray single backtick inside one
-  # (e.g. prose about shell quoting) would otherwise pair with an unrelated
+  # Fenced blocks are split out first: a stray backtick inside one (e.g.
+  # prose about shell quoting) would otherwise pair with an unrelated
   # backtick later in the text, and everything in between, including a
   # real bare mention, would be misclassified as inline code and skipped.
-  fenced_parts = FENCED_CODE_SPLIT_RE.split(text)
-  for idx in range(0, len(fenced_parts), 2):
-    parts = INLINE_CODE_SPLIT_RE.split(fenced_parts[idx])
-    for inner_idx in range(0, len(parts), 2):
-      parts[inner_idx] = BARE_MENTION_RE.sub(r"`@\1`", parts[inner_idx])
-    fenced_parts[idx] = "".join(parts)
-  return "".join(fenced_parts)
+  parts = []
+  for segment, is_code in _split_fenced_code(text):
+    if is_code:
+      parts.append(segment)
+      continue
+    pos = 0
+    for span in INLINE_CODE_RE.finditer(segment):
+      parts.append(BARE_MENTION_RE.sub(r"`@\1`", segment[pos : span.start()]))
+      parts.append(span.group(0))
+      pos = span.end()
+    parts.append(BARE_MENTION_RE.sub(r"`@\1`", segment[pos:]))
+  return "".join(parts)
 
 
 def sanitize_comment_body(text: str) -> str:
