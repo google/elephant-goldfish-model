@@ -12,6 +12,7 @@ operational guardrails.
 | [ask.md](ask.md)<br>Not planned. Workflow guidance is retained in the getting-started docs. | [@smituparmar01](https://github.com/smituparmar01) | Historical `egm-ask` proposal (#175) |
 | [skill_icons.md](skill_icons.md)<br>Canonical skill artwork shared by plugins, the README, and the website. | [@n3wth](https://github.com/n3wth) | Skill presentation |
 | [runtime_packaging.md](runtime_packaging.md)<br>Implemented runtime package boundaries, permissions, and validation. | [@n3wth](https://github.com/n3wth) | Runtime packaging implementation (#136) |
+| [antigravity_runtime_packaging.md](antigravity_runtime_packaging.md)<br>Draft allowlisted Antigravity runtime that keeps repository contributor files out of installed plugins. | [@aaravkhanal](https://github.com/aaravkhanal) | Antigravity runtime install (#272) |
 | [releases.md](releases.md)<br>Implemented versioned archives, checksums, and manual release procedure. | [@n3wth](https://github.com/n3wth) | Release implementation (#137) |
 | [claude_release_branch_distribution.md](claude_release_branch_distribution.md)<br>Draft publication of the attested Claude runtime to a generated branch for directory submission. | [@n3wth](https://github.com/n3wth) | Claude directory publication (#121) |
 | [architecture.md](architecture.md)<br>System architecture of the EGM framework covering component models, end-to-end dataflow, and agent lifecycle. | [@quinnjim](https://github.com/quinnjim), [@eewing314](https://github.com/eewing314) | [EGM Framework Architecture](../../README.md) |
