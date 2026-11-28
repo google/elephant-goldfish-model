@@ -52,23 +52,24 @@ its execution model based on the size of the target codebase:
 2.  **Sequential Execution (Small Trees)**: If the target has 5 or fewer
     subdirectories, the Root Orchestrator crawls and documents them sequentially
     in post-order, avoiding multi-agent coordination and startup overhead.
-3.  **Capped Parallel Swarm (Medium/Large Trees)**: If the target has more
+3.  **Capped Parallel Swarm (Medium/Large Trees)**: If the pruned tree has more
     than 5 subdirectories, the Root Orchestrator partitions the tree and spawns
-    parallel instances of the orchestrator agent itself (using the framework's
-    `self` subagent type) as Sub-Orchestrators (one per sub-tree).
+    parallel instances of `egm-bootstrap-orchestrator` (`agents/bootstrap_orchestrator.md`,
+    or a general-purpose subagent) as Sub-Orchestrators (one per sub-tree).
     *   **Adaptive Depth Partitioning**: To prevent parallelization bottlenecks
         in repositories with a single nested source tree (e.g. `src/` or
         `java/`), the Root Orchestrator partitions using adaptive depth,
         descending levels of the discovery map until it splits the directories
         into balanced subtree branches.
-    *   **Capped Spawning upon Approval**: The Root Orchestrator spawns at most
-        5 Sub-Orchestrators, and each runs at most 5 scouts at a time. If the
-        directory count is large (> 5), it asks for user approval to spawn the
-        required number of Sub-Orchestrators, and then spawns all of them in
-        parallel.
+    *   **Capped Spawning & Safety Gate**: The Root Orchestrator spawns at most
+        5 Sub-Orchestrators, and each runs at most 5 scouts at a time. If
+        discovered subdirectories exceed 15, it pauses at the Safety Gate and
+        asks for user approval before proceeding with full-tree execution or
+        spawning workers.
     *   **Direct Swarm Writing & Formatting**: Sub-Orchestrators process their
         subtrees in parallel, write or modify `README.md` files directly in
-        their assigned folders, and format them using `mdformat`.
+        their assigned folders, and format them with clean Markdown (optionally
+        invoking a configured repo formatter such as `npx prettier --write`).
 4.  **Sequential Bottom-Up Processing**: Within each sub-tree, the
     Sub-Orchestrator documents subdirectories sequentially in post-order
     (deepest leaves first), spawning `goldfish-explorer` agents to summarize
@@ -88,12 +89,11 @@ its execution model based on the size of the target codebase:
     DNC-compliant READMEs (`Interface`, `Invariants`, `Side Effects`) for any
     target source directory tree. Existing READMEs are corrected and updated
     without completely overwriting them.
-*   **Idempotent Sentinel-Block Upserting**: Guarantee zero loss of human
-    operational documentation on existing `README.md` files by encapsulating
-    auto-generated DNC contracts inside explicit HTML sentinel markers
-    (`<!-- EGM_BLUEPRINT_START ... -->` / `<!-- EGM_BLUEPRINT_END -->`),
-    preserving all human runbook content above the sentinels byte-for-byte
-    across runs.
+*   **Incremental Correction & Preservation**: When `target_filename`
+    (default `README.md`) already exists, read it first, extract legacy public
+    symbols, invariants, and side effects via `goldfish-explorer` and LLM
+    extraction, merge with code-verified scout output, and edit the file while
+    preserving valid developer notes and top title/metadata/overview.
 *   **Markdown Formatting**: Ensure every modified or created README is
     properly formatted using markdown formatters.
 *   **Final Correctness Check**: Perform a final verification pass on all
@@ -122,17 +122,19 @@ its execution model based on the size of the target codebase:
     specifying the target root directory.
 *   **Then**:
     1.  The Root Orchestrator maps the tree incrementally.
-    2.  If directory count <= 5, it processes them sequentially.
-    3.  If directory count > 5, it partitions the tree adaptively, requests user
-        approval, and spawns up to 5 parallel worker instances of the
-        orchestrator agent itself (`self` Sub-Orchestrators).
-    4.  Sub-Orchestrators process their sub-trees bottom-up, spawning a
+    2.  If discovered directory count > 15, it pauses at the Safety Gate and
+        requests user approval before proceeding.
+    3.  If pruned directory count <= 5, it processes them sequentially.
+    4.  If pruned directory count > 5, it partitions the tree adaptively and
+        spawns up to 5 parallel `egm-bootstrap-orchestrator` Sub-Orchestrators.
+    5.  Sub-Orchestrators process their sub-trees bottom-up, spawning a
         `goldfish-explorer` agent for each directory node.
-    5.  DNC-compliant `README.md` files are created or corrected, and formatted
-        using `mdformat`.
-    6.  The Root Orchestrator runs a final correctness check pass across all
+    6.  DNC-compliant `README.md` files are created or corrected, and formatted
+        with clean Markdown (and optionally a configured repo formatter such as
+        `npx prettier --write`).
+    7.  The Root Orchestrator runs a final correctness check pass across all
         modified READMEs.
-    7.  The user is optionally prompted to run a Drift Report on the updates.
+    8.  The user is optionally prompted to run a Drift Report on the updates.
 
 --------------------------------------------------------------------------------
 
@@ -152,18 +154,19 @@ graph TD
     Root -->|Final Pass| Verify[Correctness Check & Format]
 ```
 
-*   **Node Orchestrator (`bootstrap-orchestrator`)**:
-    *   Implemented as a single agent configuration.
+*   **Node Orchestrator (`egm-bootstrap-orchestrator`)**:
+    *   Implemented as a single agent configuration (`agents/bootstrap_orchestrator.md`).
     *   The **Root Instance** coordinates the pipeline: maps the tree
         incrementally, calculates count/depth, manages safety gates, manages
-        capped parallel worker spawning upon user approval, documents
+        capped parallel worker spawning, documents
         remaining intermediate directories, compiles the final root README, and
         executes the final correctness check pass.
     *   The **Worker Instances (Sub-Orchestrators)** are spawned by the Root
         Instance to process a specific top-level subdirectory tree. They walk
         their sub-tree sequentially bottom-up, spawning explorers, writing or
         modifying README files directly in the filesystem, and formatting them
-        with `mdformat`.
+        with clean Markdown (optionally invoking a configured repo formatter such
+        as `npx prettier --write`).
 *   **`goldfish-explorer`**:
 
     *   A read-only, dynamic scout agent.
@@ -216,7 +219,7 @@ The communications follow a hierarchical reporting pattern:
 
 1.  **Explorer to Sub-Orchestrator**: `goldfish-explorer` analyzes all files in
     a directory and returns a structured JSON summary (interface, invariants,
-    side effects) to its parent `bootstrap-orchestrator`.
+    side effects) to its parent `egm-bootstrap-orchestrator`.
 2.  **Parent Context Propagation**: When the Sub-Orchestrator processes parent
     directory `P`, it propagates the compiled interface summaries of its child
     subdirectories as prompt context when invoking the parent's
@@ -231,7 +234,7 @@ The communications follow a hierarchical reporting pattern:
             retrieves the updated symbols directly from the scout scan and
             legacy extraction.
 3.  **Child to Parent Orchestrator**: Subdirectories return their compiled
-    README summary to the parent `bootstrap-orchestrator`, which uses this
+    README summary to the parent `egm-bootstrap-orchestrator`, which uses this
     to document the parent's "Subdirectories" interface section.
 4.  **Worker to Root Orchestrator**: Sub-Orchestrators return their compiled
     subtree contract metadata to the Root Orchestrator using the structured JSON
@@ -430,12 +433,13 @@ not the execution root).
                 sequential execution).
         *   It spawns a parallel worker (Sub-Orchestrator) for each partition
             subtree, passing parameters `is_worker: true` and `sub_tree_root:
-            <path>` to the `self` subagent invocation.
-    *   **Capped Spawning upon Approval**: The Root Orchestrator spawns at most
-        5 Sub-Orchestrators, and each runs at most 5 scouts at a time. If the
-        directory count is large (> 5), it asks for user approval to spawn the
-        required number of Sub-Orchestrators, and then spawns all of them in
-        parallel.
+            <path>` to the `egm-bootstrap-orchestrator` subagent invocation
+            (or a general-purpose subagent).
+    *   **Capped Spawning & Safety Gate**: The Root Orchestrator spawns at most
+        5 Sub-Orchestrators, and each runs at most 5 scouts at a time. If
+        discovered subdirectories exceed 15, it requires user approval at the
+        Safety Gate before proceeding with full-tree execution or spawning
+        workers.
 6.  **Conditional Branching Control**: The `egm-bootstrap` skill
     configuration (`SKILL.md`) checks these parameters at start:
     *   If `is_worker` is false/unset: Executes the Root Orchestrator role (runs
@@ -444,12 +448,12 @@ not the execution root).
     *   If `is_worker` is true: Skips Phase A and executes the Sub-Orchestrator
         role (processes the assigned `sub_tree_root` subtree bottom-up, spawning
         explorers, writing/modifying files directly, and formatting them with
-        `mdformat`).
+        clean Markdown and optionally a configured repo formatter).
 
 #### Phase B: Bottom-Up Bootstrapping
 
 1.  Under the parallel strategy, the Root Orchestrator spawns parallel
-    `bootstrap-orchestrator` instances as Sub-Orchestrators, passing each
+    `egm-bootstrap-orchestrator` instances as Sub-Orchestrators, passing each
     its target sub-tree.
 2.  Each Sub-Orchestrator processes its sub-tree in post-order (deepest leaves
     first):
@@ -494,16 +498,12 @@ not the execution root).
             complex Starlark macros or dependencies that cannot be resolved via
             file reading, the Sub-Orchestrator falls back to referencing the
             wildcard `:all` target of the ancestor package, or omits the target.
-    *   **Scout Definition & Spawning**: The Sub-Orchestrator dynamically
-        declares the read-only `goldfish-explorer` subagent type using
-        `define_subagent` if not already defined in its active session.
-        *   *Subagent Definition Arguments*:
-            *   `TypeName`: `goldfish-explorer`
-            *   `Role`: `goldfish-explorer`
-            *   `enable_write_tools`: `false`
-            *   `enable_subagent_tools`: `false`
-            *   `SystemPrompt`: As defined in Section 2.1.
-        *   It then spawns the scout sequentially for the active directory.
+    *   **Scout Definition & Spawning**: The Sub-Orchestrator registers
+        (where runtime subagent definition is supported) or prompts a read-only
+        `goldfish-explorer` scout (`enable_write_tools: false`,
+        `enable_subagent_tools: false`) with the system prompt defined in
+        Section 2.1, then spawns scouts for the active directory (up to 5
+        chunks in parallel).
     *   **Child Fault Tolerance**: If a child subdirectory fails to document
         (e.g., explorer timeout or tool error), the Sub-Orchestrator logs a
         warning, inserts a placeholder link (e.g. `- [Subdirectory Name]: [Link
@@ -529,14 +529,14 @@ not the execution root).
         partitioned subtree roots. It processes these intermediate directories
         sequentially bottom-up, generating Intermediate Blueprint READMEs using
         the compiled summaries returned by the workers, and formatting them with
-        `mdformat`.
+        clean Markdown (optionally invoking a configured repo formatter).
     *   The Root Orchestrator checks if the root directory itself contains any
         direct source files. If present, it spawns a `goldfish-explorer` scout
         for the root directory to extract local symbols and invariants,
         appending them to the root README under the `## Local Interface &
         Invariants` section.
     *   It compiles the final root `README.md` (Blueprint), writes it, and
-        formats it with `mdformat`.
+        formats it cleanly.
     *   **Final Correctness Verification**: The Root Orchestrator performs a
         final verification pass across all created and modified READMEs in the
         `subtree_index` to verify EGM compliance (`Interface`, `Invariants`,
@@ -558,37 +558,22 @@ not the execution root).
     `markdown formatter (e.g. prettier or markdownlint)` on
     every modified or created README.
 
-### 2.7 Incremental Sentinel-Block Upsert Architecture
+### 2.7 Incremental Correction & Preservation Policy
 
 To safely run `egm-bootstrap` over directories that already contain
 human-authored operational documentation (such as repository runbooks or oncall
-metadata), the skill enforces **Idempotent Sentinel-Block Bootstrapping**:
+metadata), the skill enforces the **Correction Policy** without relying on
+HTML sentinel blocks:
 
-1.  **Sentinel Boundary Markers**: Every DNC block generated by
-    sub-orchestrators or leaf workers is wrapped inside explicit HTML sentinel
-    markers:
-
-    *   **Start Sentinel:** `
-        <!-- EGM_BLUEPRINT_START: AUTO-GENERATED BY egm-bootstrap. PUT HUMAN NOTES ABOVE THIS LINE -->`
-    *   **End Sentinel:** `<!-- EGM_BLUEPRINT_END -->`
-
-2.  **Three-State Upsert State Machine**: When writing or updating
-    `d/README.md`, workers execute:
-
-```mermaid
-flowchart TD
-    A[Read d/README.md] --> B{File Exists?}
-    B -- No --> C["Create file with sentinel-wrapped block"]
-    B -- Yes --> D{"Contains <!-- EGM_BLUEPRINT_START -->?"}
-    D -- Yes --> E["Replace substring [START, END] with new block"]
-    D -- No --> F{"Contains '## Subdirectories & System Boundaries'?"}
-    F -- Yes (Legacy DNC) --> G["Slice [0, HEADER_INDEX] as Human Preamble + Append Sentinel Block"]
-    F -- No (Pure Human) --> H["Retain 100% Human Preamble + Append '\n\n' + Sentinel Block"]
-    C --> I[Run markdown formatter on README.md]
-    E --> I
-    G --> I
-    H --> I
-```
+1.  **Read Before Writing**: If `target_filename` (default `README.md`) already
+    exists in directory `D`, never blindly overwrite it.
+2.  **Legacy Extraction & Code Grounding**: Read the existing file, scan the
+    directory's source code via `goldfish-explorer`, and extract legacy public
+    symbols, invariants, and side effects as JSON
+    (`{"interface": string[], "invariants": string[], "side_effects": string[]}`).
+3.  **Merge & Preserve**: Merge the extracted metadata with code-verified scout
+    output, and edit `target_filename` while preserving valid developer notes,
+    top title/metadata, and overview content.
 
 --------------------------------------------------------------------------------
 
@@ -621,7 +606,7 @@ directly.
         Python, Java, etc.) that can scale to large repositories in parallel.
     *   We chose to write `egm-bootstrap` to consolidate their DNC
         templates and bottom-up logic into a generic skill that supports
-        parallel scaling via `self` workers.
+        parallel scaling via Sub-Orchestrator workers.
 
 --------------------------------------------------------------------------------
 
@@ -634,42 +619,36 @@ All changes will be housed within the open-source repository structure:
 1.  **`skills/egm-bootstrap/SKILL.md`**
 
     *   **Rationale**: Defines the EGM workflow steps for the bootstrap process.
-    *   **YAML Frontmatter Input Schema**:
+    *   **YAML Frontmatter**:
 
         ```yaml
         name: egm-bootstrap
+        license: Apache-2.0
+        disable-model-invocation: true
         description: Bootstrap directory README.md files across a repository subtree.
-        inputs:
-          path:
-            type: string
-            description: The target root directory path to bootstrap.
-            required: true
-          is_worker:
-            type: boolean
-            description: Internal parameter. True if executing as a worker Sub-Orchestrator.
-            default: false
-          sub_tree_root:
-            type: string
-            description: Internal parameter. The root path of the assigned subtree partition.
-            required: false
         ```
+
+        Runtime inputs (`path`, `is_worker`, `sub_tree_root`, and
+        `target_filename`) are documented in the `## Inputs` markdown section
+        rather than in YAML frontmatter (which is schema-validated by
+        `tests/unit/test_frontmatter.py`).
 
     *   **`SKILL.md` Algorithmic Flow**:
 
         1.  **Startup Check**: Read `is_worker` parameter. If true, jump to step
             6 (Worker Flow).
-        2.  **BFS Scoping**: Run `list_dir` in a queue loop to map the directory
-            tree, ignoring symlinks and `.egmignore` globs.
-        3.  **Warning Gate**: If discovery count > 15, call `ask_question` and
-            wait for user approval.
-        4.  **Partitioning**: If count <= 5, document sequentially. Else, run
-            Adaptive Depth Partitioning to divide the tree into balanced
+        2.  **BFS Scoping**: Run directory discovery in a queue loop to map the
+            tree, ignoring symlinks and `.gitignore` / `.egmignore` globs.
+        3.  **Warning Gate**: If discovery count > 15, pause and request user
+            approval before proceeding.
+        4.  **Partitioning**: If pruned count <= 5, document sequentially. Else,
+            run Adaptive Depth Partitioning to divide the tree into balanced
             subtrees.
-        5.  **Spawning**: Invoke `self` subagents in parallel upon user
-            approval, passing `is_worker: true` and `sub_tree_root`. Jump to
-            step 9.
-        6.  **Worker Flow**: Declare the read-only `goldfish-explorer` subagent
-            type dynamically at startup. Traverse the assigned subtree bottom-up
+        5.  **Spawning**: Invoke `egm-bootstrap-orchestrator` subagents in
+            parallel (capped at 5), passing `is_worker=true` and
+            `sub_tree_root`. Jump to step 9.
+        6.  **Worker Flow**: Register (where supported) or prompt the read-only
+            `goldfish-explorer` scout. Traverse the assigned subtree bottom-up
             (post-order).
         7.  **Explorer Scan & Formatting**: For each folder, check Correction &
             Modification Policy. Read existing README, spawn scout,
@@ -697,7 +676,7 @@ All changes will be housed within the open-source repository structure:
 4.  **`agents/bootstrap_orchestrator.md`**
 
     *   **Rationale**: Defines the system prompt and instructions for the
-        `bootstrap-orchestrator` persona.
+        `egm-bootstrap-orchestrator` persona.
 
 --------------------------------------------------------------------------------
 
@@ -779,22 +758,21 @@ All changes will be housed within the open-source repository structure:
 
 ### 6.1 Static Analysis & Skill Validation
 
-Verification ensures the skill definition, frontmatter, heading hierarchy, and
-sentinel blocks conform to EGM standards.
+Verification ensures the skill definition, frontmatter, and heading hierarchy
+conform to EGM standards (`tests/unit/test_frontmatter.py` and
+`tests/unit/test_scenario_coverage.py`).
 
-### 6.2 Integration Testing & Scenarios
+### 6.2 Behavioral Scenario Definitions
 
-Automated integration test suites in `skills/egm-bootstrap/test_scenarios.yaml` evaluate:
+Behavioral scenario definitions in `skills/egm-bootstrap/test_scenarios.yaml`
+(schema-validated by `tests/unit/test_scenario_coverage.py`) cover:
 
-*   `bootstrap_small_tree`: Verifies sequential execution for a tree with <= 5
-    directories, ensuring it generates conforming Peanut and Hay READMEs,
-    formats them, and runs a final correctness check pass.
-*   `bootstrap_parallel_tree`: Verifies capped parallel worker spawning upon
-    user approval, child context propagation, direct filesystem
-    writing/modifying, formatting, and final correctness verification.
-*   `bootstrap_safety_gate`: Verifies the warning gate triggers when the mapped
-    directory count exceeds 15, pausing traversal and prompting the user.
-*   `bootstrap_incremental_sentinel_upsert`: Verifies that running
-    `egm-bootstrap` against an existing `README.md` containing human
-    operational notes preserves all human text above the sentinel block while
-    updating the DNC contract below.
+*   `bootstrap_small_tree`: Verifies directory tree initialization and baseline
+    documentation scaffolding for a small tree.
+*   `bootstrap_safety_gate`: Verifies the confirmation gate and worker cap
+    warning when the mapped directory count exceeds 15.
+*   `bootstrap_code_grounding`: Verifies contracts cite real code symbols in
+    `[file:symbol]` form, emit `None` for empty invariants, and do not infer
+    interfaces from directory names.
+*   `bootstrap_bazel_target_syntax`: Verifies generated `Verification` sections
+    use valid Bazel target patterns (`//pkg/a/...` or `//pkg/a:all`).

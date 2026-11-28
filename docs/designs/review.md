@@ -183,13 +183,13 @@ drafting.
 | :-------- | :--- | :----------------------------- |
 | `skills/egm-review/SKILL.md` | Skill Definition | Entry point orchestrating the multi-stage review pipeline (Zoom Out $\rightarrow$ Comprehension $\rightarrow$ Critic $\rightarrow$ Intermediate Zoom Out $\rightarrow$ Readiness). |
 | `skills/egm-review/TEST.md` | Unit Tests | Verification test scenarios testing `/egm-review` multi-stage flow and checkpoint gating. |
-| `skills/egm-review/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating model review precision and recall. |
+| `skills/egm-review/test_scenarios.yaml` | Scenario Definitions | Behavioral scenario definitions for review pipeline stages (schema-validated by `tests/unit/test_scenario_coverage.py`). |
 | `skills/egm-review-loop/SKILL.md` | Skill Definition | Central review driver managing asynchronous subagent spawning and findings collection. |
 | `skills/egm-review-loop/TEST.md` | Unit Tests | Verification test scenarios testing goldfish review loop dispatch. |
-| `skills/egm-review-loop/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating goldfish review loop dispatch. |
+| `skills/egm-review-loop/test_scenarios.yaml` | Scenario Definitions | Behavioral scenario definitions for goldfish review loop dispatch (schema-validated by `tests/unit/test_scenario_coverage.py`). |
 | `skills/egm-resolve/SKILL.md` | Skill Definition | Elephant resolution engine managing `CONTEST` vs `PROPOSE FIX` triage and automated fixes. |
 | `skills/egm-resolve/TEST.md` | Unit Tests | Verification test scenarios validating the finding categorization and resolution loop. |
-| `skills/egm-resolve/test_scenarios.yaml` | Evaluation Benchmark | Benchmark test suite evaluating model resolution and fix proposal accuracy. |
+| `skills/egm-resolve/test_scenarios.yaml` | Scenario Definitions | Behavioral scenario definitions for resolution and fix proposals (schema-validated by `tests/unit/test_scenario_coverage.py`). |
 | `agents/*.md` | Persona Prompts | System prompt instructions for all 8 Goldfish reviewers and the Synthesizer. |
 | `resources/document_standards/*.md` | Document Standards | Evaluation rubrics and standards for feature specs, implementation readiness, and simplicity. |
 

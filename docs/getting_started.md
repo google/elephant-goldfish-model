@@ -155,7 +155,7 @@ path/to/project
 │           └── SKILL.md
 └── docs/
     └── designs/               # EGM design directory
-        ├── SITEMAP.md         # An index of design artifacts
+        ├── README.md          # An index of design artifacts (or SITEMAP.md)
         └── FEATURE.md         # A detailed design specification
 ```
 

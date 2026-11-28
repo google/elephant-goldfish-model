@@ -63,9 +63,11 @@ context:
     instances of each requested reviewer (e.g., `Hostile Design Critic A` and
     `Hostile Design Critic B`) to maximize finding recall and eliminate
     non-deterministic evaluation gaps.
-*   **Role Title Enforcement**: Subagent roles are strictly suffixed with
-    `Auditor`, `Reviewer`, or `Critic` for clear observability in execution
-    dashboards.
+*   **Role Title Enforcement**: In `Mode: BRAINSTORM`, subagent role titles end
+    in `-Brainstormer` (e.g., `Skeptical Architect Brainstormer`). In
+    `Mode: REVIEW`, the synthesizer dispatches the requested `Reviewers` list
+    (optionally as A/B instances) and records each reviewer's status (`completed`
+    or `not run`).
 *   **Severity Triage**: Categorizes all aggregated findings into three tiers:
     *   🔴 **Blocker**: Architectural flaws, unaddressed SPOFs, missing file
         targets, or unresolvable dependencies.
@@ -75,9 +77,9 @@ context:
         formatting discrepancies.
 *   **Link Normalization**: Constructs clean markdown links for all referenced
     lines: `[path:Lstart-end](path#Lstart-Lend)`.
-*   **Artifact Emission**: Writes the consolidated report to
-    `goldfish_review_report.md` (or `zoom_out_report.md` /
-    `comprehension_report.md`).
+*   **Artifact Emission**: Writes the consolidated report to the report file
+    named by the caller (defaulting to `goldfish_review_report.md` if none is
+    specified).
 
 --------------------------------------------------------------------------------
 

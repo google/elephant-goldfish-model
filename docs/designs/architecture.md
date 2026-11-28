@@ -70,9 +70,10 @@ Modular agent capabilities executable via slash commands or direct invocation:
 *   `egm-bootstrap`: Recursive bottom-up codebase documentation generator.
 
 ### 2. Personas Layer (`agents/`)
-Stateless system prompt instructions for isolated Goldfish reviewer subagents
-(Comprehension, Design Critic, Implementation Readiness, Codebase Auditor,
-Structural Validator, Style Editor, Inventive Catalyst, and Synthesizer).
+Stateless system prompt instructions for isolated Goldfish reviewer and
+orchestration subagents (Zoom Out, Comprehension, Design Critic, Implementation
+Readiness, Codebase Auditor, Structural Validator, Style Editor, Inventive
+Catalyst, Bootstrap Orchestrator, and Synthesizer).
 
 ### 3. Document Standards (`resources/document_standards/`)
 Goldfish reviewers load the versioned rubrics listed in the
