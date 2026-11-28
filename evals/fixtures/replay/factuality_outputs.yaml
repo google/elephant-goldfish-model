@@ -1,0 +1,20 @@
+schema_version: 1
+execution_mode: replay
+prompt_version: factuality-judge@v1
+model_version: synthetic-replay-fixture
+datasets:
+  - dataset: ragtruth
+    records:
+      - {id: rt-1, expected: clean, predicted: clean}
+      - {id: rt-2, expected: clean, predicted: clean}
+      - {id: rt-3, expected: clean, predicted: flawed}
+      - {id: rt-4, expected: flawed, predicted: flawed}
+      - {id: rt-5, expected: flawed, predicted: flawed}
+      - {id: rt-6, expected: flawed, predicted: clean}
+  - dataset: summedits
+    records:
+      - {id: se-1, expected: clean, predicted: clean}
+      - {id: se-2, expected: clean, predicted: clean}
+      - {id: se-3, expected: flawed, predicted: flawed}
+      - {id: se-4, expected: flawed, predicted: flawed}
+      - {id: se-5, expected: flawed, predicted: null, parse_error: "Missing verdict field in judge JSON"}

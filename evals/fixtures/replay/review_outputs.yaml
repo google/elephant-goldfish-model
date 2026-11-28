@@ -1,0 +1,49 @@
+schema_version: 1
+dataset: egm-original-fixtures
+execution_mode: replay
+prompt_version: egm-review@4693375
+model_version: synthetic-replay-fixture
+harness: claude-code
+surface: native_claude_code
+harness_isolation:
+  status: passed
+  notes: Fresh-context reviewer isolation verified on synthetic replay trace.
+outputs:
+  - case_id: public-api-preserved
+    decision: proceed
+    stage: Stage 9
+    findings: []
+    evidence:
+      - tests/unit/test_packaging.py
+      - public CLI flags unchanged
+    owner_questions: []
+
+  - case_id: new-dependency-added
+    decision: hold
+    stage: Stage 9
+    findings:
+      - id: unapproved-runtime-dependency
+        severity: blocker
+        stage: Stage 9
+        summary: >-
+          Adds undeclared runtime dependency `requests` and network call inside
+          `build()` without updating `pyproject.toml`.
+        evidence:
+          - pyproject.toml
+          - requests
+    evidence:
+      - pyproject.toml
+      - requests
+    owner_questions: []
+
+  - case_id: missing-evidence-owner-question
+    decision: uncertainty
+    stage: Stage 7
+    findings: []
+    evidence:
+      - missing retention SLA evidence
+    owner_questions:
+      - id: retention-window-confirmation
+        question: >-
+          What is the required compliance retention SLA for release provenance
+          bundles before shortening retention to 3 days?

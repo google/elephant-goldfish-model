@@ -1,0 +1,106 @@
+schema_version: 1
+dataset: egm-original-fixtures
+cases:
+  - id: public-api-preserved
+    title: Refactor internal helper while preserving public CLI flags
+    workflow: egm-review
+    category: sound_plan
+    showcase: false
+    expected_decision: proceed
+    expected_blockers: []
+    allow_unsupported_blockers: false
+    expected_owner_questions: []
+    expected_stage: Stage 9
+    expected_evidence:
+      - tests/unit/test_packaging.py
+      - public CLI flags unchanged
+    plan: |
+      # Design: Extract Archive Path Helper
+
+      ## Goal
+      Extract archive path normalization in `scripts/pack_plugin.py` into a
+      private helper `_normalize_archive_path` without changing any public CLI
+      flags (`--target`, `--output`), archive layout, or zip entry names.
+
+      ## Detailed Implementation Plan
+      1. Extract `_normalize_archive_path` in `scripts/pack_plugin.py`.
+      2. Keep `build(root, target, output)` signature and CLI flags unchanged.
+      3. Run `python -m pytest tests/unit/test_packaging.py`.
+
+      ## Evidence
+      - `scripts/pack_plugin.py` defines `build(root, target, output)`.
+      - `tests/unit/test_packaging.py` verifies deterministic ZIP output and
+        public CLI behavior; public CLI flags unchanged.
+
+  - id: new-dependency-added
+    title: Add unapproved runtime dependency without lockfile or offline CI update
+    workflow: egm-review
+    category: flawed_plan
+    showcase: false
+    expected_decision: hold
+    expected_blockers:
+      - unapproved-runtime-dependency
+    allow_unsupported_blockers: false
+    expected_owner_questions: []
+    expected_stage: Stage 9
+    expected_evidence:
+      - pyproject.toml
+      - requests
+    plan: |
+      # Design: Fetch Remote Config at Runtime
+
+      ## Goal
+      Fetch remote configuration during offline unit packaging.
+
+      ## Detailed Implementation Plan
+      1. Import `requests` in `scripts/pack_plugin.py` to fetch remote defaults
+         during `build()`.
+      2. Leave `pyproject.toml` dependency groups unchanged.
+
+      ## Evidence
+      - `pyproject.toml` lists only `pytest`, `pyyaml`, and `ruff` for offline
+        unit and lint jobs; `requests` is not declared and requires network
+        access unavailable in offline fork CI.
+
+  - id: missing-evidence-owner-question
+    title: Propose retention window change without supporting SLA evidence
+    workflow: egm-review
+    category: missing_evidence
+    showcase: false
+    expected_decision: uncertainty
+    expected_blockers: []
+    allow_unsupported_blockers: false
+    expected_owner_questions:
+      - retention-window-confirmation
+    expected_stage: Stage 7
+    expected_evidence:
+      - missing retention SLA evidence
+    plan: |
+      # Design: Shorten Artifact Retention Window
+
+      ## Goal
+      Reduce CI artifact retention from 30 days to 3 days to cut storage cost.
+
+      ## Detailed Implementation Plan
+      1. Update retention-days in `.github/workflows/release.yml` to 3.
+
+      ## Evidence
+      - No audit log or compliance SLA is attached; missing retention SLA
+        evidence for release provenance bundles.
+
+  - id: showcase-public-before-after
+    title: Public before-and-after showcase example (excluded from scored set)
+    workflow: egm-review
+    category: showcase
+    showcase: true
+    expected_decision: hold
+    expected_blockers:
+      - missing-verification-step
+    allow_unsupported_blockers: false
+    expected_owner_questions: []
+    expected_stage: Stage 9
+    expected_evidence:
+      - evals/showcase/public_review_example.md
+    plan: |
+      # Showcase Only
+      Kept out of the scored set via `showcase: true`.

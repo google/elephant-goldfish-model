@@ -1,0 +1,88 @@
+schema_version: 1
+description: >-
+  Manifest of external evaluation datasets for EGM factuality and review
+  benchmarks. Inputs are fetched on demand; corpora and raw traces are kept out
+  of Git.
+datasets:
+  - id: ragtruth
+    name: RAGTruth
+    kind: factuality
+    upstream_url: https://github.com/ParticleMedia/RAGTruth
+    revision: pinned-upstream-v1
+    checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    fetch_mode: on_demand_http
+    keep_out_of_git: true
+    attribution: >-
+      RAGTruth: A Hallucination Corpus for Developing Trustworthy
+      Retrieval-Augmented Language Models (Niu et al., ACL 2024).
+    redistribution_terms: >-
+      Verify upstream MIT/Apache/dataset license terms before redistributing
+      excerpts; fetch locally into .cache/evals/ragtruth/ on demand.
+    split_rules: >-
+      Stratified held-out chat-eval sample (40 clean, 40 flawed) filtered by
+      deterministic case_id list below.
+    case_ids:
+      - ragtruth-summary-001
+      - ragtruth-summary-002
+      - ragtruth-qa-001
+
+  - id: summedits
+    name: SummEdits
+    kind: factuality
+    upstream_url: https://github.com/tingofurro/summac
+    revision: pinned-upstream-v1
+    checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    fetch_mode: on_demand_http
+    keep_out_of_git: true
+    attribution: >-
+      SummEdits: Measuring the Capabilities of Language Models to Detect
+      Inconsistencies in Edited Summaries (Laban et al., EMNLP 2023).
+    redistribution_terms: >-
+      Check upstream BSD-3-Clause / dataset terms before copying text; fetch
+      locally into .cache/evals/summedits/ on demand.
+    split_rules: >-
+      Held-out factuality evaluation split paired with RAGTruth for clean vs.
+      flawed recall reporting.
+    case_ids:
+      - summedits-news-001
+      - summedits-news-002
+
+  - id: heldout_egm_plans
+    name: Held-out EGM Plans
+    kind: review
+    upstream_url: https://github.com/google/elephant-goldfish-model
+    revision: pinned-heldout-v1
+    checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    fetch_mode: maintainer_heldout
+    keep_out_of_git: true
+    attribution: >-
+      Maintainer-curated held-out EGM design plans used to measure review
+      blocker recall and false-positive rate without training-set leakage.
+    redistribution_terms: >-
+      Held-out benchmark plans remain outside the public repository to avoid
+      contamination; maintainers supply local path via --cases.
+    split_rules: >-
+      Balanced held-out set of sound plans and plans with seeded blockers.
+    case_ids:
+      - egm-heldout-001
+      - egm-heldout-002
+
+  - id: trek_trips
+    name: TREK Trips
+    kind: review
+    upstream_url: https://github.com/google/elephant-goldfish-model
+    revision: pinned-heldout-v1
+    checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    fetch_mode: maintainer_heldout
+    keep_out_of_git: true
+    attribution: >-
+      TREK trip-planning evaluation traces used to test non-software review
+      behavior and unsupported-blocker rate.
+    redistribution_terms: >-
+      Raw traces are kept out of Git; sanitized findings may be published
+      after maintainer review.
+    split_rules: >-
+      Held-out trip-planning cases evaluated alongside held-out EGM plans.
+    case_ids:
+      - trek-trip-001
+      - trek-trip-002

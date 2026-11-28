@@ -70,7 +70,11 @@ The "core" workflow looks like:
     validate its completeness, clarity, self-containment, and readiness.
 
     This will provide *a lot* of feedback by design. Take what you think is
-    relevant. Ignore the rest.
+    relevant. Ignore the rest. See the
+    [public before-and-after review example](https://github.com/google/elephant-goldfish-model/blob/main/evals/showcase/public_review_example.md)
+    for a concrete walkthrough, or
+    [reproducible evals](https://github.com/google/elephant-goldfish-model/blob/main/evals/README.md)
+    to run offline scorer checks.
 
 4.  **Human Review**: Send a Pull Request with your design to another human. EGM
     does not replace human oversight, but encourages it. Human reviews are
