@@ -14,6 +14,7 @@ Use Python 3.10+ and a POSIX filesystem with symbolic links.
 Select a fixed candidate commit before installation. Keep the installation at its original path.
 The installer copies the complete canonical resource trees. It does not change global or project configuration.
 It refuses an existing destination. Use a new destination for each candidate.
+If installation fails, it removes the incomplete destination, so you can rerun the same command.
 
 ```sh
 git rev-parse HEAD

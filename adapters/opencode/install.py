@@ -44,7 +44,18 @@ def install(destination: Path) -> Path:
         raise ValueError("Installation path matches the .env read rules")
     if destination.is_relative_to(ROOT):
         raise ValueError("Install outside the source tree")
+    # mkdir raises if the path exists, so this call owns the destination below.
     destination.mkdir(parents=True)
+    try:
+        return _populate(destination)
+    except BaseException:
+        # A partial tree would block every retry as an existing destination.
+        shutil.rmtree(destination, ignore_errors=True)
+        raise
+
+
+def _populate(destination: Path) -> Path:
+    """Write the bundle, skill links, and configuration into a new destination."""
     bundle = destination / "bundle"
     bundle.mkdir()
     for directory in ("skills", "agents", "resources", "docs"):
