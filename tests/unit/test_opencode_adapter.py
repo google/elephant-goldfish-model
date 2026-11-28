@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import runpy
+import shutil
 
 import pytest
 
@@ -143,6 +144,39 @@ def test_dangling_destination_is_untouched(tmp_path: Path) -> None:
         ADAPTER["install"](destination)
     assert destination.is_symlink()
     assert not (tmp_path / "absent").exists()
+
+
+def test_failed_skill_link_removes_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def deny_link(self: Path, target: Path, target_is_directory: bool = False) -> None:
+        raise OSError("symbolic links unavailable")
+
+    monkeypatch.setattr(Path, "symlink_to", deny_link)
+    with pytest.raises(OSError, match="symbolic links unavailable"):
+        ADAPTER["install"](tmp_path / "candidate")
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("error", [OSError("disk full"), KeyboardInterrupt()])
+def test_failed_copy_removes_only_new_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: BaseException
+) -> None:
+    sentinel = tmp_path / "existing.txt"
+    sentinel.write_text("other worker")
+    copy = shutil.copy2
+
+    def fail_on_license(source, target, *args, **kwargs):
+        if Path(source).name == "LICENSE":
+            raise error
+        return copy(source, target, *args, **kwargs)
+
+    # The skill trees are already copied when the LICENSE copy fails.
+    monkeypatch.setattr(shutil, "copy2", fail_on_license)
+    with pytest.raises(type(error)):
+        ADAPTER["install"](tmp_path / "candidate")
+    assert list(tmp_path.iterdir()) == [sentinel]
+    assert sentinel.read_text() == "other worker"
 
 
 def v1_match(pattern: str, value: str) -> bool:
