@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import runpy
 import shutil
+import tempfile
 from xml.etree import ElementTree
 import zipfile
 
@@ -437,6 +438,7 @@ def test_archive_claimed_after_preflight_is_not_overwritten(
   monkeypatch.setattr(zipfile, "ZipFile", claim_archive)
   with pytest.raises(FileExistsError):
     build(source, target, output)
+  assert not (output / f"egm-{target}").exists()
   if claim != "file":
     assert archive.is_symlink()
     if claim == "symlink":
@@ -446,3 +448,57 @@ def test_archive_claimed_after_preflight_is_not_overwritten(
   else:
     assert archive.read_bytes() == b"another build owns this file"
   assert not list(output.glob(".egm-*"))
+
+
+@pytest.mark.parametrize("target", ["claude", "openai"])
+@pytest.mark.parametrize("failure", ["copy", "interrupt", "link"])
+def test_failed_build_removes_only_its_output(
+    source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    target: str, failure: str,
+) -> None:
+  output = tmp_path / "output"
+  output.mkdir()
+  sentinel = output / "existing.txt"
+  sentinel.write_text("other build")
+  if failure == "link":
+    def fail_link(self: Path, other: Path) -> None:
+      raise OSError("hard links unsupported")
+
+    monkeypatch.setattr(Path, "hardlink_to", fail_link)
+  else:
+    error = OSError("disk full") if failure == "copy" else KeyboardInterrupt()
+    write_bytes = Path.write_bytes
+    writes = []
+
+    def fail_fifth_write(self: Path, data: bytes) -> int:
+      writes.append(self)
+      if len(writes) == 5:
+        raise error
+      return write_bytes(self, data)
+
+    monkeypatch.setattr(Path, "write_bytes", fail_fifth_write)
+  with pytest.raises(KeyboardInterrupt if failure == "interrupt" else OSError):
+    build(source, target, output)
+  assert list(output.iterdir()) == [sentinel]
+  monkeypatch.undo()
+  folder, archive = build(source, target, output)
+  assert folder.is_dir() and archive.is_file()
+  assert sentinel.read_text() == "other build"
+
+
+@pytest.mark.parametrize("target", ["claude", "openai"])
+def test_failure_after_linking_removes_new_archive(
+    source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, target: str,
+) -> None:
+  output = tmp_path / "output"
+  cleanup = tempfile.TemporaryDirectory.cleanup
+
+  def fail_cleanup(self: tempfile.TemporaryDirectory) -> None:
+    cleanup(self)
+    raise OSError("cleanup failed")
+
+  # Removing the staging directory is the only step after the ZIP is linked.
+  monkeypatch.setattr(tempfile.TemporaryDirectory, "cleanup", fail_cleanup)
+  with pytest.raises(OSError, match="cleanup failed"):
+    build(source, target, output)
+  assert not list(output.iterdir())

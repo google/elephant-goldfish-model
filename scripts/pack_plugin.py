@@ -6,6 +6,7 @@
 import argparse
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import zipfile
 
@@ -112,24 +113,34 @@ def build(root: Path, target: str, output: Path) -> tuple[Path, Path]:
     if path.is_absolute() or ".." in path.parts or path not in files:
       raise ValueError(f"Unbundled manifest reference: {reference}")
   output.mkdir(parents=True, exist_ok=True)
+  # mkdir and hardlink_to refuse existing paths, so this call owns what they create.
   folder.mkdir()
-  with tempfile.TemporaryDirectory(prefix=".egm-", dir=output) as temporary:
-    staged = Path(temporary) / archive.name
-    with zipfile.ZipFile(staged, "x", zipfile.ZIP_DEFLATED) as bundle:
-      for relative in sorted(files):
-        data = (root / relative).read_bytes()
-        destination = folder / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(data)
-        destination.chmod(0o644)
-        info = zipfile.ZipInfo(relative.as_posix(), (1980, 1, 1, 0, 0, 0))
-        info.create_system = 3
-        info.external_attr = 0o100644 << 16
-        info.compress_type = zipfile.ZIP_DEFLATED
-        bundle.writestr(info, data)
-    # Windows exclusive file creation can follow a dangling symlink. Linking
-    # the completed ZIP claims the final directory entry without following it.
-    archive.hardlink_to(staged)
+  linked = False
+  try:
+    with tempfile.TemporaryDirectory(prefix=".egm-", dir=output) as temporary:
+      staged = Path(temporary) / archive.name
+      with zipfile.ZipFile(staged, "x", zipfile.ZIP_DEFLATED) as bundle:
+        for relative in sorted(files):
+          data = (root / relative).read_bytes()
+          destination = folder / relative
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          destination.write_bytes(data)
+          destination.chmod(0o644)
+          info = zipfile.ZipInfo(relative.as_posix(), (1980, 1, 1, 0, 0, 0))
+          info.create_system = 3
+          info.external_attr = 0o100644 << 16
+          info.compress_type = zipfile.ZIP_DEFLATED
+          bundle.writestr(info, data)
+      # Windows exclusive file creation can follow a dangling symlink. Linking
+      # the completed ZIP claims the final directory entry without following it.
+      archive.hardlink_to(staged)
+      linked = True
+  except BaseException:
+    # Partial output would block every retry. A ZIP another build claimed stays.
+    shutil.rmtree(folder, ignore_errors=True)
+    if linked:
+      archive.unlink(missing_ok=True)
+    raise
   return folder, archive
 
 
