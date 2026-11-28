@@ -140,6 +140,15 @@ When a maintainer confirms a duplicate, use GitHub's `Duplicate of #123` comment
 and preserve any unique reproduction steps or PR links on the canonical issue.
 Ask usage questions in [Discussions Q&A](https://github.com/google/elephant-goldfish-model/discussions/categories/q-a).
 
+### Starter tasks and outcome reviews
+
+Issues labeled `good first issue` must define a clear scope, observable
+acceptance criteria, and a validation command. Maintainers aim to respond to
+first-time contributors within two business days. One month after publishing a
+starter queue, record the review period, time to first response, tasks
+completed, data gaps, and adjustments in the
+[starter task outcome log](docs/verification/starter-task-outcomes.md).
+
 Before commenting on a PR, read the current diff and existing review threads.
 Reply in the existing thread when it covers the finding. For a new finding, cite
 the affected line or behavior, explain the impact, and ask for a concrete change.
