@@ -2,14 +2,19 @@ schema_version: 1
 description: >-
   Manifest of external evaluation datasets for EGM factuality and review
   benchmarks. Inputs are fetched on demand; corpora and raw traces are kept out
-  of Git.
+  of Git. Unverified revisions and checksums are left null until a maintainer
+  pins them from a local verified fetch.
 datasets:
   - id: ragtruth
     name: RAGTruth
     kind: factuality
     upstream_url: https://github.com/ParticleMedia/RAGTruth
-    revision: pinned-upstream-v1
-    checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    revision: null
+    checksum: null
+    pinning_notes: >-
+      Run `git ls-remote https://github.com/ParticleMedia/RAGTruth HEAD` and
+      `sha256sum` on the fetched split, then replace null with the verified
+      commit SHA and `sha256:<hex>`.
     fetch_mode: on_demand_http
     keep_out_of_git: true
     attribution: >-
@@ -30,8 +35,11 @@ datasets:
     name: SummEdits
     kind: factuality
     upstream_url: https://github.com/tingofurro/summac
-    revision: pinned-upstream-v1
-    checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    revision: null
+    checksum: null
+    pinning_notes: >-
+      Pin the upstream commit SHA and SHA-256 of the fetched split before
+      running maintainer comparisons.
     fetch_mode: on_demand_http
     keep_out_of_git: true
     attribution: >-
@@ -51,8 +59,11 @@ datasets:
     name: Held-out EGM Plans
     kind: review
     upstream_url: https://github.com/google/elephant-goldfish-model
-    revision: pinned-heldout-v1
-    checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    revision: null
+    checksum: null
+    pinning_notes: >-
+      Maintainers record the private held-out bundle commit and `sha256:<hex>`
+      locally when running `eval_runner.py compare`.
     fetch_mode: maintainer_heldout
     keep_out_of_git: true
     attribution: >-
@@ -71,8 +82,11 @@ datasets:
     name: TREK Trips
     kind: review
     upstream_url: https://github.com/google/elephant-goldfish-model
-    revision: pinned-heldout-v1
-    checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    revision: null
+    checksum: null
+    pinning_notes: >-
+      Maintainers record the private held-out trace commit and `sha256:<hex>`
+      locally when running `eval_runner.py compare`.
     fetch_mode: maintainer_heldout
     keep_out_of_git: true
     attribution: >-

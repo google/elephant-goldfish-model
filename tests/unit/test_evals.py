@@ -117,6 +117,11 @@ def test_manifest_validation_enforces_out_of_git_and_required_fields() -> None:
   with pytest.raises(eval_runner.EvalFormatError, match="keep_out_of_git"):
     eval_runner.validate_manifest(manifest_data)
 
+  manifest_data["datasets"][0]["keep_out_of_git"] = True
+  manifest_data["datasets"][0]["checksum"] = "sha256:" + "0" * 64
+  with pytest.raises(eval_runner.EvalFormatError, match="placeholder"):
+    eval_runner.validate_manifest(manifest_data)
+
 
 def test_cli_replay_and_compare_commands(tmp_path: Path) -> None:
   completed = subprocess.run(
@@ -171,3 +176,32 @@ def test_cli_replay_and_compare_commands(tmp_path: Path) -> None:
   assert compare_payload["review"]["advisory"] is True
   assert compare_payload["review"]["surface"] == "managed_agents"
   assert "baseline" in compare_payload
+
+  malformed_outputs = yaml.safe_load(
+      (ROOT / "evals/fixtures/replay/review_outputs.yaml").read_text(
+          encoding="utf-8"
+      )
+  )
+  malformed_outputs["outputs"][0]["decision"] = "invalid_decision"
+  bad_path = tmp_path / "bad.yaml"
+  bad_path.write_text(yaml.safe_dump(malformed_outputs), encoding="utf-8")
+  bad_compare = subprocess.run(
+      [
+          sys.executable,
+          str(ROOT / "scripts/eval_runner.py"),
+          "compare",
+          "--cases",
+          str(ROOT / "evals/fixtures/cases.yaml"),
+          "--outputs",
+          str(bad_path),
+          "--format",
+          "json",
+      ],
+      cwd=ROOT,
+      capture_output=True,
+      text=True,
+      check=False,
+  )
+  assert bad_compare.returncode != 0
+  bad_payload = json.loads(bad_compare.stdout)
+  assert "invalid decision" in bad_payload["review"]["parse_failures"][0]

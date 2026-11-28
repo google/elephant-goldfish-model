@@ -177,6 +177,13 @@ def validate_manifest(manifest_data: dict[str, Any]) -> list[dict[str, Any]]:
       raise EvalFormatError(
           f"Manifest dataset '{ds_id}' must set keep_out_of_git: true."
       )
+    checksum = entry.get("checksum")
+    if checksum is not None:
+      if not isinstance(checksum, str) or set(checksum.removeprefix("sha256:")) == {"0"}:
+        raise EvalFormatError(
+            f"Manifest dataset '{ds_id}' must use a verified checksum or null, "
+            "never a placeholder."
+        )
     case_ids = entry.get("case_ids")
     if not isinstance(case_ids, list) or not case_ids:
       raise EvalFormatError(
