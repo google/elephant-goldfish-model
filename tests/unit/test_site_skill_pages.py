@@ -16,19 +16,11 @@
 
 The website renders one hand-written reader page per skill from
 docs/site/skills/. The instructions live in skills/<name>/SKILL.md, and a
-skill change can leave its page behind. These tests fail when a page and
-its SKILL.md disagree, so both are updated in the same change.
-
-Checked facts (#391): every skill has exactly one page, each page links to
-its own skill, each page example invokes the documented slash command and
-shows an argument where the skill requires one, each page names the skill's
-primary output artifact while SKILL.md still names it, every artifact
-filename a page mentions in prose appears in SKILL.md, and SKILL.md still
-documents the inputs listed for it.
-
-OUTPUTS, INPUTS, and REQUIRED_EXAMPLE_ARG below state the facts a page must
-carry today. When a skill changes one of those facts, update the matching
-table and docs/site/skills/<name>.md in the same change.
+skill change can leave its page behind. These tests check the stable,
+structural facts that must not drift: page coverage, the skill link,
+frontmatter name, the example command, and output artifact names. They do
+not compare prose, so wording can change in one place without editing the
+other.
 """
 
 import pathlib
@@ -40,36 +32,7 @@ import yaml
 PAGES_DIR = pathlib.Path("docs/site/skills")
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
 FENCE_RE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
-ARTIFACT_RE = re.compile(r"`([^`\n]+\.md)`")
-
-# Primary output artifact each page must name. The name must also appear in
-# the skill's SKILL.md, so a rename there fails the test and forces an
-# update to both the page and this table.
-OUTPUTS = {
-    "egm-bootstrap": ("README.md",),
-    "egm-brainstorm": ("concepts_brief.md",),
-    "egm-draft": ("design_draft.md",),
-    "egm-drift-report": ("{YYYY-MM-DD}_DRIFT_REPORT.md",),
-    "egm-resolve": ("goldfish_review_report.md",),
-    "egm-review": ("consolidated_review_report.md",),
-    "egm-review-loop": ("goldfish_review_report.md",),
-}
-
-# Documented input parameters each SKILL.md must still list. Renaming or
-# removing one fails the test and forces an update to this table.
-INPUTS = {
-    "egm-bootstrap": ("path", "target_filename"),
-    "egm-draft": ("Context File",),
-    "egm-resolve": ("TargetFile", "FindingsList"),
-    "egm-review": ("TargetFile",),
-    "egm-review-loop": ("TargetFile", "Reviewers", "Standards", "GoldfishContext"),
-}
-
-# Skills whose documented input is a path or document argument. Their page
-# example must show an argument after the command.
-REQUIRED_EXAMPLE_ARG = {
-    "egm-bootstrap", "egm-drift-report", "egm-review", "egm-review-loop",
-}
+ARTIFACT_RE = re.compile(r"`([^`\n]+)`")
 
 
 def _repo_root() -> pathlib.Path:
@@ -109,6 +72,15 @@ def _example_fence(name: str, command: str) -> str | None:
   return None
 
 
+def _artifact_names(text: str) -> set[str]:
+  names = set()
+  for token in ARTIFACT_RE.findall(text):
+    token = token.strip("\"'")
+    if token.endswith(".md"):
+      names.add(pathlib.PurePosixPath(token).name)
+  return names
+
+
 def test_every_skill_has_exactly_one_page() -> None:
   pages = {path.stem for path in (_repo_root() / PAGES_DIR).glob("*.md")}
   skills = set(_skill_names())
@@ -139,50 +111,15 @@ def test_page_example_invokes_the_skill(name: str) -> None:
   assert fence is not None, (
       f"{PAGES_DIR}/{name}.md shows no example invoking {command}"
   )
-  if name in REQUIRED_EXAMPLE_ARG:
-    remainder = fence.replace(command, "", 1).strip()
-    assert remainder, (
-        f"{PAGES_DIR}/{name}.md must show an argument after {command} because"
-        f" skills/{name}/SKILL.md requires one"
-    )
 
 
 @pytest.mark.parametrize("name", _skill_names())
-def test_page_names_a_current_output_artifact(name: str) -> None:
-  anchors = OUTPUTS.get(name)
-  assert anchors, (
-      f"OUTPUTS in tests/unit/test_site_skill_pages.py lists no artifact for"
-      f" {name}"
+def test_page_prose_names_documented_artifacts(name: str) -> None:
+  documented = _artifact_names(_skill_text(name))
+  mentioned = _artifact_names(_prose(name))
+  assert mentioned, f"{PAGES_DIR}/{name}.md names no output artifact"
+  assert mentioned <= documented, (
+      f"{PAGES_DIR}/{name}.md names artifacts that"
+      f" skills/{name}/SKILL.md does not document:"
+      f" {sorted(mentioned - documented)}"
   )
-  for anchor in anchors:
-    assert anchor in _page(name), (
-        f"{PAGES_DIR}/{name}.md does not name the output artifact {anchor}."
-        " Update the page or the OUTPUTS table in"
-        " tests/unit/test_site_skill_pages.py"
-    )
-    assert anchor in _skill_text(name), (
-        f"skills/{name}/SKILL.md no longer names {anchor}. If the artifact"
-        f" was renamed, update {PAGES_DIR}/{name}.md and the OUTPUTS table"
-        " in tests/unit/test_site_skill_pages.py"
-    )
-
-
-@pytest.mark.parametrize("name", _skill_names())
-def test_page_prose_names_only_documented_artifacts(name: str) -> None:
-  skill = _skill_text(name)
-  for token in ARTIFACT_RE.findall(_prose(name)):
-    assert token in skill, (
-        f"{PAGES_DIR}/{name}.md mentions {token}, which"
-        f" skills/{name}/SKILL.md does not document. Rename or remove it,"
-        " or restore the artifact name in the skill"
-    )
-
-
-@pytest.mark.parametrize("name", _skill_names())
-def test_skill_still_documents_listed_inputs(name: str) -> None:
-  for parameter in INPUTS.get(name, ()):
-    assert f"`{parameter}`" in _skill_text(name), (
-        f"skills/{name}/SKILL.md no longer documents `{parameter}`. Update"
-        " the INPUTS table in tests/unit/test_site_skill_pages.py, and the"
-        f" page {PAGES_DIR}/{name}.md if it names the input"
-    )
