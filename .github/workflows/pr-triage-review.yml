@@ -92,6 +92,7 @@ jobs:
             --repo "$REPO"
             --default-branch "$DEFAULT_BRANCH"
             --maintainers-team "$MAINTAINERS_TEAM"
+            --repo-root .
             --model "$REVIEW_MODEL"
             --fallback-models "$FALLBACK_MODELS"
             --out "$PLAN_OUT"
@@ -123,6 +124,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
+      contents: read
       pull-requests: write
       issues: write
     steps:
@@ -259,19 +261,96 @@ jobs:
             }
 
             const allowedTeams = new Set([process.env.ALLOWED_TEAM || "egm-maintainers"].filter(Boolean));
-            const teamReviewers = (plan.team_reviewers || []).filter(team => allowedTeams.has(team));
-            if (teamReviewers.length > 0) {
+            const configuredReviewers = new Set();
+            if (typeof client.rest.repos?.getContent === "function") {
               try {
-                await client.rest.pulls.requestReviewers({
+                const defaultBranch = context.payload?.repository?.default_branch || "main";
+                const { data: cfgFile } = await client.rest.repos.getContent({
                   owner,
                   repo,
-                  pull_number: prNumber,
-                  team_reviewers: teamReviewers
+                  path: ".github/reviewers.json",
+                  ref: defaultBranch
                 });
+                const cfg = JSON.parse(Buffer.from(cfgFile.content, "base64").toString("utf8"));
+                if (cfg.fallback_team) {
+                  allowedTeams.add(String(cfg.fallback_team).trim());
+                }
+                for (const login of cfg.egm_maintainers || []) {
+                  if (login) configuredReviewers.add(String(login).trim().toLowerCase());
+                }
+                for (const login of [
+                  ...(cfg.new_design_docs_reviewers || []),
+                  ...(cfg.new_root_dir_or_skill_reviewers || [])
+                ]) {
+                  if (login) configuredReviewers.add(String(login).trim().toLowerCase());
+                }
+                for (const route of cfg.routes || []) {
+                  for (const login of route.reviewers || []) {
+                    if (login) configuredReviewers.add(String(login).trim().toLowerCase());
+                  }
+                }
               } catch (error) {
+                core.warning(`Could not load .github/reviewers.json: ${error.message}`);
+              }
+            }
+            const stage1TrustedReviewers = new Set();
+            const stage1PrNumber = Number(plan.stage1_pr_number);
+            if (Number.isInteger(stage1PrNumber) && stage1PrNumber > 0) {
+              try {
+                const { data: stage1Pr } = await client.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: stage1PrNumber
+                });
+                const stage1Author = String(stage1Pr.user?.login || "").toLowerCase();
+                const stage1Reviews = typeof client.paginate === "function"
+                  ? await client.paginate(client.rest.pulls.listReviews, { owner, repo, pull_number: stage1PrNumber, per_page: 100 })
+                  : (await client.rest.pulls.listReviews({ owner, repo, pull_number: stage1PrNumber, per_page: 100 })).data;
+                const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+                for (const rev of stage1Reviews) {
+                  const login = String(rev.user?.login || "");
+                  const assoc = String(rev.author_association || "").toUpperCase();
+                  if (login && login.toLowerCase() !== stage1Author && trustedAssociations.has(assoc)) {
+                    stage1TrustedReviewers.add(login.toLowerCase());
+                  }
+                }
+                for (const req of stage1Pr.requested_reviewers || []) {
+                  const login = String(req?.login || "");
+                  if (login && req.type !== "Bot" && login.toLowerCase() !== stage1Author) {
+                    stage1TrustedReviewers.add(login.toLowerCase());
+                  }
+                }
+              } catch (error) {
+                core.warning(`Could not verify Stage 1 PR #${stage1PrNumber} reviewers: ${error.message}`);
+              }
+            }
+            const prAuthor = String(pr.user?.login || "").toLowerCase();
+            const reviewers = (plan.reviewers || []).filter(
+              login => {
+                const lowered = String(login || "").toLowerCase();
+                return (
+                  lowered &&
+                  lowered !== prAuthor &&
+                  (configuredReviewers.has(lowered) || stage1TrustedReviewers.has(lowered))
+                );
+              }
+            );
+            const teamReviewers = (plan.team_reviewers || []).filter(team => allowedTeams.has(team));
+            if (reviewers.length > 0 || teamReviewers.length > 0) {
+              const reviewerRequest = { owner, repo, pull_number: prNumber };
+              if (reviewers.length > 0) {
+                reviewerRequest.reviewers = reviewers;
+              }
+              if (teamReviewers.length > 0) {
+                reviewerRequest.team_reviewers = teamReviewers;
+              }
+              try {
+                await client.rest.pulls.requestReviewers(reviewerRequest);
+              } catch (error) {
+                const requested = [...reviewers, ...teamReviewers].join(", ");
                 core.warning(
-                  `Could not request team reviewers (${teamReviewers.join(", ")}): ${error.message}. ` +
-                  "Configure or rotate secrets.EGM_TRIAGE_BOT_TOKEN with Pull requests: Read/Write to enable team review delegation."
+                  `Could not request reviewers (${requested}): ${error.message}. ` +
+                  "Configure or rotate secrets.EGM_TRIAGE_BOT_TOKEN with Pull requests: Read/Write to enable review delegation."
                 );
               }
             }

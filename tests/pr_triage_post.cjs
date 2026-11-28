@@ -23,11 +23,15 @@ function createHarness(overrides = {}) {
   const planPath = join(dir, 'review-plan.json')
   const state = {
     reviews: overrides.existingReviews ? [...overrides.existingReviews] : [],
+    reviewsByPr: overrides.reviewsByPr || {},
+    pullsByNumber: overrides.pullsByNumber || {},
     labels: new Set(overrides.initialLabels || []),
+    requestedReviewers: [],
     requestedTeams: [],
     warnings: [],
     infos: [],
     failed: null,
+    prAuthor: overrides.prAuthor || 'contributor',
     prState: overrides.prState || 'open',
     prHeadSha: overrides.prHeadSha || 'abc12345',
     rejectInline422: Boolean(overrides.rejectInline422),
@@ -39,16 +43,27 @@ function createHarness(overrides = {}) {
   const makeClient = isPrimary => ({
     rest: {
       pulls: {
-        get: async () => {
+        get: async ({ pull_number }) => {
           if (isPrimary && state.rejectPrimary401) {
             throw Object.assign(new Error('Bad credentials'), { status: 401 })
           }
+          if (pull_number && state.pullsByNumber[pull_number]) {
+            return { data: state.pullsByNumber[pull_number] }
+          }
           return {
-            data: { state: state.prState, head: { sha: state.prHeadSha } },
+            data: {
+              state: state.prState,
+              head: { sha: state.prHeadSha },
+              user: { login: state.prAuthor },
+            },
           }
         },
-        listReviews: async () => ({
-          data: [...state.reviews],
+        listReviews: async ({ pull_number } = {}) => ({
+          data: [
+            ...(pull_number && state.reviewsByPr[pull_number]
+              ? state.reviewsByPr[pull_number]
+              : state.reviews),
+          ],
         }),
         createReview: async req => {
           if (state.rejectInline422 && req.comments && req.comments.length > 0) {
@@ -56,13 +71,14 @@ function createHarness(overrides = {}) {
           }
           state.reviews.push(req)
         },
-        requestReviewers: async ({ team_reviewers }) => {
+        requestReviewers: async ({ reviewers = [], team_reviewers = [] }) => {
           if (state.rejectTeam422 || !isPrimary) {
             throw Object.assign(
               new Error('Could not resolve to a node with the global id'),
               { status: 422 },
             )
           }
+          state.requestedReviewers.push(...reviewers)
           state.requestedTeams.push(...team_reviewers)
         },
       },
@@ -74,6 +90,23 @@ function createHarness(overrides = {}) {
           }
         },
       },
+      ...(overrides.reviewersConfig
+        ? {
+            repos: {
+              getContent: async ({ path }) => {
+                assert.equal(path, '.github/reviewers.json')
+                return {
+                  data: {
+                    content: Buffer.from(
+                      JSON.stringify(overrides.reviewersConfig),
+                      'utf8',
+                    ).toString('base64'),
+                  },
+                }
+              },
+            },
+          }
+        : {}),
     },
   })
 
@@ -92,7 +125,10 @@ function createHarness(overrides = {}) {
     },
   }
 
-  state.run = async (plan, allowedTeam = 'egm-maintainers') => {
+  state.run = async (
+    plan,
+    allowedTeam = 'egm-maintainers',
+  ) => {
     writeFileSync(planPath, JSON.stringify(plan), 'utf8')
     const prevPlan = process.env.PLAN_PATH
     const prevTeam = process.env.ALLOWED_TEAM
@@ -236,4 +272,72 @@ test('concurrent trigger race skips duplicate review when SHA marker already exi
   assert.equal(state.reviews.length, 1)
   assert.equal(state.labels.size, 0)
   assert.ok(state.infos.some(msg => /already present/.test(msg)))
+})
+
+test('clean_handoff filters reviewers by .github/reviewers.json, Stage 1 PR reviews, and author exclusion', async () => {
+  const state = createHarness({
+    prAuthor: 'briansuchy',
+    reviewersConfig: {
+      egm_maintainers: ['briansuchy', 'drensin', 'n3wth'],
+      fallback_team: 'egm-maintainers',
+      routes: [{ name: 'site', paths: ['docs/**'], reviewers: ['n3wth'] }],
+    },
+    pullsByNumber: {
+      210: { user: { login: 'contributor' }, requested_reviewers: [] },
+    },
+    reviewsByPr: {
+      210: [
+        { user: { login: 'drensin' }, author_association: 'MEMBER', state: 'APPROVED' },
+      ],
+    },
+  })
+  await state.run({
+    action: 'clean_handoff',
+    pr_number: 42,
+    head_sha: 'abc12345',
+    stage1_pr_number: 210,
+    add_labels: ['triage: passed'],
+    remove_labels: [],
+    reviewers: ['n3wth', 'drensin', 'briansuchy', 'untrusted-user'],
+    team_reviewers: [],
+    review_payload: {
+      commit_id: 'abc12345',
+      body: '<!-- egm-triage-review:sha=abc12345 -->\nClean pass.',
+      comments: [],
+    },
+  })
+  assert.equal(state.failed, null)
+  assert.deepEqual(state.requestedReviewers, ['n3wth', 'drensin'])
+  assert.deepEqual(state.requestedTeams, [])
+})
+
+test('clean_handoff validates reviewers against .github/reviewers.json on default branch', async () => {
+  const state = createHarness({
+    prAuthor: 'contributor',
+    reviewersConfig: {
+      egm_maintainers: ['briansuchy', 'eewing314', 'quinnjim', 'tearseb'],
+      fallback_team: 'egm-maintainers',
+      routes: [{ name: 'draft', paths: ['skills/egm-draft/**'], reviewers: ['eewing314', 'quinnjim'] }],
+    },
+  })
+  await state.run(
+    {
+      action: 'clean_handoff',
+      pr_number: 43,
+      head_sha: 'abc12345',
+      add_labels: ['triage: passed'],
+      remove_labels: [],
+      reviewers: ['eewing314', 'quinnjim', 'unauthorized-user'],
+      team_reviewers: [],
+      review_payload: {
+        commit_id: 'abc12345',
+        body: '<!-- egm-triage-review:sha=abc12345 -->\nClean pass.',
+        comments: [],
+      },
+    },
+    'egm-maintainers',
+  )
+  assert.equal(state.failed, null)
+  assert.deepEqual(state.requestedReviewers, ['eewing314', 'quinnjim'])
+  assert.deepEqual(state.requestedTeams, [])
 })

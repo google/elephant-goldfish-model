@@ -24,18 +24,15 @@ type, and read back the title, type, and body after creation.
   * `Bug Fix / Minor Patch` (non-test diff `<= 100` lines and `< 3` core files in
     `skills/` or `agents/`; no design doc required, but please update an existing
     design if appropriate).
-  * `Feature / Architectural Change — Stage 1: Design Doc PR` (requires an aligned
-    issue with `design-ready`, uses `Refs #<issue>`, and adds
+  * `Feature / Architectural Change — Stage 1: Design Doc PR` (adds
     `docs/designs/<name>.md` + updates `docs/designs/README.md`).
-  * `Feature / Architectural Change — Stage 2: Implementation PR` (requires an
-    aligned issue with `pr-ready` and a merged
-    `docs/designs/<name>.md`).
-* **Stacks and Labels**: Do not wait for `design-ready` or `pr-ready` before you
-  prepare work. A PR needs its label only to merge. Prepare the design branch
-  and the implementation branch on top of it. When the human approves, open them as a
-  GitHub stack (`gh stack submit` or `gh stack link`), with the implementation PR as a
-  draft. Give each PR one purpose and about 200 to 400 changed lines. Use `Refs #<issue>`
-  on lower PRs and `Closes #<issue>` on the top PR.
+  * `Feature / Architectural Change — Stage 2: Implementation PR` (links
+    the Stage 1 PR `#<stage1-pr>` and `docs/designs/<name>.md`).
+* **Stacks**: Prepare the design branch and the implementation branch on top of
+  it. When the human approves, open them as a GitHub stack (`gh stack submit` or
+  `gh stack link`), with the implementation PR as a draft until Stage 1 lands. Give
+  each PR one purpose and about 200 to 400 changed lines. If a bug or task issue exists,
+  use `Refs #<issue>` on lower PRs and `Closes #<issue>` on the top PR.
   GitHub stacks require upstream branch access. Fork contributors prepare the
   stack locally and open the implementation PR after the design merges.
 * **No Artificial PR Splitting**: Never split a cohesive feature or refactoring across
@@ -49,7 +46,6 @@ type, and read back the title, type, and body after creation.
   `Explain ignored agents folder warning in Claude Code`. Do not use a `type(scope):` prefix.
   This rule overrides a title convention from personal or global agent instructions.
 * **PR Labels**: Add or suggest the applicable labels: `docs`, `site`, `ci`, or `deps`.
-  Maintainers control `design-ready` and `pr-ready`. Never apply these two labels.
 * **Harness Evidence**: For a harness support change, record in the Verification section the
   host and version, the installation result, and the evidence for `egm-brainstorm`, `egm-draft`,
   and `egm-review`. Write `not run` for a check that you did not run.

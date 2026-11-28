@@ -118,6 +118,7 @@ def test_workflow_enforces_zizmor_ready_for_review_and_two_job_boundary() -> Non
   }
   post_job = data["jobs"]["post"]
   assert post_job["permissions"] == {
+      "contents": "read",
       "pull-requests": "write",
       "issues": "write",
   }
@@ -551,7 +552,8 @@ def test_plan_pr_review_guards_missing_key_stale_sha_and_two_pass_flow(
   assert len(clean_calls) == 1
   assert clean_plan["action"] == "clean_handoff"
   assert clean_plan["add_labels"] == ["triage: passed"]
-  assert clean_plan["team_reviewers"] == ["egm-maintainers"]
+  assert clean_plan["reviewers"] == ["n3wth"]
+  assert clean_plan["team_reviewers"] == []
 
   # Candidate findings trigger an independent stateless Pass 2 disproof call.
   disproved_calls = 0
@@ -1088,7 +1090,8 @@ def test_repo_inventory_and_false_positive_filter_prevent_pr_410_regressions(
   assert "- agents/design_critic.md" in prompts_seen[0]
   assert plan_410["action"] == "clean_handoff"
   assert plan_410["add_labels"] == ["triage: passed"]
-  assert plan_410["team_reviewers"] == ["egm-maintainers"]
+  assert plan_410["reviewers"] == ["eewing314"]
+  assert plan_410["team_reviewers"] == []
 
   # Converse check: genuine broken path claims (`agents/egm-design.md` or a
   # file deleted in the PR) are preserved and NOT filtered out.
@@ -1117,3 +1120,271 @@ def test_repo_inventory_and_false_positive_filter_prevent_pr_410_regressions(
       parity_checked_deterministically=True,
   )
   assert len(kept) == 2
+
+
+def test_reviewers_json_valid_and_maintainers_only() -> None:
+  cfg = review_pr.load_reviewers_config(repo_root=ROOT)
+  maintainers = {login.lower() for login in cfg.egm_maintainers}
+  assert len(maintainers) >= 8
+  assert cfg.max_individual_reviewers == 3
+  assert cfg.fallback_team == "egm-maintainers"
+  for login in cfg.new_design_docs_reviewers:
+    assert login.lower() in maintainers
+  for login in cfg.new_root_dir_or_skill_reviewers:
+    assert login.lower() in maintainers
+  for route in cfg.routes:
+    assert route.paths
+    for login in route.reviewers:
+      assert login.lower() in maintainers, (route.name, login)
+
+
+def test_handoff_routing_site_and_platform_adapters_to_n3wth() -> None:
+  for filename in (
+      "site/src/pages/index.astro",
+      "adapters/windsurf/install.py",
+      ".cursor-plugin/plugin.json",
+      "docs/claude.md",
+      ".gemini/extensions/egm.json",
+  ):
+    reviewers, team_reviewers, stage1_pr = review_pr.select_handoff_reviewers(
+        501,
+        {"user": {"login": "contributor"}, "title": "Update integration", "body": ""},
+        [{"filename": filename, "status": "modified"}],
+        repo_root=ROOT,
+    )
+    assert reviewers == ["n3wth"], filename
+    assert team_reviewers == []
+    assert stage1_pr is None
+
+  # Prose mentioning platform words inside a non-platform PR must not false-positive.
+  reviewers_prose, team_prose, _ = review_pr.select_handoff_reviewers(
+      502,
+      {
+          "user": {"login": "contributor"},
+          "title": "Document windsurf extension tips in brainstorming",
+          "body": "Mentions egm.dev and claude plugin in text only.",
+      },
+      [{"filename": "skills/egm-brainstorm/SKILL.md", "status": "modified"}],
+      repo_root=ROOT,
+  )
+  assert reviewers_prose == ["briansuchy"]
+  assert team_prose == []
+
+  # Platform owner's own PRs never route back to themselves.
+  reviewers, team_reviewers, _ = review_pr.select_handoff_reviewers(
+      503,
+      {"user": {"login": "n3wth"}, "title": "Update egm.dev landing page", "body": ""},
+      [{"filename": "site/src/pages/index.astro", "status": "modified"}],
+      repo_root=ROOT,
+  )
+  assert "n3wth" not in reviewers
+  assert team_reviewers == ["egm-maintainers"]
+
+
+def test_handoff_routing_design_docs_new_vs_existing() -> None:
+  # All net-new design docs route to eewing314 (regardless of filename keywords).
+  for fname in ("docs/designs/skill-x.md", "docs/designs/windsurf-adapter.md"):
+    r_new, t_new, _ = review_pr.select_handoff_reviewers(
+        100,
+        {
+            "user": {"login": "contributor"},
+            "title": "Add design doc",
+            "body": (
+                "## Contribution Type\n"
+                "Track: Feature / Architectural Change -- Stage 1: Design Doc PR\n"
+            ),
+        },
+        [{"filename": fname, "status": "added"}],
+        repo_root=ROOT,
+    )
+    assert r_new == ["eewing314"], fname
+    assert t_new == []
+
+  # Existing design doc updates route to listed header authors in egm-maintainers.
+  r_rev, t_rev, _ = review_pr.select_handoff_reviewers(
+      102,
+      {"user": {"login": "contributor"}, "title": "Update review design", "body": ""},
+      [{"filename": "docs/designs/review.md", "status": "modified"}],
+      repo_root=ROOT,
+  )
+  assert r_rev == ["tearseb", "briansuchy", "seanstappas"]
+  assert t_rev == []
+
+  # Author exclusion removes PR author when editing an existing design doc.
+  r_draft, _, _ = review_pr.select_handoff_reviewers(
+      103,
+      {"user": {"login": "quinnjim"}, "title": "Clarify draft design", "body": ""},
+      [{"filename": "docs/designs/draft.md", "status": "modified"}],
+      repo_root=ROOT,
+  )
+  assert r_draft == ["eewing314"]
+
+  # External design doc authors are filtered out, falling back to egm-maintainers.
+  r_ext, t_ext, _ = review_pr.select_handoff_reviewers(
+      104,
+      {"user": {"login": "contributor"}, "title": "Update ask design", "body": ""},
+      [{"filename": "docs/designs/ask.md", "status": "modified"}],
+      repo_root=ROOT,
+  )
+  assert r_ext == []
+  assert t_ext == ["egm-maintainers"]
+
+
+def test_handoff_routing_implementation_follows_stage1_reviewers(monkeypatch) -> None:
+  stage1_pr_open = {
+      "number": 210,
+      "state": "open",
+      "merged_at": None,
+      "title": "Design core orchestrator update",
+      "user": {"login": "contributor"},
+      "body": (
+          "## Contribution Type\n"
+          "Track: Feature / Architectural Change -- Stage 1: Design Doc PR\n"
+      ),
+      "labels": [],
+      "requested_reviewers": [{"login": "tearseb", "type": "User"}],
+  }
+  stage1_reviews = [
+      {
+          "user": {"login": "drensin", "type": "User"},
+          "author_association": "MEMBER",
+          "state": "APPROVED",
+      },
+      {
+          "user": {"login": "external-commenter", "type": "User"},
+          "author_association": "NONE",
+          "state": "COMMENTED",
+      },
+  ]
+
+  def fake_get(url: str, token: str, **_kw):
+    if url.endswith("/pulls/210"):
+      return stage1_pr_open, {}
+    raise RuntimeError(f"HTTP 404 from GET {url}")
+
+  def fake_paginate(endpoint: str, token: str, **_kw):
+    if endpoint == "repos/google/elephant-goldfish-model/pulls/210/reviews":
+      return stage1_reviews
+    if endpoint == "repos/google/elephant-goldfish-model/pulls/210/files":
+      return [{"filename": "docs/designs/orchestrator.md"}]
+    return []
+
+  monkeypatch.setattr(review_pr, "_github_request_json", fake_get)
+  monkeypatch.setattr(review_pr, "_github_paginate", fake_paginate)
+
+  stage2_unmerged_ref = {
+      "user": {"login": "contributor"},
+      "title": "Implement core orchestrator update",
+      "body": (
+          "## Contribution Type\n"
+          "Track: Feature / Architectural Change -- Stage 2: Implementation PR\n"
+          "Refs #210\n"
+      ),
+      "labels": [],
+  }
+  # Copies all maintainer reviewers from unmerged Stage 1 PR + area route owner.
+  reviewers, team_reviewers, stage1_pr_num = review_pr.select_handoff_reviewers(
+      215,
+      stage2_unmerged_ref,
+      [{"filename": "skills/egm-drift-report/SKILL.md", "status": "modified"}],
+      github_token="tok",
+      repo_root=ROOT,
+  )
+  assert reviewers == ["drensin", "tearseb", "quinnjim"]
+  assert team_reviewers == []
+  assert stage1_pr_num == 210
+
+  # Stage 2 referencing unmerged Stage 1 plus platform/site files still preserves Stage 1 reviewers.
+  r_plat, t_plat, s1_plat = review_pr.select_handoff_reviewers(
+      216,
+      stage2_unmerged_ref,
+      [{"filename": "docs/site/skills.md", "status": "modified"}],
+      github_token="tok",
+      repo_root=ROOT,
+  )
+  assert r_plat == ["drensin", "tearseb", "n3wth"]
+  assert t_plat == []
+  assert s1_plat == 210
+
+
+def test_handoff_routing_new_root_dir_and_cross_cutting_cap() -> None:
+  # Net-new root-level directory (like contributions/) routes to eewing314.
+  r_root, t_root, _ = review_pr.select_handoff_reviewers(
+      434,
+      {"user": {"login": "contributor"}, "title": "Add EECS 481 package", "body": ""},
+      [{"filename": "new_program/README.md", "status": "added"}],
+      repo_root=ROOT,
+  )
+  assert r_root == ["eewing314"]
+  assert t_root == []
+
+  # Mirror/index noise does not affect area matching.
+  r_noise, t_noise, _ = review_pr.select_handoff_reviewers(
+      435,
+      {"user": {"login": "contributor"}, "title": "Update drift skill", "body": ""},
+      [
+          {"filename": "README.md", "status": "modified"},
+          {"filename": "docs/designs/README.md", "status": "modified"},
+          {"filename": "distributions/claude/skills/egm-drift-report/SKILL.md", "status": "modified"},
+          {"filename": "skills/egm-drift-report/SKILL.md", "status": "modified"},
+      ],
+      repo_root=ROOT,
+  )
+  assert r_noise == ["quinnjim"]
+  assert t_noise == []
+
+  # Cross-cutting PRs matching <= 3 reviewers get all matched reviewers.
+  r_three, t_three, _ = review_pr.select_handoff_reviewers(
+      359,
+      {"user": {"login": "contributor"}, "title": "Update drift docs and CI", "body": ""},
+      [
+          {"filename": ".github/workflows/ci.yml", "status": "modified"},
+          {"filename": "skills/egm-drift-report/SKILL.md", "status": "modified"},
+          {"filename": "site/src/pages/index.astro", "status": "modified"},
+      ],
+      repo_root=ROOT,
+  )
+  assert r_three == ["briansuchy", "quinnjim", "n3wth"]
+  assert t_three == []
+
+  # Cross-cutting PRs matching > 3 reviewers fall back to egm-maintainers.
+  r_many, t_many, _ = review_pr.select_handoff_reviewers(
+      369,
+      {"user": {"login": "contributor"}, "title": "Repo-wide skill refactor", "body": ""},
+      [
+          {"filename": ".github/workflows/ci.yml", "status": "modified"},
+          {"filename": "skills/egm-review/SKILL.md", "status": "modified"},
+          {"filename": "skills/egm-draft/SKILL.md", "status": "modified"},
+          {"filename": "site/src/pages/index.astro", "status": "modified"},
+      ],
+      repo_root=ROOT,
+  )
+  assert r_many == []
+  assert t_many == ["egm-maintainers"]
+
+
+def test_handoff_routing_bug_fix_uses_area_map() -> None:
+  bug_pr = {
+      "user": {"login": "contributor"},
+      "title": "Fix typo in SKILL.md",
+      "body": (
+          "## Contribution Type\n"
+          "Track: Bug Fix / Minor Patch\n"
+      ),
+      "labels": [],
+  }
+  reviewers, team_reviewers, stage1_pr = review_pr.select_handoff_reviewers(
+      300,
+      bug_pr,
+      [{"filename": "skills/egm-review/SKILL.md", "status": "modified"}],
+      repo_root=ROOT,
+  )
+  assert reviewers == ["briansuchy", "tearseb"]
+  assert team_reviewers == []
+  assert stage1_pr is None
+
+
+def test_no_feature_issue_triage_or_design_gating() -> None:
+  assert not (ROOT / ".github/ISSUE_TEMPLATE/feature_proposal.md").exists()
+  assert not (ROOT / ".github/workflows/design-pr-merged.yml").exists()
+  assert not (ROOT / ".github/workflows/issue-triage.yml").exists()

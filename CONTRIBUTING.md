@@ -18,9 +18,8 @@ listed in the issue before you open a PR.
 *   **Small fix within the Track 1 limits:** open a PR with the
     [PR template](.github/PULL_REQUEST_TEMPLATE.md).
 *   **New feature, architectural change, or anything over the Track 1
-    limits:** open a
-    [feature proposal issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
-    and follow the Track 2 steps. Existing design docs are listed in
+    limits:** follow the Track 2 steps, starting with a Stage 1 Design Doc PR
+    adding `docs/designs/<name>.md`. Existing design docs are listed in
     [docs/designs/README.md](docs/designs/README.md).
 
 **Example:** If a documentation link is broken, fix the destination on a
@@ -51,9 +50,8 @@ Example: `Explain ignored agents folder warning in Claude Code`.
 
 Add applicable labels: `docs` for documentation, `site` for the website,
 `ci` for GitHub Actions, or `deps` for dependencies. If you cannot apply labels,
-suggest them in the PR description. Maintainers control `design-ready` and
-`pr-ready`. A PR needs its label to merge. You can open the PR earlier.
-Automation manages `design-needed` and `triage: passed`.
+suggest them in the PR description. Automation manages `design-needed` and
+`triage: passed`.
 
 All contributions must comply with our [AI & Automated Contribution Policy](AI_POLICY.md):
 every pull request requires a human author who has reviewed and tested the change. They
@@ -65,7 +63,7 @@ Contributions follow a two-track intake model defined in
 ### Track 1: Bug Fix / Minor Patch (`<= 100` Non-Test Lines, `< 3` Core Files)
 Targeted fixes, typo corrections, and test additions that do not alter core
 agent behavior or touch 3+ core files (`skills/`, `agents/`) can be
-submitted directly as a Pull Request without a prior issue or design document.
+submitted directly as a Pull Request without a design document.
 PRs exceeding these limits without an approved design doc receive an advisory label
 (`design-needed`) recommending two-stage alignment.
 
@@ -74,34 +72,24 @@ Any new skill, persona, or change exceeding `100` non-test
 lines (or touching `>= 3` core files in `skills/` or `agents/`)
 follows the EGM Spec-Driven Development process:
 
-1.  **Reach Out & Align (`design-ready`)**:
-    Before investing in a large implementation or full specification, open a
-    [Feature / Architectural Inquiry Issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
-    (`.github/ISSUE_TEMPLATE/feature_proposal.md`) outlining the problem
-    statement and proposed `Goals` vs. `Non-Goals`. We recommend using
-    `/egm-brainstorm` to complete this section. Maintainers will review and apply
-    `design-ready` once aligned on direction.
-
-2.  **Draft & Review Design Specification**:
-    Draft a technical design specification under `docs/designs/<name>.md`. We
-    recommend using `/egm-draft`, and registering it in [`docs/designs/README.md`](docs/designs/README.md).
+1.  **Draft & Review Design Specification**:
+    Explore the problem with `/egm-brainstorm`, draft a technical design
+    specification under `docs/designs/<name>.md` (we recommend `/egm-draft`),
+    and register it in [`docs/designs/README.md`](docs/designs/README.md).
     We also recommend running `/egm-review docs/designs/<name>.md` to stress-test
-    the proposal.
+    the proposal before opening a PR.
 
-3.  **Submit a Design Doc PR and wait for `pr-ready`**:
-    You can open this PR before `design-ready` is applied. It merges after.
-    Open a dedicated **Design Doc PR** containing `docs/designs/<name>.md`
-    and `docs/designs/README.md` (referencing your aligned issue with
-    `Refs #<issue>` rather than `Closes #<issue>` so the issue stays open).
-    When maintainers merge the Design Doc PR, the specification is checked into
-    the codebase and maintainers manually transition the issue label to
-    `pr-ready`.
+2.  **Submit and Merge a Stage 1 Design Doc PR**:
+    Open a dedicated **Design Doc PR** containing `docs/designs/<name>.md` and
+    `docs/designs/README.md`. Maintainers review the scope, `Goals` vs.
+    `Non-Goals`, and technical design directly on this PR. When maintainers
+    approve and merge the Design Doc PR, the specification is checked into
+    the codebase.
 
-4.  **Submit the Implementation PR**:
-    Open the implementation PR (`Closes #<issue>`) referencing
-    `docs/designs/<name>.md`. It merges after the specification merges and the
-    issue has `pr-ready`. To start early, stack it on the Design Doc PR as a
-    draft.
+3.  **Submit the Stage 2 Implementation PR**:
+    Write and submit the implementation PR referencing both the Stage 1 PR
+    (`#<stage1-pr>`) and `docs/designs/<name>.md`. To start early, stack it on
+    the Design Doc PR as a draft until Stage 1 merges.
 
 ### Stacked Pull Requests and Size
 
@@ -118,9 +106,10 @@ follows the EGM Spec-Driven Development process:
     [small changes](https://google.github.io/eng-practices/review/developer/small-cls.html)
     guide). Put renames, moves, and deletions in a PR of their own. Each PR
     must pass the tests on top of the PR below it.
-*   **Links**: A feature has one issue. Lower PRs in a stack use
-    `Refs #<issue>`. The top PR uses `Closes #<issue>`. A minor patch uses
-    `Fixes #<issue>` when an issue exists. Put follow-up work in a new issue.
+*   **Links**: Stage 2 PRs link their Stage 1 PR and `docs/designs/<name>.md`.
+    When fixing an existing bug or task issue, lower PRs in a stack use
+    `Refs #<issue>` and the top PR uses `Closes #<issue>` (or `Fixes #<issue>`
+    for a standalone minor patch). Put follow-up work in a new issue.
 *   **Limits**: The track limits apply to the whole stack. Do not split a
     feature into minor patches to avoid the design process.
 

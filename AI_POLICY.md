@@ -14,21 +14,17 @@ review, understand, and explain every submitted change.
 3. **EGM Design Requirement & Two-Stage Alignment**: Contributors planning features
    or large changes (`> 100` non-test lines or `>= 3` core files in `skills/` or
    `agents/`) should:
-   * **a)** Reach out to maintainers first via a
-     [Feature Inquiry Issue](https://github.com/google/elephant-goldfish-model/issues/new?template=feature_proposal.md)
-     (`.github/ISSUE_TEMPLATE/feature_proposal.md`) to receive
-     `design-ready`.
-   * **b)** Submit and merge a full EGM design document PR
+   * **a)** Submit and merge a full EGM design document PR
      (`docs/designs/<name>.md` authored via `/egm-brainstorm`, `/egm-draft`,
-     and `/egm-review`, referencing the issue with `Refs #<issue>`) so
-     maintainers can apply `pr-ready` to the Feature Inquiry Issue.
-   * **c)** Submit and merge an implementation PR of the approved design into
-     the codebase (`Closes #<issue>`).
+     and `/egm-review`) as Stage 1.
+   * **b)** Submit and merge an implementation PR of the approved design into
+     the codebase (linking `docs/designs/<name>.md` and the Stage 1 PR) as
+     Stage 2.
 
-   A contributor can open (b) and (c) before the labels are applied, as a stack
-   of pull requests. Each one needs its label to merge. See
+   A contributor can prepare (a) and (b) early as a draft stack; Stage 2 merges
+   after Stage 1 lands. See
    [CONTRIBUTING.md](CONTRIBUTING.md#stacked-pull-requests-and-size).
 4. **No Artificial PR Splitting**: Do not artificially split a single logical
    feature or refactoring into multiple smaller pull requests (e.g., two 60-line PRs)
-   to bypass the 100-line scope threshold. A stack of small pull requests under
-   one issue and one design is not artificial splitting.
+   to bypass the 100-line scope threshold. A stack of small pull requests implementing
+   one design is not artificial splitting.
